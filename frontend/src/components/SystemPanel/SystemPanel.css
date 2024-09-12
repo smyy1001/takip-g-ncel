@@ -1,0 +1,126 @@
+.app-dark .sys-sliding-panel,
+.sys-sliding-panel {
+    position: absolute;
+    top: 64px;
+    right: 0;
+    width: 40px;
+    z-index: 10;
+    background-color: var(--system-panel-bg);
+    height: calc((100% - 64px) / 2);
+    transition: all 0.5s ease-in-out;
+    display: flex;
+    flex-direction: row;
+    box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.5);
+}
+
+.sys-sliding-panel.open {
+    height: 100%;
+    width: 30vw;
+    z-index: 5;
+    top: 64px;
+}
+
+.sys-toggle-button {
+    position: absolute !important;
+    /* left: -40px; */
+    border-radius: 0% !important;
+    background-color: #4f7d55 !important;
+    box-shadow: 0 0 5px #0006;
+}
+
+.sys-panel-content {
+    writing-mode: vertical-rl;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-right: 5px;
+    padding-left: 7px;
+    display: flex;
+    justify-content: start;
+    height: calc((100% - 64px) / 2);
+    color: rgb(255, 255, 255);
+    font-weight: 800;
+    font-size: 20px;
+    margin-top: 40px;
+}
+
+.app-dark .sys-panel-scroll,
+.sys-panel-scroll {
+    overflow-y: auto;
+    max-height: calc(100% - 64px);
+    box-shadow: none !important;
+    width: 100%;
+    transition: background-color 0.3s ease;
+    margin-right: 40px;
+    scrollbar-width: none;
+}
+
+.app.dark .sys-panel-all-list,
+.sys-panel-all-list {
+    display: flex;
+    align-items: center;
+}
+
+
+.css-sjiyiz {
+    margin: 0px !important;
+    color: white !important;
+}
+
+
+.app.dark .sys-panel-empty-message,
+.sys-panel-empty-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px !important;
+    font-size: larger !important;
+    font-weight: 800 !important;
+}
+
+.app-dark .sys-panel-sub-malz-list-class:hover,
+.sys-panel-sub-malz-list-class:hover {
+    background-color: rgb(255, 255, 255, 0.08) !important;
+    cursor: pointer !important;
+}
+
+
+.app-dark .sys-panel-expand-more-less:hover,
+.sys-panel-expand-more-less:hover {
+    background-color: rgb(255, 255, 255, 0.3) !important;
+    cursor: pointer !important;
+}
+
+
+.app-dark .system-hover-effect-link,
+.system-hover-effect-link {
+    font-size: 25px !important;
+    font-weight: 800 !important;
+    padding: 20px 20px 20px 20px !important;
+}
+
+
+.app-dark .system-hover-effect-link:hover,
+.system-hover-effect-link:hover {
+    background-color: rgb(255, 255, 255, 0.1);
+    cursor: pointer;
+}
+
+.system-directing-icon-style {
+    padding: 0px !important;
+    margin: 0 0 5px 5px !important;
+}
+
+.system-directing-icon-style:focus {
+    background-color: transparent !important;
+}
+
+.sys-sliding-panel-header {
+    width: 40px;
+    transition: all 0.5s ease-in-out;
+    cursor: pointer;
+}
+
+.sys-sliding-panel-header.open {
+    background-color: #4f7d55;
+    cursor: pointer;
+}

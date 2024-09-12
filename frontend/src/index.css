@@ -1,0 +1,66 @@
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+* {
+  font-family: 'Arial', sans-serif !important;
+  font-style: normal !important;
+}
+
+:root,
+.dark-mode {
+  --popover-background-color: #17110f !important;
+  --light-text-color: #ffffff !important;
+  --secondary-color: #27211f !important;
+  --border-color: #8e8782 !important;
+  --highlight-color: #F85E00;
+  --dark-bg-color: #2b2222 !important;
+  --error-color: red;
+  --sidebar-width: 350px;
+  --button-bg-color: #8e8782 !important;
+  --button-hover-color: #d2b48c !important;
+  --popover-background-color: #17110f !important;
+
+  --primary-color: #2b2222 !important;
+  --single-item-color: #121212 !important;
+  --single-item-color2: #574d4b !important;
+  --drop-down-menu: #241b19;
+  --hover-link-color: #79d2ff;
+
+
+  --system-panel-bg: #3f3f3f;
+  --malzeme-panel-bg: #3f3f3f;
+  --mevzi-panel-bg: #3f3f3f;
+  --searchfilter-panel-bg: #3f3f3f;
+}
+
+
+/* 
+/** CSS DARK THEME PRIMARY COLORS 
+--color-primary-100: #3d7894;
+#4f7d55
+--color-primary-200: #55869f;
+--color-primary-300: #6b94ab;
+--color-primary-400: #80a3b7;
+--color-primary-500: #95b2c2;
+--color-primary-600: #aac1ce;
+/** CSS DARK THEME SURFACE COLORS 
+-color-surface-100: #121212;
+--color-surface-200: #282828;
+--color-surface-300: #3f3f3f;
+--color-surface-400: #575757;
+--color-surface-500: #717171;
+--color-surface-600: #8b8b8b;
+/** CSS DARK THEME MIXED SURFACE COLORS 
+--color-surface-mixed-100: #181b1e;
+--color-surface-mixed-200: #2d3033;
+--color-surface-mixed-300: #444649;
+--color-surface-mixed-400: #5c5e60;
+--color-surface-mixed-500: #757779;
+--color-surface-mixed-600: #8f9092; */

@@ -1,0 +1,46 @@
+.sfp-sliding-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 40px;
+    z-index: 10;
+    background-color: var(--searchfilter-panel-bg);
+    border-top-right-radius: 8px;
+    width: 20vw;
+    transition: height 0.3s ease-in-out;
+}
+
+.sfp-sliding-panel.open {
+    height: 30vh;
+}
+
+.sfp-toggle-button {
+    position: absolute !important;
+    /* top: -40px; */
+    border-radius: 0% !important;
+    background-color: #4f7d55 !important;
+    box-shadow: 0 0 5px #0006;
+}
+
+.sfp-panel-content {
+    padding: 10px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    height: 100%;
+    color: rgb(255, 255, 255);
+    font-size: 20px;
+    font-weight: 800;
+}
+
+
+.sfp-sliding-panel-header {
+    height: 40px;
+    transition: all 0.5s ease-in-out;
+    cursor: pointer;
+}
+
+.sfp-sliding-panel-header.open {
+    background-color: #4f7d55;
+    cursor: pointer;
+}
