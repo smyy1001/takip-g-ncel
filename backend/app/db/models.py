@@ -10,12 +10,72 @@ from sqlalchemy import (
     Table,
     ARRAY,
 )
-from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP, JSONB
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 import uuid
+from typing import Dict
 
 Base = declarative_base()
+
+
+class Enerji(Base):
+    __tablename__ = "enerji"
+
+    id = Column(Integer, primary_key=True)
+    voltaj = Column(Float)
+    jenerator = Column(Text)
+    guc_k = Column(Text)
+    regulator = Column(Text)
+
+
+class Iklim(Base):
+    __tablename__ = "iklim"
+
+    id = Column(Integer, primary_key=True)
+    klima = Column(Text)
+
+
+class Haber(Base):
+    __tablename__ = "haber"
+
+    id = Column(Integer, primary_key=True)
+    t = Column(Text)
+    r_l = Column(Text)
+    uydu = Column(Text)
+    telekom = Column(Text)
+    g_modem = Column(Text)
+
+
+class Kabin(Base):
+    __tablename__ = "kabin"
+
+    id = Column(Integer, primary_key=True)
+    rack_kabin = Column(Text)
+
+
+class KAlan(Base):
+    __tablename__ = "k_alan"
+
+    id = Column(Integer, primary_key=True)
+    konteyner = Column(Text)
+
+
+class AltY(Base):
+    __tablename__ = "alt_y"
+
+    id = Column(Integer, primary_key=True)
+    enerji_alty = Column(Integer, ForeignKey("enerji.id"))
+    iklim_alty = Column(Integer, ForeignKey("iklim.id"))
+    haberlesme_alty = Column(Integer, ForeignKey("haber.id"))
+    kabin_alty = Column(Integer, ForeignKey("kabin.id"))
+    kapali_alan_alty = Column(Integer, ForeignKey("k_alan.id"))
+
+    enerjii = relationship("Enerji")
+    iklimm = relationship("Iklim")
+    haberr = relationship("Haber")
+    kabinn = relationship("Kabin")
+    k_alann = relationship("KAlan")
 
 
 class Sys_Type(Base):
@@ -90,6 +150,7 @@ class System(Base):
     photos = Column(ARRAY(String(255)))
     description = Column(Text)
 
+
     type = relationship("Sys_Type")
     marka = relationship("Sys_Marka")
     model = relationship("Sys_Model")
@@ -108,10 +169,12 @@ class Malzeme(Base):
     system_id = Column(UUID(as_uuid=True), ForeignKey("system.id"), nullable=True)
     depo = Column(Integer)
     mevzi_id = Column(UUID(as_uuid=True), ForeignKey("mevzi.id"), nullable=True)
-    giris_tarihi = Column(TIMESTAMP)
-    arizalar = Column(ARRAY(TIMESTAMP))
-    onarimlar = Column(ARRAY(TIMESTAMP))
-    bakimlar = Column(ARRAY(TIMESTAMP))
+    giris_tarihi = Column(Date)
+    arizalar = Column(ARRAY(Date))
+    photos = Column(ARRAY(String(255)))
+    onarimlar = Column(ARRAY(Date))
+    bakimlar = Column(ARRAY(Date))
+
 
     type = relationship("Type")
     marka = relationship("Marka")
@@ -154,10 +217,24 @@ class Mevzi(Base):
     sube_id = Column(Integer, ForeignKey("sube.id"))
     d_sistemler = Column(ARRAY(Text))
     y_sistemler = Column(ARRAY(Integer))
-    foto_albums = Column(ARRAY(String(255)))  # MinIO bucket names, implied as date storage
+    photos = Column(ARRAY(String(255)))
 
-    ip_list = Column(JSONB)
-    alt_y = Column(JSONB)
+
+    alt_y_id = Column(Integer, ForeignKey("alt_y.id"))
 
     bakim_sorumlusu = relationship("Bakimsorumlulari")
     sube = relationship("Sube")
+    altt_y = relationship("AltY")
+
+
+class MalzMatch(Base):
+    __tablename__ = "malz_matches"
+
+    id = Column(Integer, primary_key=True)
+    malzeme_name = Column(Text, ForeignKey("malzeme.name"), nullable=True)
+    mevzi_id = Column(UUID(as_uuid=True), ForeignKey("mevzi.id"), nullable=True)
+    ip = Column(Text)
+
+    malzeme = relationship("Malzeme")
+    mevzi = relationship("Mevzi")
+

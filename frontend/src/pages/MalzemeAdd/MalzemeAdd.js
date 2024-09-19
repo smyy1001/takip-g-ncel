@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useRef } from "react";
 import Axios from "../../Axios";
 import { Container, Typography, Button, IconButton } from "@mui/material";
+import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import {
   Tooltip,
   TextField,
@@ -13,6 +14,7 @@ import {
   FormControlLabel,
   InputAdornment,
 } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { message } from "antd";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -23,6 +25,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import "dayjs/locale/tr";
+import CloseIcon from "@mui/icons-material/Close";
 
 const CustomAutocompleteTextField = styled(TextField)({
   "& label.Mui-focused": {
@@ -202,6 +205,108 @@ function MalzemeAdd({
   const [newChosenDate2, setNewChosenDate2] = useState(null);
   const [newChosenDate3, setNewChosenDate3] = useState(null);
 
+  const [folders, setFolders] = useState([
+    {
+      folderName: "",
+      selectedImages: [],
+      deletedImages: [],
+      existingImages: [],
+    },
+  ]);
+
+  const calculateTimeDifference = (startDate, endDate) => {
+    const diffInMilliseconds = dayjs(endDate).diff(dayjs(startDate));
+    const diffInMinutes = Math.floor(diffInMilliseconds / (1000 * 60));
+    const days = Math.floor(diffInMinutes / (60 * 24));
+    const hours = Math.floor((diffInMinutes % (60 * 24)) / 60);
+    const minutes = diffInMinutes % 60;
+    if (days === 0 && hours === 0) {
+      return `${minutes} dakika`;
+    } else if (days === 0) {
+      return `${hours} saat, ${minutes} dakika`;
+    } else {
+      return `${days} gün, ${hours} saat, ${minutes} dakika`;
+    }
+  };
+
+  const handleImageChange = (event, folderIndex) => {
+    const files = Array.from(event.target.files);
+    setFolders((prevFolders) => {
+      const updatedFolders = [...prevFolders];
+      updatedFolders[folderIndex].selectedImages = [
+        ...updatedFolders[folderIndex].selectedImages,
+        ...files,
+      ];
+      console.log("Güncellenmiş Klasörler:", updatedFolders);
+      return updatedFolders;
+    });
+  };
+
+  const handleDeleteImage = (folderIndex, imageName) => {
+    setFolders((prevFolders) => {
+      const updatedFolders = [...prevFolders];
+      updatedFolders[folderIndex].existingImages = updatedFolders[
+        folderIndex
+      ].existingImages.filter((img) => img.name !== imageName);
+      updatedFolders[folderIndex].deletedImages.push(imageName);
+      return updatedFolders;
+    });
+    console.log(folders);
+  };
+  const handleFolderNameChange = (index, value) => {
+    const updatedFolders = [...folders];
+    updatedFolders[index].folderName = value;
+    setFolders(updatedFolders);
+  };
+
+  const handleAddFolder = () => {
+    setFolders((prevFolders) => [
+      ...prevFolders,
+      {
+        folderName: "",
+        selectedImages: [],
+        existingImages: [],
+        deletedImages: [],
+      },
+    ]);
+  };
+  const handleDeleteFolder = (folderIndex) => {
+    setFolders((prevFolders) => {
+      const updatedFolders = [...prevFolders];
+
+      updatedFolders[folderIndex].existingImages.forEach((img) => {
+        updatedFolders[folderIndex].deletedImages.push(img.name);
+      });
+      updatedFolders[folderIndex].existingImages = [];
+      updatedFolders[folderIndex].selectedImages = [];
+      return updatedFolders;
+    });
+  };
+
+  const calculateAdjustedTimeDifference = (startDate, endDate) => {
+    const start = dayjs(startDate).startOf("day");
+    const end = dayjs(endDate).startOf("day");
+
+    const diffInDays = end.diff(start, "day");
+    return diffInDays === 0 ? `1 gün` : `${diffInDays} gün`;
+  };
+
+  const calculateTotalFaultTime = (arizalar, onarimlar) => {
+    let totalArizaDays = 0;
+
+    arizalar.forEach((ariza) => {
+      const ilgiliOnarim = onarimlar.find((onarim) =>
+        dayjs(onarim).isSame(dayjs(ariza), "day")
+      );
+      if (ilgiliOnarim) {
+        return;
+      } else {
+        totalArizaDays += dayjs(new Date()).diff(dayjs(ariza), "day");
+      }
+    });
+    return totalArizaDays === 0 ? "1 gün" : `${totalArizaDays} gün`;
+  };
+
   const resetForm = () => {
     formRef.current.reset();
     setTempType("");
@@ -210,6 +315,7 @@ function MalzemeAdd({
     setNewChosenDate3(null);
     setTempMarka("");
     setTempModel("");
+    setFolders([]);
     setMalzemeInfo({
       name: "",
       system_id: null,
@@ -219,6 +325,9 @@ function MalzemeAdd({
       mmodel_id: null,
       description: "",
       mevzi_id: null,
+      bakimlar: [],
+      arizalar: [],
+      onarimlar: [],
     });
     setSelectedRadioBValue("b");
     setGirisTarihi(new Date());
@@ -392,14 +501,16 @@ function MalzemeAdd({
   const handleArizaDateChange = (newDateTime) => {
     if (newDateTime) {
       setMalzemeInfo((prev) => {
-        const exists = prev.arizalar.some((a) => a.isSame(newDateTime));
+        const exists = prev.arizalar.some((a) =>
+          dayjs(a).isSame(dayjs(newDateTime))
+        );
 
         if (!exists) {
           return {
             ...prev,
             arizalar: prev.arizalar
-              ? [...prev.arizalar, newDateTime]
-              : [newDateTime],
+              ? [...prev.arizalar, dayjs(newDateTime).format("YYYY-MM-DD")]
+              : [dayjs(newDateTime).format("YYYY-MM-DD")],
           };
         } else {
           return prev;
@@ -421,20 +532,22 @@ function MalzemeAdd({
     // if (newDateTime && isValid(newDateTime)) {
     if (newDateTime) {
       setMalzemeInfo((prev) => {
-        const exists = prev.bakimlar.some((bakim) => bakim.isSame(newDateTime));
+        const exists = prev.bakimlar.some((bakim) =>
+          dayjs(bakim).isSame(dayjs(newDateTime))
+        );
 
         if (!exists) {
           return {
             ...prev,
             bakimlar: prev.bakimlar
-              ? [...prev.bakimlar, newDateTime]
-              : [newDateTime],
+              ? [...prev.bakimlar, dayjs(newDateTime).format("YYYY-MM-DD")]
+              : [dayjs(newDateTime).format("YYYY-MM-DD")],
           };
         } else {
           return prev;
         }
       });
-      setNewChosenDate2(null);
+      setNewChosenDate3(null);
     } else {
       message.error("Geçersiz tarih veya saat!");
     }
@@ -451,21 +564,21 @@ function MalzemeAdd({
     if (newDateTime) {
       setMalzemeInfo((prev) => {
         const exists = prev.onarimlar.some((onarim) =>
-          onarim.isSame(newDateTime)
+          dayjs(onarim).isSame(dayjs(newDateTime))
         );
 
         if (!exists) {
           return {
             ...prev,
             onarimlar: prev.onarimlar
-              ? [...prev.onarimlar, newDateTime]
-              : [newDateTime],
+              ? [...prev.onarimlar, dayjs(newDateTime).format("YYYY-MM-DD")]
+              : [dayjs(newDateTime).format("YYYY-MM-DD")],
           };
         } else {
           return prev;
         }
       });
-      setNewChosenDate3(null);
+      setNewChosenDate2(null);
     } else {
       message.error("Geçersiz tarih veya saat!");
     }
@@ -519,6 +632,7 @@ function MalzemeAdd({
   // EKLE
   const handleAddMalzeme = async (event) => {
     event.preventDefault();
+
     let lok =
       selectedRadioBValue === "b" ? 0 : selectedRadioBValue === "y" ? 1 : 2;
 
@@ -526,28 +640,68 @@ function MalzemeAdd({
     handleAddingStringMarka();
     handleAddingStringModel();
 
-
     if (newChosenDate) {
       handleArizaDateChange(newChosenDate);
     }
 
     if (newChosenDate2) {
-      handleBakimDateChange(newChosenDate2);
+      handleOnarimDateChange(newChosenDate2);
     }
 
     if (newChosenDate3) {
       handleBakimDateChange(newChosenDate3);
     }
 
-    const formattedData = {
-      ...malzemeInfo,
-      depo: lok,
+    const malzemeData = {
+      name: malzemeInfo?.name || null,
+      seri_num: malzemeInfo?.seri_num || null,
+      description: malzemeInfo?.description || null,
+      type_id: malzemeInfo?.type_id || null,
+      marka_id: malzemeInfo?.marka_id || null,
+      mmodel_id: malzemeInfo?.mmodel_id || null,
+      depo: lok !== undefined ? lok : null,
       mevzi_id:
         selectedRadioBValue === "m" && malzemeInfo.mevzi_id
           ? malzemeInfo.mevzi_id
           : undefined,
-      giris_tarihi: girisTarihi.toISOString().split("T")[0],
+      giris_tarihi: girisTarihi.toISOString().split("T")[0] || null,
+      arizalar: malzemeInfo?.arizalar || [],
+      bakimlar: malzemeInfo?.bakimlar || [],
+      onarimlar: malzemeInfo?.onarimlar || [],
+      system_id: malzemeInfo?.system_id || null,
     };
+
+    const formData = new FormData();
+    formData.append("malzeme", JSON.stringify(malzemeData));
+
+    const folderImageCounts = [];
+    const deletedImagesData = [];
+    console.log("gönderme folders " + folders);
+    folders.forEach((folder, folderIndex) => {
+      formData.append("folderNames", folder.folderName);
+      folderImageCounts.push(folder.selectedImages.length);
+
+      folder.selectedImages.forEach((image) => {
+        formData.append("images", image);
+      });
+
+      if (folder.deletedImages && folder.deletedImages.length > 0) {
+        deletedImagesData.push({
+          folderName: folder.folderName,
+          deletedImages: folder.deletedImages,
+        });
+      }
+    });
+
+    formData.append("folderImageCounts", JSON.stringify(folderImageCounts));
+
+    if (deletedImagesData.length > 0) {
+      formData.append("deletedImagesData", JSON.stringify(deletedImagesData));
+    }
+
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
 
     try {
       let response;
@@ -555,15 +709,25 @@ function MalzemeAdd({
       if (malzeme) {
         response = await Axios.put(
           `/api/malzeme/update/${malzeme.id}`,
-          formattedData
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
         );
         if (response.status === 200) {
           message.success("Malzeme güncellendi!");
           fetchMalzemeler();
+          fetchAllMevzi();
         }
       } else {
-        response = await Axios.post("/api/malzeme/add/", formattedData);
-        if (response.status === 200) {
+        response = await Axios.post("/api/malzeme/add/", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        if (response.status === 200 || response.status === 201) {
           message.success("Malzeme eklendi!");
         }
       }
@@ -573,13 +737,12 @@ function MalzemeAdd({
       fetchAllMevzi();
       fetchAllModels();
       fetchAllTypes();
-      setMalzemeInfo(null);
+      setMalzemeInfo({ arizalar: [], bakimlar: [], onarimlar: [] });
       resetForm();
     } catch (error) {
       message.error(error.response?.data?.detail || error.message);
     }
   };
-
   useEffect(() => {
     fetchAllTypes();
     fetchAllModels();
@@ -589,6 +752,7 @@ function MalzemeAdd({
   }, []);
 
   useEffect(() => {
+    resetForm();
     if (malzeme) {
       setMalzemeInfo({
         name: malzeme.name,
@@ -607,15 +771,57 @@ function MalzemeAdd({
       const depoValue =
         malzeme.depo === 0 ? "b" : malzeme.depo === 1 ? "y" : "m";
       setSelectedRadioBValue(depoValue);
+
       const selectedMevziFromMalzeme = mevziler.find(
         (mevzi) => mevzi.id === malzeme.mevzi_id
       );
       setSelectedMevzi(selectedMevziFromMalzeme || null);
+
+      if (selectedMevziFromMalzeme) {
+        setMalzemeInfo((prev) => ({
+          ...prev,
+          mevzi_id: selectedMevziFromMalzeme.id,
+        }));
+      }
+
       if (malzeme.giris_tarihi) {
         setGirisTarihi(new Date(malzeme.giris_tarihi));
       }
+      if (malzeme.photos) {
+        const foldersFromSystem = malzeme.photos?.reduce((acc, photoUrl) => {
+          const folderName = photoUrl.split("/")[4];
+          const photoName = photoUrl.split("/").pop();
+
+          if (!acc[folderName]) {
+            acc[folderName] = {
+              folderName: folderName,
+              selectedImages: [],
+              existingImages: [{ name: photoName, url: photoUrl }],
+              deletedImages: [],
+            };
+          } else {
+            acc[folderName].existingImages.push({
+              name: photoName,
+              url: photoUrl,
+            });
+          }
+          return acc;
+        }, {});
+        setFolders(Object.values(foldersFromSystem));
+      }
     }
   }, [malzeme, mevziler]);
+
+  const mevziAdi = selectedMevzi?.name || "Bilinmeyen Mevzi";
+
+  useEffect(() => {
+    if (malzemeInfo.mevzi_id) {
+      const selectedMevzi = mevziler.find(
+        (mevzi) => mevzi.id === malzemeInfo.mevzi_id
+      );
+      setSelectedMevzi(selectedMevzi || null);
+    }
+  }, [malzemeInfo.mevzi_id, mevziler]);
 
   return (
     <Container className="malzeme-add-container">
@@ -693,8 +899,6 @@ function MalzemeAdd({
                 label="Seri Numara"
                 required
                 fullWidth
-                type="number"
-                inputProps={{ step: "1" }}
                 variant="filled"
                 value={malzemeInfo?.seri_num}
                 onChange={(e) => {
@@ -898,7 +1102,6 @@ function MalzemeAdd({
                   />
                 </div>
               </div>
-
               {selectedRadioBValue === "m" && (
                 <div
                   style={{
@@ -942,7 +1145,6 @@ function MalzemeAdd({
                   </Tooltip>
                 </div>
               )}
-
               <LocalizationProvider
                 className="malzeme-add-calender"
                 style={{ marginTop: "30px" }}
@@ -969,7 +1171,6 @@ function MalzemeAdd({
                   )}
                 />
               </LocalizationProvider>
-
               <div
                 style={{
                   display: "flex",
@@ -1011,7 +1212,6 @@ function MalzemeAdd({
                   </IconButton>
                 </Tooltip>
               </div>
-
               <div>
                 {malzemeInfo.arizalar && malzemeInfo.arizalar.length > 0 && (
                   <ul>
@@ -1037,7 +1237,6 @@ function MalzemeAdd({
                   </ul>
                 )}
               </div>
-
               <div
                 style={{
                   display: "flex",
@@ -1069,10 +1268,6 @@ function MalzemeAdd({
                   />
                 </LocalizationProvider>
 
-                {/* <CustomOutlinedButton variant="outlined" onClick={() => handleOnarimDateChange(newChosenDate)}>
-                                Onarım Kaydı Ekle
-                            </CustomOutlinedButton> */}
-
                 <Tooltip title="Onarım Kaydı Ekle" placement="right">
                   <IconButton
                     onClick={() => handleOnarimDateChange(newChosenDate2)}
@@ -1102,7 +1297,6 @@ function MalzemeAdd({
                   </ul>
                 )}
               </div>
-
               <div
                 style={{
                   display: "flex",
@@ -1134,10 +1328,6 @@ function MalzemeAdd({
                   />
                 </LocalizationProvider>
 
-                {/* <CustomOutlinedButton variant="outlined" onClick={() => handleBakimDateChange(newChosenDate)}>
-                                Bakım Kaydı Ekle
-                            </CustomOutlinedButton> */}
-
                 <Tooltip title="Bakım Kaydı Ekle" placement="right">
                   <IconButton
                     onClick={() => handleBakimDateChange(newChosenDate3)}
@@ -1148,7 +1338,6 @@ function MalzemeAdd({
                   </IconButton>
                 </Tooltip>
               </div>
-
               <div>
                 {malzemeInfo.bakimlar && malzemeInfo.bakimlar.length > 0 && (
                   <ul>
@@ -1167,6 +1356,217 @@ function MalzemeAdd({
                     ))}
                   </ul>
                 )}
+              </div>
+              <div>
+                {malzeme && (
+                  <>
+                    <h3>Arıza Bilgileri:</h3>
+                    <ul>
+                      {malzemeInfo.arizalar &&
+                      malzemeInfo.arizalar.length > 0 ? (
+                        malzemeInfo.arizalar.map((ariza, index) => {
+                          const ilgiliOnarim =
+                            malzemeInfo.onarimlar &&
+                            malzemeInfo.onarimlar.find((onarim) =>
+                              dayjs(onarim).isSame(dayjs(ariza), "day")
+                            );
+
+                          return (
+                            <li key={index}>
+                              {`Mevzi Adı: ${mevziAdi}`} <br />
+                              {`Arıza Tarihi: ${dayjs(ariza)
+                                .locale("tr")
+                                .format("DD/MM/YYYY")}`}{" "}
+                              <br />
+                              {!ilgiliOnarim && (
+                                <>
+                                  {`${calculateAdjustedTimeDifference(
+                                    ariza,
+                                    new Date()
+                                  )}dür arızalı`}
+                                </>
+                              )}
+                            </li>
+                          );
+                        })
+                      ) : (
+                        <li>Hiçbir arıza kaydı bulunamadı.</li>
+                      )}
+                    </ul>
+
+                    <h3>Toplam Arıza Bilgisi:</h3>
+                    <p>
+                      {malzemeInfo.arizalar && malzemeInfo.onarimlar
+                        ? `${calculateTotalFaultTime(
+                            malzemeInfo.arizalar,
+                            malzemeInfo.onarimlar
+                          )}`
+                        : "Veri bulunamadı"}
+                    </p>
+
+                    <h3>Onarım Bilgileri:</h3>
+                    <ul>
+                      {malzemeInfo.onarimlar &&
+                      malzemeInfo.onarimlar.length > 0 ? (
+                        malzemeInfo.onarimlar.map((onarim, index) => (
+                          <li key={index}>
+                            {`Mevzi Adı: ${mevziAdi}`} <br />
+                            {`Onarım Tarihi: ${dayjs(onarim)
+                              .locale("tr")
+                              .format("DD/MM/YYYY HH:mm")}`}
+                            <br />
+                          </li>
+                        ))
+                      ) : (
+                        <li>Hiçbir onarım kaydı bulunamadı.</li>
+                      )}
+                    </ul>
+
+                    <h3>Bakım Bilgileri:</h3>
+                    <ul>
+                      {malzemeInfo.bakimlar &&
+                      malzemeInfo.bakimlar.length > 0 ? (
+                        malzemeInfo.bakimlar.map((bakim, index) => (
+                          <li key={index}>
+                            {`Mevzi Adı: ${mevziAdi}`} <br />
+                            {`Bakım Tarihi: ${dayjs(bakim)
+                              .locale("tr")
+                              .format("DD/MM/YYYY HH:mm")}`}
+                          </li>
+                        ))
+                      ) : (
+                        <li>Hiçbir bakım kaydı bulunamadı.</li>
+                      )}
+                    </ul>
+                  </>
+                )}
+              </div>
+
+              <div style={{ marginTop: "20px" }}>
+                {folders.map((folder, folderIndex) => (
+                  <div key={folderIndex} style={{ marginTop: "20px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      <TextField
+                        label="Klasör Adı"
+                        value={folder.folderName}
+                        onChange={(e) =>
+                          handleFolderNameChange(folderIndex, e.target.value)
+                        }
+                        variant="outlined"
+                        fullWidth
+                      />
+
+                      <IconButton
+                        aria-label="delete"
+                        size="medium"
+                        onClick={() => handleDeleteFolder(folderIndex)}
+                        style={{ marginLeft: "10px" }}
+                      >
+                        <DeleteIcon fontSize="medium" />
+                      </IconButton>
+                    </div>
+                    {folder.folderName && (
+                      <>
+                        <CustomOutlinedButton
+                          variant="outlined"
+                          component="label"
+                        >
+                          Fotoğraf Seç
+                          <input
+                            type="file"
+                            hidden
+                            multiple
+                            accept="image/*"
+                            onChange={(event) =>
+                              handleImageChange(event, folderIndex)
+                            }
+                          />
+                        </CustomOutlinedButton>
+
+                        {folder.selectedImages.length > 0 && (
+                          <Accordion style={{ marginTop: "10px" }}>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                              <Typography variant="subtitle1">
+                                Seçilen Fotoğraflar
+                              </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                              <ul style={{ listStyle: "none", padding: 0 }}>
+                                {folder.selectedImages.map(
+                                  (image, imageIndex) => (
+                                    <li
+                                      key={imageIndex}
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        marginBottom: "8px",
+                                      }}
+                                    >
+                                      <span>{image.name}</span>
+                                    </li>
+                                  )
+                                )}
+                              </ul>
+                            </AccordionDetails>
+                          </Accordion>
+                        )}
+                        {folder.existingImages.length > 0 && (
+                          <Accordion style={{ marginTop: "10px" }}>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                              <Typography variant="subtitle1">
+                                Mevcut Fotoğraflar
+                              </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                              <ul style={{ listStyle: "none", padding: 0 }}>
+                                {folder.existingImages.map(
+                                  (image, imageIndex) => (
+                                    <li
+                                      key={imageIndex}
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        marginBottom: "8px",
+                                      }}
+                                    >
+                                      <span>{image.name}</span>
+                                      <IconButton
+                                        aria-label="delete"
+                                        size="small"
+                                        onClick={() =>
+                                          handleDeleteImage(
+                                            folderIndex,
+                                            image.name
+                                          )
+                                        }
+                                        style={{ marginLeft: "10px" }}
+                                      >
+                                        <CloseIcon fontSize="small" />
+                                      </IconButton>
+                                    </li>
+                                  )
+                                )}
+                              </ul>
+                            </AccordionDetails>
+                          </Accordion>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
+                <CustomOutlinedButton
+                  onClick={handleAddFolder}
+                  variant="outlined"
+                  style={{ marginTop: "20px" }}
+                >
+                  Yeni Klasör Ekle
+                </CustomOutlinedButton>
               </div>
             </div>
           </div>

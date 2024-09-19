@@ -8,7 +8,6 @@
   background-image: none !important;
   background-color: transparent !important;
   position: relative !important;
-  overflow: hidden !important;
   max-width: 100vw !important;
   height: 93vh;
   align-items: center !important;
@@ -29,7 +28,7 @@
   /* background-color: var(--system-panel-bg); */
   height: 99vh;
   left: 0;
-  position: absolute;
+  position: fixed;
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -84,8 +83,8 @@
   background-color: transparent !important;
 }
 
-.app.dark .sys-edit-all-list,
-.sys-edit-all-list {
+.app.dark .malz-edit-all-list,
+.malz-edit-all-list {
   align-items: center;
   display: flex;
   border-radius: 20px !important;
@@ -93,13 +92,13 @@
   margin: 15px 0px;
 }
 
-.app.dark .sys-edit-all-list.chosen,
-.sys-edit-all-list.chosen {
+.app.dark .malz-edit-all-list.chosen,
+.malz-edit-all-list.chosen {
   background-color: rgb(63 99 68 / 80%);
 }
 
-.app.dark .sys-edit-all-list.chosen:hover,
-.sys-edit-all-list.chosen:hover {
+.app.dark .malz-edit-all-list.chosen:hover,
+.malz-edit-all-list.chosen:hover {
   background-color: #4f7d55;
   cursor: default;
 }

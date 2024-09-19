@@ -1,129 +1,134 @@
 .app.dark .system-main-container,
 .system-main-container {
-    margin-top: 64px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    padding: 0px !important;
-    box-shadow: none !important;
-    background-image: none !important;
-    background-color: transparent !important;
-    position: relative !important;
-    overflow: hidden !important;
-    max-width: 100vw !important;
-    height: 93vh;
-    align-items: center !important;
+  margin-top: 64px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0px !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  position: relative !important;
+  max-width: 100vw !important;
+  height: 93vh;
+  align-items: center !important;
 }
-
 
 .app.dark .system-content,
 .system-content {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    padding-top: 64px;
-    justify-content: left;
-    position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  padding-top: 64px;
+  justify-content: left;
+  position: relative;
 }
 
 .app.dark .sys-malz-icon-cell,
 .sys-malz-icon-cell {
-    text-align: center !important;
+  text-align: center !important;
 }
-
 
 .app.dark .sys-malz-icon-cell.open,
 .sys-malz-icon-cell.open {
-    background-image: linear-gradient(rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.07)) !important;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.07),
+      rgba(255, 255, 255, 0.07)) !important;
 }
-
-
 
 tr.MuiTableRow-root:hover {
-    /* background-color: rgba(255, 255, 255, 0.08); */
-    background-color: rgb(79, 125, 85, 0.2);
+  /* background-color: rgba(255, 255, 255, 0.08); */
+  background-color: rgb(79, 125, 85, 0.2);
 }
 
-
 .systems-add-button-in-header:hover {
-    background-color: rgb(79, 125, 85, 0.2) !important;
+  background-color: rgb(79, 125, 85, 0.2) !important;
 }
 
 .app.dark .system-delete-icon,
-.system-delete-icon {
-    color: white !important;
+.system-delete-icon,
+.app.dark .system-edit-icon,
+.system-edit-icon,
+.app.dark .system-photo-gallery-icon,
+.system-photo-gallery-icon {
+  color: white !important;
 }
 
 .app.dark .system-delete-icon:hover,
-.system-delete-icon:hover {
-    color: #cecece !important;
-}
-
-
-
-.app.dark .system-edit-icon,
-.system-edit-icon {
-    color: white !important;
-}
-
+.system-delete-icon:hover,
 .app.dark .system-edit-icon:hover,
-.system-edit-icon:hover {
-    color: #cecece !important;
+.system-edit-icon:hover,
+.app.dark .system-photo-gallery-icon:hover,
+.system-photo-gallery-icon:hover {
+  color: #cecece !important;
 }
 
 
 .app.dark .no-systems-empty-message,
 .no-systems-empty-message {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 20px !important;
-    font-size: larger !important;
-    font-weight: 800 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px !important;
+  font-size: larger !important;
+  font-weight: 800 !important;
 }
 
-
 .css-1jjkkyv {
-    background-color: #282828;
+  background-color: #282828;
 }
 
 .app.dark .systems-table-main-container,
 .systems-table-main-container {
-    margin-bottom: 30px !important;
-    border-radius: 8px !important;
-    width: calc(100% - 48px) !important;
-    background-color: transparent !important;
-    scrollbar-width: thin !important;
+  margin-bottom: 30px !important;
+  border-radius: 8px !important;
+  width: calc(100% - 48px) !important;
+  background-color: transparent !important;
+  scrollbar-width: thin !important;
 }
-
 
 .app.dark .systems-main-big-header,
 .systems-main-big-header {
-    font-size: 2rem !important;
-    font-weight: 600 !important;
-    color: white !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 20px 20px 0px 20px !important;
-    gap: 3px;
+  font-size: 2rem !important;
+  font-weight: 600 !important;
+  color: white !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 20px 0px 20px !important;
+  gap: 3px;
 }
-
-
 
 .sticky-pagination {
-    position: sticky !important;
-    bottom: 0 !important;
-    z-index: 10 !important;
-    background-color: #1f1f1f !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 10 !important;
+  background-color: #1f1f1f !important;
 }
 
-
 .MuiTableRow-root {
-    /* z-index: 1; */
-    position: relative !important;
+  /* z-index: 1; */
+  position: relative !important;
 }
 
 .systems-sticky-header {
-    background-color: transparent !important;
-    z-index: 10 !important;
+  background-color: transparent !important;
+  z-index: 10 !important;
+}
+
+
+.systems-page-header-container {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}
+
+
+.systems-page-search-bar {
+  max-width: 400px;
+  width: 400px;
+  right: 0;
+  position: absolute;
+  padding: 40px;
+  margin-top: 10px;
+  margin-right: 25px;
 }

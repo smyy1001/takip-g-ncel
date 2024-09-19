@@ -8,11 +8,14 @@ import AddIcon from '@mui/icons-material/Add';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import MenuIcon from '@mui/icons-material/Menu';
+import BackupTableIcon from '@mui/icons-material/BackupTable';
 
-const Navigation = ({isRoleAdmin}) => {
+const Navigation = ({ isRoleAdmin }) => {
     const navigate = useNavigate();
     // const location = useLocation();
     const [anchorEl, setAnchorEl] = useState(null);
+    const [anchorEl2, setAnchorEl2] = useState(null);
     // const [editInvDialogOpen, setEditInvDialogOpen] = useState(false);
     // const [addAdminDialogOpen, setAddAdminDialogOpen] = useState(false);
 
@@ -27,6 +30,14 @@ const Navigation = ({isRoleAdmin}) => {
 
     const handleMenuClose = () => {
         setAnchorEl(null);
+    };
+
+    const handleTableMenuClick = (event) => {
+        setAnchorEl2(event.currentTarget);
+    };
+
+    const handleTableMenuClose = () => {
+        setAnchorEl2(null);
     };
 
 
@@ -56,9 +67,31 @@ const Navigation = ({isRoleAdmin}) => {
 
                 {isRoleAdmin && (
                     <>
-                        <Tooltip title="Menü">
+                        <Tooltip title="Tabular Görünüm Menüsü">
+                            <IconButton onClick={handleTableMenuClick}>
+                                <MenuIcon style={{ fontSize: '1.8rem' }} />
+                            </IconButton>
+                        </Tooltip>
+                        <Menu
+                            anchorEl={anchorEl2}
+                            open={Boolean(anchorEl2)}
+                            onClose={handleTableMenuClose}
+                        >
+                            <MenuItem onClick={() => navigate('/sistemler')}>
+                                <BackupTableIcon style={{ marginRight: '5px' }} />  Tüm Sistemler
+                            </MenuItem>
+                            <MenuItem onClick={() => navigate('/malzemeler')}>
+                                <BackupTableIcon style={{ marginRight: '5px' }} />  Tüm Malzemeler
+                            </MenuItem>
+                            <MenuItem onClick={() => navigate('/mevziler')}>
+                                <BackupTableIcon style={{ marginRight: '5px' }} />  Tüm Mevziler
+                            </MenuItem>
+                        </Menu>
+
+                        
+                        <Tooltip title="Yeni Veri Ekleme Menüsü">
                             <IconButton onClick={handleMenuClick}>
-                                <PlaylistAddIcon style={{ fontSize: '1.8rem' }} />
+                                <PlaylistAddIcon style={{ fontSize: '2rem' }} />
                             </IconButton>
                         </Tooltip>
                         <Menu

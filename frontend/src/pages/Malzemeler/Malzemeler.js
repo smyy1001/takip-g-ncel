@@ -17,14 +17,12 @@ import TablePagination from "@mui/material/TablePagination";
 import Axios from "../../Axios";
 import { message } from "antd";
 import AddIcon from "@mui/icons-material/Add";
-import "./Mevziler.css";
+import "./Malzemeler.css";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import SearchIcon from "@mui/icons-material/Search";
 import styled from "@mui/material/styles/styled";
 import CollectionsIcon from "@mui/icons-material/Collections";
-import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
-import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 const CustomTextField = styled(TextField)({
   "& .MuiInput-underline:after": {
@@ -85,72 +83,70 @@ const CustomTextField = styled(TextField)({
   },
 });
 
-function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
+function Malzemeler({ isRoleAdmin, initialMalzemeler, fetchMalzemeler }) {
   const [order, setOrder] = useState("asc");
   const [orderBy, setOrderBy] = useState("name");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const navigate = useNavigate();
-  const [mevziler, setMevziler] = useState([]);
-  const [searchMevzi, setSearchMevzi] = useState("");
+  const [malzemeler, setMalzemeler] = useState([]);
+  const [searchMalzeme, setSearchMalzeme] = useState("");
 
-  const updateDetails = async (mevziler) => {
-    const fetchSube = async () => {
-      const response = await Axios.get("/api/sube/all");
+  const updateDetails = async (malzemeler) => {
+    const fetchMevzi = async () => {
+      const response = await Axios.get("/api/mevzi/all");
       return response.data;
     };
 
-    const fetchBS = async () => {
-      const response = await Axios.get("/api/bakimsorumlulari/all");
+    const fetchMModels = async () => {
+      const response = await Axios.get("/api/model/all");
       return response.data;
     };
 
-    const fetchSistemler = async () => {
-      const response = await Axios.get("/api/sistem/all");
+    const fetchMMarkalar = async () => {
+      const response = await Axios.get("/api/marka/all");
+      return response.data;
+    };
+
+    const fetchMTypes = async () => {
+      const response = await Axios.get("/api/type/all");
       return response.data;
     };
 
     // Execute all fetches concurrently
-    const [subeler, bakimS, sistemler] = await Promise.all([
-      fetchSube(),
-      fetchBS(),
-      fetchSistemler(),
+    const [models, markalar, types, mevziler] = await Promise.all([
+      fetchMModels(),
+      fetchMMarkalar(),
+      fetchMTypes(),
+      fetchMevzi(),
     ]);
 
-    return mevziler.map((mevzi) => ({
-      ...mevzi,
-      sube_id:
-        subeler.find((m) => m.id === mevzi.sube_id)?.name || mevzi.sube_id,
-      bakim_sorumlusu_id:
-        bakimS.find((m) => m.id === mevzi.bakim_sorumlusu_id)?.name ||
-        mevzi.bakim_sorumlusu_id,
-      y_sistemler: mevzi.y_sistemler.map(
-        (id) => sistemler.find((u) => u.id === id)?.name || id
-      ),
+    // Update systems with mapped values
+    return malzemeler.map((malzeme) => ({
+      ...malzeme,
+      mmodel_id:
+        models.find((m) => m.id === malzeme.mmodel_id)?.name ||
+        malzeme.mmodel_id,
+      marka_id:
+        markalar.find((m) => m.id === malzeme.marka_id)?.name ||
+        malzeme.marka_id,
+      type_id:
+        types.find((t) => t.id === malzeme.type_id)?.name || malzeme.type_id,
+      mevzi_id:
+        mevziler.find((m) => m.id === malzeme.mevzi_id)?.name ||
+        malzeme.mevzi_id,
     }));
   };
 
   useEffect(() => {
     const updateData = async () => {
-      if (initialMevziler.length > 0) {
-        const updatedMevziler = await updateDetails(initialMevziler);
-        setMevziler(updatedMevziler);
+      if (initialMalzemeler.length > 0) {
+        const updatedMalzemeler = await updateDetails(initialMalzemeler);
+        setMalzemeler(updatedMalzemeler);
       }
     };
     updateData();
-  }, [initialMevziler]);
-
-  const handlePhotoClick = async (name) => {
-    navigate(`/mevzi/gallery/${name}`);
-  };
-
-  const handleAltyClick = async (id) => {
-    navigate(`/mevziler/${id}/altyapi`);
-  };
-
-  const handleIpClick = async (id) => {
-    navigate(`/mevziler/${id}/ip`);
-  };
+  }, [initialMalzemeler]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -161,21 +157,26 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
     setPage(0);
   };
 
-  const handleEditMevziClick = async (mevzi) => {
-    navigate(`/mevziler/${mevzi.id}`);
+  const handleEditMalzemeClick = async (id) => {
+    navigate(`/malzemeler/${id}`);
   };
 
-  const handleDeleteMevziClick = async (id, event) => {
+  const handleSMalzemePhotoClick = async (name) => {
+    navigate(`/malzeme/gallery/${name}`);
+  };
+
+
+  const handleDeleteMalzemeClick = async (id, event) => {
     try {
-      const response = await Axios.delete(`/api/mevzi/delete/${id}`);
+      const response = await Axios.delete(`/api/malzeme/delete/${id}`);
       if (response.status === 200 || response.status === 204) {
-        message.success("Mevzi silindi!");
-        setMevziler((prevMevziler) =>
-          prevMevziler.filter((mevzi) => mevzi.id !== id)
+        message.success("Malzeme silindi!");
+        setMalzemeler((prevMalzemeler) =>
+          prevMalzemeler.filter((malzeme) => malzeme.id !== id)
         );
-        fetchAllMevzi();
+        fetchMalzemeler();
       } else {
-        message.error("Mevzi silinemedi");
+        message.error("Malzeme silinemedi");
       }
     } catch (error) {
       message.error(error.response?.data?.detail || error.message);
@@ -183,7 +184,7 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
   };
 
   useEffect(() => {
-    fetchAllMevzi();
+    fetchMalzemeler();
   }, []);
 
   const handleRequestSort = (property) => {
@@ -208,26 +209,26 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
       : (a, b) => (a[orderBy] < b[orderBy] ? -1 : 1);
   };
 
-  const filteredMevziler = mevziler.filter((m) =>
-    m.name.toLowerCase().includes(searchMevzi.toLowerCase())
+  const filteredMalzemeler = malzemeler.filter((m) =>
+    m.name.toLowerCase().includes(searchMalzeme.toLowerCase())
   );
 
   return (
-    <Container className="mevziler-main-container">
-      <div className="mevziler-page-header-container">
-        <div className="mevziler-page-header-add">
+    <Container className="malzemeler-main-container">
+      <div className="malzemeler-page-header-container">
+        <div className="malzemeler-page-header-add">
           <Typography
-            className="mevziler-main-big-header"
+            className="malzemeler-main-big-header"
             variant="h6"
             gutterBottom
             component="div"
           >
-            Mevziler
+            Malzemeler
             {isRoleAdmin && (
               <IconButton
-                className="mevzi-add-button-in-header"
+                className="malzemeler-add-button-in-header"
                 size="large"
-                onClick={() => navigate("/mevzi-ekle")}
+                onClick={() => navigate("/malzeme-ekle")}
               >
                 <Tooltip title="Ekle">
                   <AddIcon />
@@ -236,18 +237,18 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
             )}
           </Typography>
         </div>
-        <div className="mevziler-page-search-bar">
+        <div className="malzemeler-page-search-bar">
           <CustomTextField
             autoComplete="off"
             fullWidth
             variant="outlined"
             placeholder="Ara..."
-            value={searchMevzi}
-            onChange={(e) => setSearchMevzi(e.target.value)}
+            value={searchMalzeme}
+            onChange={(e) => setSearchMalzeme(e.target.value)}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton disabled={!searchMevzi}>
+                  <IconButton disabled={!searchMalzeme}>
                     <SearchIcon />
                   </IconButton>
                 </InputAdornment>
@@ -256,21 +257,21 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
           />
         </div>
       </div>
-      {filteredMevziler && filteredMevziler.length > 0 ? (
+      {filteredMalzemeler && filteredMalzemeler.length > 0 ? (
         <TableContainer
-          className="mevziler-table-main-container"
+          className="malzemeler-table-main-container"
           component={Paper}
         >
-          <Table stickyHeader aria-label="mevzi table">
+          <Table stickyHeader aria-label="malzeme table">
             <TableHead>
-              <TableRow className="mevziler-sticky-header">
+              <TableRow className="malzemeler-sticky-header">
                 <TableCell style={{ textAlign: "center" }}>
                   <Tooltip title="Sıralamak için tıklayınız">
                     <Typography
                       style={{ fontWeight: "bold", cursor: "pointer" }}
                       onClick={() => handleRequestSort("name")}
                     >
-                      Mevzi Adı
+                      Adı
                     </Typography>
                   </Tooltip>
                 </TableCell>
@@ -278,9 +279,9 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                   <Tooltip title="Sıralamak için tıklayınız">
                     <Typography
                       style={{ fontWeight: "bold", cursor: "pointer" }}
-                      onClick={() => handleRequestSort("isim")}
+                      onClick={() => handleRequestSort("system_id")}
                     >
-                      İsim
+                      İlişkili Sistem
                     </Typography>
                   </Tooltip>
                 </TableCell>
@@ -288,26 +289,9 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                   <Tooltip title="Sıralamak için tıklayınız">
                     <Typography
                       style={{ fontWeight: "bold", cursor: "pointer" }}
-                      onClick={() => handleRequestSort("kesif_tarihi")}
+                      onClick={() => handleRequestSort("type_id")}
                     >
-                      Keşif Tarihi
-                    </Typography>
-                  </Tooltip>
-                </TableCell>
-                {/* <TableCell style={{ textAlign: 'center' }}>
-                                    <Tooltip title="Sıralamak için tıklayınız">
-                                        <Typography style={{ fontWeight: 'bold', cursor: 'pointer' }} onClick={() => handleRequestSort('desciption')}>
-                                            Açıklama
-                                        </Typography>
-                                    </Tooltip>
-                                </TableCell> */}
-                <TableCell style={{ textAlign: "center" }}>
-                  <Tooltip title="Sıralamak için tıklayınız">
-                    <Typography
-                      style={{ fontWeight: "bold", cursor: "pointer" }}
-                      onClick={() => handleRequestSort("kordinat")}
-                    >
-                      Kordinat
+                      Tür
                     </Typography>
                   </Tooltip>
                 </TableCell>
@@ -315,9 +299,29 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                   <Tooltip title="Sıralamak için tıklayınız">
                     <Typography
                       style={{ fontWeight: "bold", cursor: "pointer" }}
-                      onClick={() => handleRequestSort("rakim")}
+                      onClick={() => handleRequestSort("marka_id")}
                     >
-                      Rakım
+                      Marka
+                    </Typography>
+                  </Tooltip>
+                </TableCell>
+                <TableCell style={{ textAlign: "center" }}>
+                  <Tooltip title="Sıralamak için tıklayınız">
+                    <Typography
+                      style={{ fontWeight: "bold", cursor: "pointer" }}
+                      onClick={() => handleRequestSort("mmodel_id")}
+                    >
+                      Model
+                    </Typography>
+                  </Tooltip>
+                </TableCell>
+                <TableCell style={{ textAlign: "center" }}>
+                  <Tooltip title="Sıralamak için tıklayınız">
+                    <Typography
+                      style={{ fontWeight: "bold", cursor: "pointer" }}
+                      onClick={() => handleRequestSort("seri_num")}
+                    >
+                      Seri No
                     </Typography>
                   </Tooltip>
                 </TableCell>
@@ -335,9 +339,9 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                   <Tooltip title="Sıralamak için tıklayınız">
                     <Typography
                       style={{ fontWeight: "bold", cursor: "pointer" }}
-                      onClick={() => handleRequestSort("ulasim")}
+                      onClick={() => handleRequestSort("giris_tarihi")}
                     >
-                      Ulaşım Şekli
+                      Envantere Giriş Tarihi
                     </Typography>
                   </Tooltip>
                 </TableCell>
@@ -345,67 +349,33 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                   <Tooltip title="Sıralamak için tıklayınız">
                     <Typography
                       style={{ fontWeight: "bold", cursor: "pointer" }}
-                      onClick={() => handleRequestSort("bakim_sorumlusu_id")}
+                      onClick={() => handleRequestSort("description")}
                     >
-                      Bakım Sorumlusu
+                      Açıklama
                     </Typography>
                   </Tooltip>
                 </TableCell>
                 <TableCell style={{ textAlign: "center" }}>
-                  <Tooltip title="Sıralamak için tıklayınız">
-                    <Typography
-                      style={{ fontWeight: "bold", cursor: "pointer" }}
-                      onClick={() => handleRequestSort("sube_id")}
-                    >
-                      İşleten Şube
-                    </Typography>
-                  </Tooltip>
-                </TableCell>
-                <TableCell style={{ textAlign: "center" }}>
-                  <Tooltip title="Sıralamak için tıklayınız">
-                    <Typography
-                      style={{ fontWeight: "bold", cursor: "pointer" }}
-                      onClick={() => handleRequestSort("kurulum_tarihi")}
-                    >
-                      Kurulum Tarihi
-                    </Typography>
-                  </Tooltip>
-                </TableCell>
-                <TableCell style={{ textAlign: "center" }}>
-                  <Tooltip title="Sıralamak için tıklayınız">
-                    <Typography
-                      style={{ fontWeight: "bold", cursor: "pointer" }}
-                      onClick={() => handleRequestSort("d_sistemler")}
-                    >
-                      Dış Kurum Sistemleri
-                    </Typography>
-                  </Tooltip>
-                </TableCell>
-                <TableCell style={{ textAlign: "center" }}>
-                  <Tooltip title="Sıralamak için tıklayınız">
-                    <Typography
-                      style={{ fontWeight: "bold", cursor: "pointer" }}
-                      onClick={() => handleRequestSort("y_sistemler")}
-                    >
-                      Yazılıma Oluşturulan Sistemler
-                    </Typography>
-                  </Tooltip>
-                </TableCell>
-                <TableCell style={{ textAlign: "center" }}>
-                  <Typography style={{ fontWeight: "bold", cursor: "default" }}>
-                    Alt Yapı Bilgileri
+                  <Typography style={{ fontWeight: "bold", cursor: "pointer" }}>
+                    Arıza Tarihleri
                   </Typography>
                 </TableCell>
                 <TableCell style={{ textAlign: "center" }}>
-                  <Typography style={{ fontWeight: "bold", cursor: "default" }}>
-                    Malzeme IP Bilgileri
+                  <Typography style={{ fontWeight: "bold", cursor: "pointer" }}>
+                    Onarım Tarihleri
                   </Typography>
                 </TableCell>
                 <TableCell style={{ textAlign: "center" }}>
-                  <Typography style={{ fontWeight: "bold", cursor: "default" }}>
+                  <Typography style={{ fontWeight: "bold", cursor: "pointer" }}>
+                    Bakım Tarihleri
+                  </Typography>
+                </TableCell>
+                <TableCell style={{ textAlign: "center" }}>
+                  <Typography style={{ fontWeight: "bold", cursor: "pointer" }}>
                     Fotoğraflar
                   </Typography>
                 </TableCell>
+
 
                 {isRoleAdmin && (
                   <>
@@ -420,103 +390,88 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
             </TableHead>
             <TableBody>
               {sortArray(
-                filteredMevziler.slice(
+                filteredMalzemeler.slice(
                   page * rowsPerPage,
                   page * rowsPerPage + rowsPerPage
                 ),
                 getComparator(order, orderBy)
-              ).map((mevzi) => (
-                <TableRow key={mevzi.id}>
+              ).map((malz) => (
+                <TableRow key={malz.id}>
                   <TableCell
                     style={{ textAlign: "center" }}
                     component="th"
                     scope="row"
                   >
-                    {mevzi.name}
+                    {malz.name}
                   </TableCell>
                   <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.isim ? mevzi.isim : "-"}
+                    {malz.system_id ? malz.system_id : "-"}
                   </TableCell>
                   <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.kesif_tarihi ? mevzi.kesif_tarihi : "-"}
+                    {malz.type_id ? malz.type_id : "-"}
                   </TableCell>
                   <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.kordinat ? mevzi.kordinat : "-"}
+                    {malz.marka_id ? malz.marka_id : "-"}
                   </TableCell>
                   <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.rakim ? mevzi.rakim : "-"}
+                    {malz.mmodel_id ? malz.mmodel_id : "-"}
                   </TableCell>
                   <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.lokasyon ? mevzi.lokasyon : "-"}
+                    {malz.seri_num ? malz.seri_num : "-"}
+                  </TableCell>
+
+                  <TableCell style={{ textAlign: "center" }}>
+                    {malz.depo === 0
+                      ? "Birim Depo"
+                      : malz.depo === 1
+                      ? "Yedek Depo"
+                      : malz.depo === 2
+                      ? malz.mevzi_id
+                      : "-"}
+                  </TableCell>
+
+                  <TableCell style={{ textAlign: "center" }}>
+                    {malz.giris_tarihi ? malz.giris_tarihi : "-"}
                   </TableCell>
                   <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.ulasim ? mevzi.ulasim : "-"}
+                    {malz.description ? malz.description : "-"}
                   </TableCell>
                   <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.bakim_sorumlusu_id ? mevzi.bakim_sorumlusu_id : "-"}
+                    {(malz.arizalar && malz.arizalar.length) > 0
+                      ? malz.arizalar.join(", ")
+                      : "-"}
                   </TableCell>
                   <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.sube_id ? mevzi.sube_id : "-"}
+                    {(malz.onarimlar && malz.onarimlar.length) > 0
+                      ? malz.onarimlar.join(", ")
+                      : "-"}
                   </TableCell>
                   <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.kurulum_tarihi ? mevzi.kurulum_tarihi : "-"}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.d_sistemler ? mevzi.d_sistemler.join(", ") : "-"}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.y_sistemler ? mevzi.y_sistemler.join(", ") : "-"}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    <IconButton
-                      aria-label="edit"
-                      size="small"
-                      className="mevzi-alty-icon"
-                      onClick={() => handleAltyClick(mevzi.id)}
-                    >
-                      <Tooltip title="Alt Yapı">
-                        <AnalyticsOutlinedIcon />
-                      </Tooltip>
-                    </IconButton>
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    <IconButton
-                      aria-label="edit"
-                      size="small"
-                      className="mevzi-ip-icon"
-                      onClick={() => handleIpClick(mevzi.id)}
-                    >
-                      <Tooltip title="Malzeme Ip">
-                        <LocationOnIcon />
-                      </Tooltip>
-                    </IconButton>
+                    {(malz.bakimlar && malz.bakimlar.length) > 0
+                      ? malz.bakimlar.join(", ")
+                      : "-"}
                   </TableCell>
                   <TableCell style={{ textAlign: "center" }}>
                     <IconButton
-                      aria-label="edit"
+                      aria-label="photo-gallery"
                       size="small"
-                      className="mevzi-edit-icon"
-                      onClick={() => handlePhotoClick(mevzi.name)}
+                      className="malzeme-edit-icon"
+                      onClick={() => handleSMalzemePhotoClick(malz.name)}
                     >
                       <Tooltip title="Fotoğraflar">
                         <CollectionsIcon />
                       </Tooltip>
                     </IconButton>
                   </TableCell>
-                  {/* <TableCell style={{ textAlign: "center" }}>
-                                        {mevzi.ip_list ? mevzi.ip_list : "-"}
-                                    </TableCell>
-                                    <TableCell style={{ textAlign: "center" }}>
-                                        {mevzi.alt_y ? mevzi.aly_y : "-"}
-                                    </TableCell> */}
+
                   {isRoleAdmin && (
                     <>
                       <TableCell style={{ textAlign: "center" }}>
                         <IconButton
                           aria-label="edit"
                           size="small"
-                          className="mevzi-edit-icon"
-                          onClick={() => handleEditMevziClick(mevzi)}
+                          className="malzeme-edit-icon"
+                          onClick={() => handleEditMalzemeClick(malz.id)}
                         >
                           <Tooltip title="Düzenle">
                             <EditIcon />
@@ -525,8 +480,8 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                         <IconButton
                           aria-label="delete"
                           size="small"
-                          className="mevzi-delete-icon"
-                          onClick={() => handleDeleteMevziClick(mevzi.id)}
+                          className="malzeme-delete-icon"
+                          onClick={() => handleDeleteMalzemeClick(malz.id)}
                         >
                           <Tooltip title="Sil">
                             <DeleteIcon />
@@ -543,7 +498,7 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
             className="sticky-pagination"
             rowsPerPageOptions={[5, 10]}
             component="div"
-            count={filteredMevziler.length}
+            count={filteredMalzemeler.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
@@ -551,12 +506,12 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
           />
         </TableContainer>
       ) : (
-        <Typography className="no-mevzi-empty-message">
-          Görüntülenecek Mevzi bulunmamaktadır.
+        <Typography className="no-malzeme-empty-message">
+          Görüntülenecek Malzeme bulunmamaktadır.
         </Typography>
       )}
     </Container>
   );
 }
 
-export default Mevziler;
+export default Malzemeler;

@@ -12,6 +12,7 @@ import Axios from '../../Axios';
 function Home({ isRoleAdmin, mevziler, fetchAllMevzi, systems, fetchSystems }) {
     const [isSystemPanelOpen, setIsSystemPanelOpen] = useState(false);
     const [isMevziPanelOpen, setIsMevziPanelOpen] = useState(false);
+    const [searchContent, setSearchContent] = useState('');
 
 
     // SYSTEM PANEL
@@ -36,8 +37,8 @@ function Home({ isRoleAdmin, mevziler, fetchAllMevzi, systems, fetchSystems }) {
     return (
         <Container className="home-main-container">
             <div className='home-content'>
-                <MapView mevziler={mevziler} isRoleAdmin={isRoleAdmin} />
-                <SearchFilterPanel />            
+                <MapView mevziler={mevziler} searchContent={searchContent} isRoleAdmin={isRoleAdmin} />
+                <SearchFilterPanel searchContent={searchContent} setSearchContent={setSearchContent}/>            
                 <SystemPanel systems={systems} fetchSystems={fetchSystems} isOpen={isSystemPanelOpen} togglePanel={toggleSystemPanel} isRoleAdmin={isRoleAdmin} />
                 <MevziPanel mevziler={mevziler} fetchAllMevzi={fetchAllMevzi} isOpen={isMevziPanelOpen} togglePanel={toggleMevziPanel} isRoleAdmin={isRoleAdmin} />
             </div>

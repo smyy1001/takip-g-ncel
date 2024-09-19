@@ -1,71 +1,69 @@
 .app.dark .mevzi-add-container,
 .mevzi-add-container {
-    margin-top: 64px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    padding: 0px !important;
-    box-shadow: none !important;
-    background-image: none !important;
-    background-color: transparent !important;
-    position: relative !important;
-    overflow: hidden !important;
-    max-width: 100vw !important;
-    height: 90vh;
-    align-items: center !important;
+  margin-top: 64px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0px !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  position: relative !important;
+  max-width: 100vw !important;
+  height: 90vh;
+  align-items: center !important;
 }
-
 
 .app.dark .mevzi-add-big-header,
 .mevzi-add-big-header {
-    font-size: 4rem !important;
-    font-weight: 600 !important;
-    color: white !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 40px 20px 0px 20px !important;
+  font-size: 4rem !important;
+  font-weight: 600 !important;
+  color: white !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 40px 20px 0px 20px !important;
 }
-
 
 .app.dark .mevzi-add-main-div-class,
 .mevzi-add-main-div-class {
-    align-items: center;
-    flex-direction: column;
-    display: flex;
-    height: 100%;
-    justify-content: flex-start;
-    padding: 20px;
-    width: 100%;
+  align-items: center;
+  flex-direction: column;
+  display: flex;
+  height: 100%;
+  justify-content: flex-start;
+  padding: 20px;
+  width: 100%;
 }
-
 
 .app.dark .mevzi-add-direction-row,
 .mevzi-add-direction-row {
-    align-items: flex-start;
-    display: flex;
-    flex-direction: row;
-    gap: 5vw;
+  align-items: flex-start;
+  display: flex;
+  flex-direction: row;
+  gap: 5vw;
 }
-
-.app.dark .mevzi-add-to-the-right,
-.mevzi-add-to-the-right,
-.app.dark .mevzi-add-to-the-left,
-.mevzi-add-to-the-left {
-    width: 40vw;
-}
-
-
 
 .app.dark .mevzi-add-form,
 .mevzi-add-form {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding-bottom: 100px;
 }
-
 
 .app.dark .mevzi-add-calender,
 .mevzi-add-calender {
-    width: inherit !important;
+  width: inherit !important;
+}
+
+.css-1wfv7j2.Mui-selected,
+.css-1637zkn.Mui-selected {
+  background-color: #4f7d55 !important;
+}
+.mevzi-add-alt-yapi-div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
 }

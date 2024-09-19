@@ -1,6 +1,89 @@
 from pydantic import BaseModel, UUID4, Field
 from typing import List, Optional, Dict
 from datetime import date, datetime
+from fastapi import UploadFile
+
+
+class EnerjiBase(BaseModel):
+    voltaj: Optional[float] = None
+    jenerator: Optional[str] = None
+    guc_k: Optional[str] = None
+    regulator: Optional[str] = None
+
+
+class EnerjiCreate(EnerjiBase):
+    pass
+
+
+class Enerji(EnerjiBase):
+    id: int
+
+
+class HaberBase(BaseModel):
+    t: Optional[str] = None
+    r_l: Optional[str] = None
+    uydu: Optional[str] = None
+    telekom: Optional[str] = None
+    g_modem: Optional[str] = None
+
+class HaberCreate(HaberBase):
+    pass
+
+
+class Haber(HaberBase):
+    id: int
+
+
+class IklimBase(BaseModel):
+    klima: Optional[str] = None
+
+
+class IklimCreate(IklimBase):
+    pass
+
+
+class Iklim(IklimBase):
+    id: int
+
+
+class KabinBase(BaseModel):
+    rack_kabin: Optional[str] = None
+
+
+class KabinCreate(KabinBase):
+    pass
+
+
+class Kabin(KabinBase):
+    id: int
+
+
+class KAlanBase(BaseModel):
+    konteyner: Optional[str] = None
+
+
+class KAlanCreate(KAlanBase):
+    pass
+
+
+class KAlan(KAlanBase):
+    id: int
+
+
+class AltYBase(BaseModel):
+    enerji_alty: Optional[int] = None
+    iklim_alty: Optional[int] = None
+    haberlesme_alty: Optional[int] = None
+    kabin_alty: Optional[int] = None
+    kapali_alan_alty: Optional[int] = None
+
+
+class AltYCreate(AltYBase):
+    pass
+
+
+class AltY(AltYBase):
+    id: int
 
 
 class SubeBase(BaseModel):
@@ -112,10 +195,9 @@ class SystemBase(BaseModel):
     photos: Optional[List[str]] = None
     description: Optional[str] = None
 
-
 class SystemCreate(SystemBase):
-    pass
 
+    images: Optional[List[UploadFile]] = None
 
 class System(SystemBase):
     id: UUID4
@@ -134,14 +216,15 @@ class MalzemeBase(BaseModel):
     system_id: Optional[UUID4] = None
     depo: Optional[int] = None
     mevzi_id: Optional[UUID4] = None
-    giris_tarihi: Optional[datetime] = None
-    arizalar: Optional[List[datetime]] = None
-    onarimlar: Optional[List[datetime]] = None
-    bakimlar: Optional[List[datetime]] = None
+    giris_tarihi: Optional[date] = None
+    arizalar: Optional[List[date]] = None
+    onarimlar: Optional[List[date]] = None
+    bakimlar: Optional[List[date]] = None
+    photos: Optional[List[str]] = None
 
 
 class MalzemeCreate(MalzemeBase):
-    pass
+    images: Optional[List[UploadFile]] = None
 
 
 class Malzeme(MalzemeBase):
@@ -152,17 +235,17 @@ class Malzeme(MalzemeBase):
 
 class ArizaCreate(BaseModel):
     malzeme_id: UUID4
-    ariza_timestamp: datetime
+    ariza_timestamp: date
 
 
 class OnarimCreate(BaseModel):
     malzeme_id: UUID4
-    onarim_timestamp: datetime
+    onarim_timestamp: date
 
 
 class BakimCreate(BaseModel):
     malzeme_id: UUID4
-    bakim_timestamp: datetime
+    bakim_timestamp: date
 
 
 class SistemBase(BaseModel):
@@ -212,28 +295,12 @@ class MevziBase(BaseModel):
     bakim_sorumlusu_id: Optional[int] = None
     sube_id: Optional[int] = None
     d_sistemler: Optional[List[str]] = None
+    alt_y_id: Optional[int] = None
     y_sistemler: Optional[List[int]] = None
-    ip_list: Optional[Dict[str, str]] = Field(
-        default=None,
-        example={"Main Server": "192.168.1.1", "Backup Server": "192.168.1.2"},
-    )
-    foto_albums: Optional[List[str]] = (
-        None
-    )
-    alt_y: Optional[Dict[str, str]] = Field(
-        default=None,
-        example={"klima": "Var", "kgk": "Var"},
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "ip_list": {"Main Server": "192.168.1.1", "Backup Server": "192.168.1.2"}
-            }
-        }
+    photos: Optional[List[str]] = None
 
 class MevziCreate(MevziBase):
-    pass
+    images: Optional[List[UploadFile]] = None
 
 
 class Mevzi(MevziBase):
@@ -241,3 +308,17 @@ class Mevzi(MevziBase):
 
     class Config:
         from_attributes = True
+
+
+class MalzMathchBase(BaseModel):
+    malzeme_name: Optional[str] = None
+    mevzi_id: Optional[UUID4] = None
+    ip: Optional[str] = None
+
+
+class MalzMatchCreate(MalzMathchBase):
+    pass
+
+
+class MalzMatch(MalzMathchBase):
+    id: int

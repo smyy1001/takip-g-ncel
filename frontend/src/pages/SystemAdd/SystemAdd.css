@@ -8,7 +8,6 @@
   background-image: none !important;
   background-color: transparent !important;
   position: relative !important;
-  overflow: hidden !important;
   max-width: 100vw !important;
   height: 90vh;
   align-items: center !important;
@@ -38,7 +37,7 @@
 
 .app.dark .system-add-direction-row,
 .system-add-direction-row {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
   flex-direction: row;
   gap: 5vw;
@@ -50,9 +49,15 @@
   display: flex;
   flex-direction: column;
   gap: 40px;
+  padding-bottom: 100px;
 }
 
 .app.dark .system-add-calender,
 .system-add-calender {
   width: inherit !important;
+}
+
+.css-1wfv7j2.Mui-selected,
+.css-1637zkn.Mui-selected {
+  background-color: #4f7d55 !important;
 }

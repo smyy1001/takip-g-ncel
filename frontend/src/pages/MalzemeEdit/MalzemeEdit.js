@@ -64,17 +64,17 @@ function MalzemeEdit({
     fetchMalzemeler();
   }, [id]);
 
+  useEffect(() => {
+    const fetchedMalzeme = malzemeler.find((malzeme) => malzeme.id === id);
+    if (fetchedMalzeme) {
+      setSelectedMalzeme(fetchedMalzeme);
+    }
+  }, [id, malzemeler]);
+
   // Listeden tıklanan malzemenin detaylarını sağ tarafta göstermek için
   const handleEditMalzemeClick = (malzeme) => {
     setSelectedMalzeme(malzeme);
-  };
-
-  const toggleMalzemeOpen = (id, event) => {
-    event.stopPropagation();
-    setOpenMalzeme((prevOpenMalzeme) => ({
-      ...prevOpenMalzeme,
-      [id]: !prevOpenMalzeme[id],
-    }));
+    navigate(`/malzemeler/${malzeme.id}`);
   };
 
   const handleDeleteMalzemeClick = async (malzemeId, event) => {
@@ -92,18 +92,43 @@ function MalzemeEdit({
     }
   };
 
+  const handleToMalzmeler = () => {
+    navigate('/malzemeler');
+  };
+
+
   return (
     <Container className="malzeme-edit-container">
       <div className="malzeme-edit-main-div-class">
         <div className="malzeme-edit-left-div">
+          <Tooltip title="Tabular Görünüm"
+            style={{ cursor: 'pointer' }}
+            onClick={() => handleToMalzmeler()}
+          >
+
+            <Typography
+              component="span"
+              sx={{
+                fontSize: "1.5rem",
+                color: "white",
+                fontWeight: "bold",
+                justifyContent: "center",
+                alignItems: "center",
+                textAlign: "center",
+                marginBottom: "20px",
+                marginTop: "35px",
+              }}
+            >
+              MALZEMELER
+            </Typography>
+          </Tooltip>
           <div className="malzeme-edit-scroll">
             {malzemeler.length > 0 ? (
               malzemeler.map((malz, index) => (
                 <div
                   key={malz.id}
-                  className={`malz-edit-all-list ${
-                    malz.id === id ? "chosen" : ""
-                  }`}
+                  className={`malz-edit-all-list ${malz.id === id ? "chosen" : ""
+                    }`}
                 >
                   <Box sx={{ flexGrow: 1, maxWidth: 752 }}>
                     <Grid item xs={12} md={6}>
@@ -126,9 +151,8 @@ function MalzemeEdit({
                           }
                         >
                           <ListItemButton
-                            className={`malzeme-edit-list-item ${
-                              malz.id === id ? "chosen" : ""
-                            }`}
+                            className={`malzeme-edit-list-item ${malz.id === id ? "chosen" : ""
+                              }`}
                             onClick={() => handleEditMalzemeClick(malz)}
                           >
                             <ListItemText

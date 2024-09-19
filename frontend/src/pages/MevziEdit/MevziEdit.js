@@ -1,167 +1,179 @@
-// import React, { useState, useEffect, useRef } from 'react';
-// import { createRef } from 'react';
-// import { useParams, useNavigate } from 'react-router-dom';
-// import Axios from '../../Axios';
-// import {
-//     Container,
-//     Typography,
-//     List,
-//     ListItem,
-//     ListItemButton,
-//     ListItemText,
-//     Grid,
-//     Box,
-//     Collapse,
-//     IconButton,
-//     Tooltip
-// } from '@mui/material';
-// import DeleteIcon from '@mui/icons-material/Delete';
-// import ExpandLess from '@mui/icons-material/ExpandLess';
-// import ExpandMore from '@mui/icons-material/ExpandMore';
-// import { message } from 'antd';
-// import './Edit.css';
+import React, { useState, useEffect, useRef } from "react";
+import { createRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import Axios from "../../Axios";
+import {
+  Container,
+  Typography,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Grid,
+  Box,
+  Collapse,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { message } from "antd";
+import "./MevziEdit.css";
+import MevziAdd from "../MevziAdd/MevziAdd";
 
-// function MevziEdit({ systems, fetchSystems, isRoleAdmin }) {
-//     const { id } = useParams();
-//     const navigate = useNavigate();
-//     const itemRefs = useRef([]);
+function MevziEdit({ isRoleAdmin, systems, fetchSystems, mevziler, fetchAllMevzi }) {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const itemRefs = useRef([]);
 
-//     const [openSystem, setOpenSystem] = useState({});
-//     const [system, setSystem] = useState(null);
-//     const [malzemeler, setMalzemeler] = useState([]);
+  const [selectedMevzi, setSelectedMevzi] = useState(null);
 
-//     useEffect(() => {
-//         itemRefs.current = systems.map((_, index) => itemRefs.current[index] ?? createRef());
-//     }, [systems]);
+  useEffect(() => {
+    itemRefs.current = mevziler.map(
+      (_, index) => itemRefs.current[index] ?? createRef()
+    );
+  }, [mevziler]);
 
-//     useEffect(() => {
-//         const fetchCurrentSystem = async () => {
-//             try {
-//                 const response = await Axios.get(`/api/system/get/${id}`);
-//                 setSystem(response.data);
+  useEffect(() => {
+    fetchAllMevzi();
+  }, [id]);
+  useEffect(() => {
+    const currentMevzi = mevziler.find((mevzi) => mevzi.id === id);
+    if (currentMevzi) {
+      setSelectedMevzi(currentMevzi);
+    }
+  }, [id, mevziler]);
 
-//                 const malzemeResponse = await Axios.get(`/api/malzeme/get/${id}`);
-//                 setMalzemeler(malzemeResponse.data);
-//             } catch (error) {
-//                 console.error('Error fetching data:', error);
-//             }
-//         };
+  useEffect(() => {
+    if (mevziler.length > 0 && id) {
+      const index = mevziler.findIndex((mevzi) => mevzi.id === id);
+      const ref = itemRefs.current[index];
 
-//         fetchCurrentSystem();
-//         fetchSystems();
-//     }, [id]);
+      if (ref && ref.current) {
+        ref.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      } else {
+        console.error("Ref not found or not attached to a DOM element");
+      }
+    }
+  }, [mevziler, id]);
 
-//     useEffect(() => {
-//         console.log(itemRefs.current);
+  const handleDeleteMevziClick = async (mevziId, event) => {
+    event.stopPropagation();
+    try {
+      const response = await Axios.delete(`/api/mevzi/delete/${mevziId}`);
+      if (response.status === 200 || response.status === 204) {
+        message.success("Mevzi silindi!");
+        fetchAllMevzi();
+      } else {
+        message.error("Mevzi silinemedi");
+      }
+    } catch (error) {
+      message.error(error.response?.data?.detail || error.message);
+    }
+  };
 
-//         if (systems.length > 0 && id) {
-//             const index = systems.findIndex(sys => sys.id === id);
-//             const ref = itemRefs.current[index];
+  const handleEditMevziClick = (mevzi) => {
+    setSelectedMevzi(mevzi);
+    navigate(`/mevziler/${mevzi.id}`);
+  };
 
-//             console.log(ref);
+  const handleToMevziler = () => {
+    navigate(`/mevziler`);
+  };
 
-//             if (ref && ref.current) {
-//                 ref.current.scrollIntoView({
-//                     behavior: 'smooth',
-//                     block: 'start'
-//                 });
-//             } else {
-//                 console.error('Ref not found or not attached to a DOM element');
-//             }
-//         }
-//     }, [systems, id]);
 
-//     const toggleSystemOpen = (id, event) => {
-//         event.stopPropagation();
-//         setOpenSystem((prevOpenSystem) => ({
-//             ...prevOpenSystem,
-//             [id]: !prevOpenSystem[id],
-//         }));
-//     };
+  return (
+    <Container className="mevzi-edit-container">
+      <div className="mevzi-edit-main-div-class">
+        <div className="mevzi-edit-left-div">
+          <Tooltip title="Tabular Görünüm"
+            style={{ cursor: 'pointer' }}
+            onClick={() => handleToMevziler()}
+          >
 
-//     const handleDeleteSystemClick = async (systemId, event) => {
-//         event.stopPropagation();
-//         try {
-//             const response = await Axios.delete(`/api/system/delete/${systemId}`);
-//             if (response.status === 200 || response.status === 204) {
-//                 message.success('Sistem silindi!');
-//                 fetchSystems();
-//             } else {
-//                 message.error("Sistem silinemedi'");
-//             }
-//         } catch (error) {
-//             message.error(error.response?.data?.detail || error.message);
-//         }
-//     };
+            <Typography
+              component="span"
+              sx={{
+                fontSize: "1.5rem",
+                color: "white",
+                fontWeight: "bold",
+                justifyContent: "center",
+                alignItems: "center",
+                textAlign: "center",
+                marginBottom: "20px",
+                marginTop: "35px",
+              }}
+            >
+              MEVZİLER
+            </Typography>
+          </Tooltip>
+          <div className="mevzi-edit-scroll">
+            {mevziler.length > 0 ? (
+              mevziler.map((mevzi, index) => (
+                <div
+                  key={mevzi.id}
+                  className={`mevzi-edit-all-list ${mevzi.id === id ? "chosen" : ""
+                    }`}
+                >
+                  <Box sx={{ flexGrow: 1, maxWidth: 752 }}>
+                    <Grid item xs={12} md={6}>
+                      <List>
+                        <ListItem
+                          disablePadding
+                          ref={itemRefs.current[index]}
+                          secondaryAction={
+                            <Tooltip title="Sil">
+                              <IconButton
+                                edge="end"
+                                onClick={(event) =>
+                                  handleDeleteMevziClick(mevzi.id, event)
+                                }
+                                aria-label="delete"
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
+                          }
+                        >
+                          <ListItemButton
+                            className={`mevzi-edit-list-item ${mevzi.id === id ? "chosen" : ""
+                              }`}
+                            onClick={() => handleEditMevziClick(mevzi)}
+                          >
+                            <ListItemText
+                              sx={{
+                                ".MuiListItemText-primary": {
+                                  fontSize: "1.3rem",
+                                  color: "white",
+                                  fontWeight: "bold",
+                                },
+                              }}
+                              primary={mevzi.name}
+                            />
+                          </ListItemButton>
+                        </ListItem>
+                      </List>
+                    </Grid>
+                  </Box>
+                </div>
+              ))
+            ) : (
+              <Typography className="mevzi-edit-empty-message">
+                Görüntülenecek Mevzi bulunmamaktadır.
+              </Typography>
+            )}
+          </div>
+        </div>
+        <div className="mevzi-edit-right-div">
+          {selectedMevzi && (
+            <MevziAdd isRoleAdmin={isRoleAdmin} systems={systems} fetchSystems={fetchSystems} mevzi={selectedMevzi} />
+          )}
+        </div>
+      </div>
+    </Container>
+  );
+}
 
-//     const handleEditMalzemeClick = (malzeme) => {
-//         navigate(`/malzemeler/${malzeme.id}`);
-//     };
-
-//     const handleEditSystemClick = (system) => {
-//         navigate(`/sistemler/${system.id}`);
-//     };
-
-//     return (
-//         <Container className="system-edit-container">
-//             <div className='system-edit-main-div-class'>
-//                 <div className='system-edit-left-div'>
-//                     <div className='system-edit-scroll'>
-//                         {systems.length > 0 ? systems.map((sys, index) => (
-//                             <div key={sys.id} className={`sys-edit-all-list ${sys.id === id ? 'chosen' : ''}`}>
-//                                 <Box sx={{ flexGrow: 1, maxWidth: 752 }}>
-//                                     <Grid item xs={12} md={6}>
-//                                         <List>
-//                                             <ListItem disablePadding ref={itemRefs.current[index]}
-//                                                 secondaryAction={
-//                                                     <Tooltip title="Sil">
-//                                                         <IconButton edge="end" onClick={(event) => handleDeleteSystemClick(sys.id, event)} aria-label="delete">
-//                                                             <DeleteIcon />
-//                                                         </IconButton>
-//                                                     </Tooltip>
-//                                                 }
-//                                             >
-//                                                 <ListItemButton className={`system-edit-list-item ${sys.id === id ? 'chosen' : ''}`} onClick={() => handleEditSystemClick(sys)}>
-//                                                     <ListItemText sx={{ '.MuiListItemText-primary': { fontSize: '1.3rem', color: 'white', fontWeight: 'bold' } }} primary={sys.name} />
-//                                                     {sys.malzemeler && sys.malzemeler.length > 0 && (
-//                                                         <Tooltip title="Sistemdeki Malzemeler">
-//                                                             {openSystem[sys.id] ? <ExpandLess onClick={(e) => toggleSystemOpen(sys.id, e)} /> : <ExpandMore onClick={(e) => toggleSystemOpen(sys.id, e)} />}
-//                                                         </Tooltip>
-//                                                     )}
-//                                                 </ListItemButton>
-//                                             </ListItem>
-//                                             <Collapse in={openSystem[sys.id]} timeout="auto" unmountOnExit>
-//                                                 <List component="div" disablePadding>
-//                                                     {sys.malzemeler?.map((malzeme, index) => (
-//                                                         <>
-//                                                             <ListItem key={index} className='sys-edit-sub-malz-list-class' sx={{ pl: 4 }} onClick={() => handleEditMalzemeClick(malzeme)}>
-//                                                                 <ListItemText primary={malzeme.name} secondary={`Seri No: ${malzeme.seri_num}`} sx={{ '.MuiListItemText-primary': { fontSize: '1rem', color: 'white', fontWeight: 'bold' } }} />
-//                                                             </ListItem>
-//                                                             {index < sys.malzemeler.length - 1 && (
-//                                                                 <Divider
-//                                                                     variant="inset"
-//                                                                     sx={{ marginLeft: 4 }}
-//                                                                 />
-//                                                             )}
-//                                                         </>
-//                                                     ))}
-//                                                 </List>
-//                                             </Collapse>
-//                                         </List>
-//                                     </Grid>
-//                                 </Box>
-//                             </div>
-//                         )) : (
-//                             <Typography className='sys-edit-empty-message'>Görüntülenecek Sistem bulunmamaktadır.</Typography>
-//                         )}
-//                     </div>
-//                 </div>
-//                 <div className='system-edit-right-div'>
-//                     {/* Additional details or actions can be placed here */}
-//                 </div>
-//             </div>
-//         </Container>
-//     );
-// }
-
-// export default MevziEdit;
+export default MevziEdit;

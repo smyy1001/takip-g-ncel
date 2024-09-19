@@ -1,52 +1,129 @@
-from fastapi import FastAPI, HTTPException, Depends, APIRouter, Body
+from fastapi import FastAPI, HTTPException, Depends, APIRouter, Body,status, File, UploadFile, Form
 from sqlalchemy.orm import Session, selectinload
 import app.db.models as models
 from app.deps import get_db
 import app.schemas as schemas
 from pydantic import UUID4
-from typing import List
+from typing import Dict
+from pydantic import BaseModel
+from typing import List, Optional
+import io
+from minio import Minio
+from PIL import Image
+from .minio_utils import upload_image_to_minio, delete_folder_from_minio, format_bucket_name
+import json
+from sqlalchemy.orm.attributes import flag_modified
+
 
 
 router = APIRouter()
 
+minio_client = Minio(
+    "minio:9000", 
+    access_key="user_minio",
+    secret_key="password_minio",
+    secure=False 
+)
 
 @router.post("/add/", response_model=schemas.Malzeme)
-def create_malzeme(malzeme: schemas.MalzemeCreate, db: Session = Depends(get_db)):
-    # check if it exists
-    db_malzeme = (
-        db.query(models.Malzeme)
-        .filter(models.Malzeme.system_id == malzeme.system_id)
-        .filter(models.Malzeme.name == malzeme.name)
-        .first()
-    )
-    if db_malzeme:
-        raise HTTPException(
-            status_code=400, detail="Bu malzeme zaten bu sistemde mevcut"
+async def create_malzeme(
+    malzeme: str = Form(...),
+    folderNames: Optional[List[str]] = Form(None),
+    folderImageCounts: Optional[str] = Form(None), 
+    images: Optional[List[UploadFile]] = File(None), 
+    db: Session = Depends(get_db)
+):
+    try:
+        malzeme_data = json.loads(malzeme)
+        malzeme_create = schemas.MalzemeCreate(**malzeme_data)
+
+        db_malzeme = (
+            db.query(models.Malzeme)
+            .filter(models.Malzeme.system_id == malzeme_create.system_id)
+            .filter(models.Malzeme.name == malzeme_create.name)
+            .first()
         )
-    # create new malzeme
-    db_malzeme = models.Malzeme(**malzeme.dict())
-    db.add(db_malzeme)
-    db.commit()
-    db.refresh(db_malzeme)
-    return db_malzeme
+        if db_malzeme:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Bu malzeme zaten bu sistemde mevcut"
+            )
+
+        db_malzeme = models.Malzeme(
+            name=malzeme_create.name,
+            description=malzeme_create.description,
+            type_id=malzeme_create.type_id,
+            marka_id=malzeme_create.marka_id,
+            mmodel_id=malzeme_create.mmodel_id,
+            seri_num=malzeme_create.seri_num,
+            system_id=malzeme_create.system_id,
+            depo=malzeme_create.depo,
+            mevzi_id=malzeme_create.mevzi_id,
+            giris_tarihi=malzeme_create.giris_tarihi,
+            bakimlar=malzeme_create.bakimlar,
+            arizalar=malzeme_create.arizalar,
+            onarimlar=malzeme_create.onarimlar,
+        )
+        db.add(db_malzeme)
+        db.commit()
+        db.refresh(db_malzeme)
+
+        image_urls = []
+
+        if folderImageCounts and folderNames and images:
+            folder_image_counts = json.loads(folderImageCounts)
+            
+            image_index = 0
+            for folder_index, folder_name in enumerate(folderNames):
+                image_count = folder_image_counts[folder_index]
+                folder_images = images[image_index:image_index + image_count]
+
+                for image in folder_images:
+                    contents = await image.read() 
+                    print(f"Yüklenecek dosya: {image.filename} (Klasör: {folder_name})")
+
+                    bucket_name = format_bucket_name(db_malzeme.name)
+                    image_url = upload_image_to_minio(bucket_name, folder_name, contents, image.filename)
+                    image_urls.append(image_url)
+
+                image_index += image_count
+
+        db_malzeme.photos = image_urls
+        db.commit()
+
+        return db_malzeme
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Bir hata oluştu: {str(e)}")
 
 
 @router.delete("/delete/{malzeme_id}", response_model=schemas.Malzeme)
 def delete_malzeme(malzeme_id: UUID4, db: Session = Depends(get_db)):
-    db_malzeme = (
-        db.query(models.Malzeme).filter(models.Malzeme.id == malzeme_id).first()
-    )
+    db_malzeme = db.query(models.Malzeme).filter(models.Malzeme.id == malzeme_id).first()
     if not db_malzeme:
         raise HTTPException(status_code=404, detail="Malzeme bulunamadı")
+
+    if db_malzeme.photos:
+        bucket_name = format_bucket_name(db_malzeme.name)
+        for photo_url in db_malzeme.photos:
+            photo_name = photo_url.split("/")[-1]
+            try:
+                minio_client.remove_object(bucket_name, photo_name)
+            except Exception as e:
+                print(f"Resim silinirken hata oluştu: {str(e)}")
+
+    db.query(models.MalzMatch).filter(models.MalzMatch.malzeme_name == db_malzeme.name).update({models.MalzMatch.malzeme_name: None})
+    
     db.delete(db_malzeme)
     db.commit()
+
     return db_malzeme
 
 
 @router.get("/all/", response_model=List[schemas.Malzeme])
-def get_all_systems(db: Session = Depends(get_db)):
-    systems = db.query(models.Malzeme).all()
-    return systems
+def get_all_malzeme(db: Session = Depends(get_db)):
+    malzemeler = db.query(models.Malzeme).all()
+    return malzemeler
 
 
 @router.get("/get/{id}", response_model=List[schemas.Malzeme])
@@ -209,16 +286,157 @@ def get_all_free(db: Session = Depends(get_db)):
 
 
 @router.put("/update/{malzeme_id}", response_model=schemas.Malzeme)
-def update_malzeme(malzeme_id: UUID4, malzeme: schemas.MalzemeCreate, db: Session = Depends(get_db)):
-    db_malzeme = db.query(models.Malzeme).filter(models.Malzeme.id == malzeme_id).first()
+async def update_malzeme(
+    malzeme_id: UUID4, 
+    malzeme: str = Form(...), 
+    folderNames: Optional[List[str]] = Form(None),
+    folderImageCounts: Optional[str] = Form(None), 
+    images: Optional[List[UploadFile]] = File(None),
+    deletedImagesData: Optional[str] = Form(None),
+    db: Session = Depends(get_db)
+):
+    try:
+        updated_malzeme_data = json.loads(malzeme)
+        malzeme_update = schemas.MalzemeCreate(**updated_malzeme_data)
 
-    if not db_malzeme:
-        raise HTTPException(status_code=404, detail="Malzeme bulunamadı")
+        db_malzeme = db.query(models.Malzeme).filter(models.Malzeme.id == malzeme_id).first()
 
-    # Malzeme bilgilerini güncelle
-    for key, value in malzeme.dict().items():
-        setattr(db_malzeme, key, value)
+        if not db_malzeme:
+            raise HTTPException(status_code=404, detail="Malzeme bulunamadı")
 
+        for field, value in malzeme_update.dict().items():
+            if field == "photos" and value is None:
+                continue
+            if value is None:
+                continue
+            setattr(db_malzeme, field, value)
+
+        image_urls = db_malzeme.photos if db_malzeme.photos is not None else []
+
+        folder_image_counts = json.loads(folderImageCounts) if folderImageCounts not in [None, "null", ""] else []
+        image_index = 0
+
+        if folderNames and folder_image_counts:
+            for folder_index, folder_name in enumerate(folderNames):
+                image_count = folder_image_counts[folder_index]
+                folder_images = images[image_index:image_index + image_count] if images else []
+
+                for image in folder_images:
+                    contents = await image.read()
+                    print(f"Yüklenecek dosya: {image.filename} (Klasör: {folder_name})")
+
+                    bucket_name = format_bucket_name(db_malzeme.name)
+                    image_url = upload_image_to_minio(bucket_name, folder_name, contents, image.filename)
+                    image_urls.append(image_url)
+
+                image_index += image_count
+
+        if deletedImagesData:
+            try:
+                deleted_images = json.loads(deletedImagesData) 
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=400, detail="Invalid JSON format for deletedImagesData")
+
+            for folder in deleted_images:
+                folder_name = folder.get("folderName")
+                deleted_images_list = folder.get("deletedImages")
+
+                if folder_name and deleted_images_list:
+                    for image_name in deleted_images_list:
+                        file_path = f"{folder_name}/{image_name}"
+                        bucket_name = format_bucket_name(db_malzeme.name)
+
+                        try:
+                            minio_client.remove_object(bucket_name, file_path)
+                            print(f"Silinen dosya: {file_path}")
+                        except Exception as e:
+                            print(f"Resim silinirken hata oluştu: {str(e)}")
+                            
+                        image_urls = [photo for photo in image_urls if f"{bucket_name}/{file_path}" not in photo]
+                else:
+                    print(f"Geçersiz veri: folder_name: {folder_name}, deleted_images_list: {deleted_images_list}")
+
+        db_malzeme.photos = image_urls
+        flag_modified(db_malzeme, "photos")
+
+        db.commit()
+        db.refresh(db_malzeme)
+
+        return db_malzeme
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Bir hata oluştu: {str(e)}")
+
+
+@router.put("/malzmatches/add")
+def update_malz_matches(ips: List[schemas.MalzMatchCreate], db: Session = Depends(get_db)):
+    for item in ips:
+        # Check if the malzeme_name already exists in the database
+        malz_match = (
+            db.query(models.MalzMatch)
+            .filter(models.MalzMatch.malzeme_name == item.malzeme_name)
+            .first()
+        )
+
+        if malz_match:
+            # Update the existing record
+            malz_match.ip = item.ip
+            malz_match.mevzi_id = item.mevzi_id
+        else:
+            # Insert a new record
+            new_malz_match = models.MalzMatch(
+                malzeme_name=item.malzeme_name, mevzi_id=item.mevzi_id, ip=item.ip
+            )
+            db.add(new_malz_match)
+
+    db.commit()  # Commit all changes
+    return {"status": "success", "message": "Malz matches updated successfully."}
+
+
+@router.get("/malzmatches/get")
+def get_malz_matches(mevzi_id: Optional[UUID4] = None, db: Session = Depends(get_db)):
+    query = db.query(models.MalzMatch)
+    if mevzi_id:
+        query = query.filter(models.MalzMatch.mevzi_id == mevzi_id)
+
+    malz_matches = query.all()
+    formatted_matches = [
+        {
+            "malzeme_name": match.malzeme_name,
+            "mevzi_id": match.mevzi_id,
+            "ip": match.ip
+        }
+        for match in malz_matches
+    ]
+    return formatted_matches
+
+
+@router.delete("/malzmatches/delete/{malzeme_name}")
+def delete_malz_match(malzeme_name: str, db: Session = Depends(get_db)):
+    # İlk olarak silinmesi gereken kaydı bul
+    malz_match = (
+        db.query(models.MalzMatch)
+        .filter(models.MalzMatch.malzeme_name == malzeme_name)
+        .first()
+    )
+    
+    if not malz_match:
+        raise HTTPException(status_code=404, detail="Malzeme not found")
+
+    db.delete(malz_match)
     db.commit()
-    db.refresh(db_malzeme)
-    return db_malzeme
+
+    return {"status": "success", "message": f"Malzeme '{malzeme_name}' başarıyla silindi."}
+
+
+@router.get("/{malzeme_name}/photos", response_model=List[str])
+def get_malzeme_photos(malzeme_name: str, db: Session = Depends(get_db)):
+    malzeme = db.query(models.Malzeme).filter(models.Malzeme.name == malzeme_name).first()
+
+    if not malzeme:
+        raise HTTPException(status_code=404, detail="Malzeme bulunamadı")
+    
+    if not malzeme.photos:
+        raise HTTPException(status_code=404, detail="Malzemeye ait fotoğraf bulunamadı")
+
+    return malzeme.photos

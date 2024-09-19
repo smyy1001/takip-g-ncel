@@ -12,15 +12,18 @@ import Mevziler from "./pages/Mevziler/Mevziler";
 import SystemEdit from "./pages/SystemEdit/SystemEdit";
 import MevziEdit from "./pages/MevziEdit/MevziEdit";
 import MalzemeEdit from "./pages/MalzemeEdit/MalzemeEdit";
+import Malzemeler from "./pages/Malzemeler/Malzemeler";
 import SystemAdd from "./pages/SystemAdd/SystemAdd";
 import { useTheme } from "@mui/material/styles";
 import "./index.css";
 import AppBarComponent from "./components/AppBarComponent/AppBarComponent";
-import Main from "./pages/Main/Main";
 import Axios from "axios";
 import { message } from "antd";
 import MalzemeAdd from "./pages/MalzemeAdd/MalzemeAdd";
 import MevziAdd from "./pages/MevziAdd/MevziAdd";
+import PhotoGallery from "./pages/PhotoGallery/PhotoGallery";
+import MevziAltYapi from "./pages/MevziAltYapi/MevziAltYapi";
+import MevziIp from "./pages/MevziIp/MevziIp";
 
 function App() {
   const theme = useTheme();
@@ -28,6 +31,7 @@ function App() {
   const [systems, setSystems] = useState([]);
   const [freeMalzemeler, setFreeMalzemeler] = useState([]);
   const [malzemeler, setMalzemeler] = useState([]);
+  const [malzMatch, setMalzMatch] = useState([]);
   const isAdmin = process.env.REACT_APP_ROLE;
   let isRoleAdmin;
 
@@ -44,6 +48,16 @@ function App() {
       setMevziler(response.data);
     } catch (error) {
       message.error(error.response?.data?.detail || error.message);
+    }
+  };
+
+  // FETCH ALL MALZ MATCH
+  const fetchMalzMatch = async () => {
+    try {
+      const response = await Axios.get("/api/malzeme/malzmatches/get");
+      setMalzMatch(response.data);
+    } catch (error) {
+      console.error(error.response?.data?.detail || error.message);
     }
   };
 
@@ -97,18 +111,8 @@ function App() {
   return (
     <Router>
       <>
-        <AppBarComponent isRoleAdmin={isRoleAdmin}/>
+        <AppBarComponent isRoleAdmin={isRoleAdmin} />
         <Routes>
-          <Route
-            path="/main"
-            element={
-              <Main
-                mevziler={mevziler}
-                fetchAllMevzi={fetchAllMevzi}
-                isRoleAdmin={isRoleAdmin}
-              />
-            }
-          />
           <Route
             path="/home"
             element={
@@ -126,7 +130,7 @@ function App() {
             element={
               <Systems
                 isRoleAdmin={isRoleAdmin}
-                systems={systems}
+                initialSystems={systems}
                 fetchSystems={fetchSystems}
               />
             }
@@ -143,6 +147,7 @@ function App() {
                 freeMalzemeler={freeMalzemeler}
                 fetchFreeMalzemeler={fetchFreeMalzemeler}
                 malzemeler={malzemeler}
+                fetchMalzemeler={fetchMalzemeler}
               />
             }
           />
@@ -151,14 +156,54 @@ function App() {
             element={
               <Mevziler
                 isRoleAdmin={isRoleAdmin}
-                mevziler={mevziler}
+                initialMevziler={mevziler}
                 fetchAllMevzi={fetchAllMevzi}
               />
             }
           />
           <Route
             path="/mevziler/:id"
-            element={<MevziEdit isRoleAdmin={isRoleAdmin} />}
+            element={
+              <MevziEdit
+                isRoleAdmin={isRoleAdmin}
+                systems={systems}
+                fetchSystems={fetchSystems}
+                mevziler={mevziler}
+                fetchAllMevzi={fetchAllMevzi}
+              />
+            }
+          />
+          <Route
+            path="/mevziler/:id/altyapi"
+            element={
+              <MevziAltYapi
+                isRoleAdmin={isRoleAdmin}
+                mevziler={mevziler}
+                fetchAllMevzi={fetchAllMevzi}
+              />
+            }
+          />
+          <Route
+            path="/mevziler/:id/ip"
+            element={
+              <MevziIp
+                isRoleAdmin={isRoleAdmin}
+                mevziler={mevziler}
+                fetchAllMevzi={fetchAllMevzi}
+                malzMatch={malzMatch}
+                fetchMalzMatch={fetchMalzMatch}
+              />
+            }
+          />
+          <Route
+            path="/malzemeler"
+            element={
+              <Malzemeler
+                isRoleAdmin={isRoleAdmin}
+                initialMalzemeler={malzemeler}
+                fetchMalzemeler={fetchMalzemeler}
+              />
+            }
           />
           <Route
             path="/malzemeler/:id"
@@ -186,6 +231,7 @@ function App() {
                 freeMalzemeler={freeMalzemeler}
                 fetchFreeMalzemeler={fetchFreeMalzemeler}
                 malzemeler={malzemeler}
+                fetchMalzemeler={fetchMalzemeler}
               />
             }
           />
@@ -207,8 +253,18 @@ function App() {
           />
           <Route
             path="/mevzi-ekle"
-            element={<MevziAdd isRoleAdmin={isRoleAdmin} />}
+            element={<MevziAdd isRoleAdmin={isRoleAdmin} systems={systems}
+              fetchSystems={fetchSystems} />}
           />
+          <Route
+            path="/:sis-malz-mev/gallery/:name"
+            element={
+              <PhotoGallery
+                isRoleAdmin={isRoleAdmin}
+              />
+            }
+          />
+
         </Routes>
       </>
     </Router>

@@ -11,7 +11,7 @@
 }
 
 .sfp-sliding-panel.open {
-    height: 30vh;
+    height: 135px;
 }
 
 .sfp-toggle-button {
@@ -23,7 +23,7 @@
 }
 
 .sfp-panel-content {
-    padding: 10px;
+    padding: 5px 10px 10px 10px;
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -43,4 +43,11 @@
 .sfp-sliding-panel-header.open {
     background-color: #4f7d55;
     cursor: pointer;
+}
+
+
+.sfp-panel-content-body {
+    min-height: calc(30vh - 40px);
+    width: inherit;
+    padding: 20px;
 }

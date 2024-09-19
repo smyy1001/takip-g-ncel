@@ -18,12 +18,144 @@ import Collapse from '@mui/material/Collapse';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
-import Axios from '../../Axios';
-import { message } from 'antd';
+import SearchIcon from '@mui/icons-material/Search';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import styled from '@mui/material/styles/styled';
+
+
+const CustomAutocompleteTextField = styled(TextField)({
+    "& label.Mui-focused": {
+        color: "white",
+    },
+    "& .MuiInput-underline:after": {
+        borderBottomColor: "white !important",
+    },
+    "& .MuiOutlinedInput-root": {
+        "& fieldset": {
+            borderColor: "white",
+        },
+        "&:hover fieldset": {
+            borderColor: "white",
+        },
+        "&.Mui-focused fieldset": {
+            borderColor: "white !important",
+        },
+        "& input:valid:focus + fieldset": {
+            borderColor: "white !important",
+        },
+    },
+    "& .MuiFilledInput-root": {
+        "&:before": {
+            borderBottomColor: "white",
+        },
+        "&:hover:before": {
+            borderBottomColor: "white",
+        },
+        "&:after": {
+            borderBottomColor: "white",
+        },
+        "&:hover fieldset": {
+            borderColor: "white",
+        },
+        "&.Mui-focused fieldset": {
+            borderColor: "white",
+        },
+    },
+    "& label.Mui-focused": {
+        color: "white",
+    },
+    "& label": {
+        color: "white",
+        '&[aria-selected="true"]': {
+            backgroundColor: "#423532",
+        },
+        "&:hover": {
+            backgroundColor: "#332725",
+        },
+    },
+    "& .MuiInputBase-root": {
+        "&::selection": {
+            backgroundColor: "rgba(255, 255, 255, 0.99)",
+            color: "#241b19",
+        },
+        "& input": {
+            caretColor: "white",
+        },
+    },
+    "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+        borderColor: "white !important",
+    },
+    "& .MuiInputBase-input::selection": {
+        backgroundColor: "rgba(255, 255, 255, 0.99)",
+        color: "#241b19",
+    },
+});
+
+const CustomTextField = styled(TextField)({
+    "& .MuiInput-underline:after": {
+        borderBottomColor: "white",
+    },
+    "& .MuiOutlinedInput-root": {
+        "& fieldset": {
+            borderColor: "white",
+        },
+        "&:hover fieldset": {
+            borderColor: "white",
+        },
+        "&.Mui-focused fieldset": {
+            borderColor: "white !important",
+        },
+        "& input:valid:focus + fieldset": {
+            borderColor: "white !important",
+        },
+    },
+    "& .MuiFilledInput-root": {
+        "&:before": {
+            borderBottomColor: "white",
+        },
+        "&:hover:before": {
+            borderBottomColor: "white",
+        },
+        "&:after": {
+            borderBottomColor: "white",
+        },
+        "&:hover fieldset": {
+            borderColor: "white",
+        },
+        "&.Mui-focused fieldset": {
+            borderColor: "white",
+        },
+    },
+    "& label.Mui-focused": {
+        color: "white",
+    },
+    "& label": {
+        color: "white",
+    },
+    "& .MuiInputBase-root": {
+        "&::selection": {
+            backgroundColor: "rgba(255, 255, 255, 0.99)",
+            color: "#241b19",
+        },
+        "& input": {
+            caretColor: "white",
+        },
+    },
+    "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+        borderColor: "white !important",
+    },
+    "& .MuiInputBase-input::selection": {
+        backgroundColor: "rgba(255, 255, 255, 0.99)",
+        color: "#241b19",
+    },
+});
+
 
 const SystemPanel = ({ systems, fetchSystems, isOpen, togglePanel, isRoleAdmin }) => {
     const [openSystem, setOpenSystem] = useState({});
     const navigate = useNavigate();
+    const [searchSistem, setSearchSistem] = useState('');
 
     const handleEditSystemClick = async (system) => {
         navigate(`/sistemler/${system.id}`)
@@ -45,44 +177,58 @@ const SystemPanel = ({ systems, fetchSystems, isOpen, togglePanel, isRoleAdmin }
         }));
     };
 
+    //filter systems reagrding therir names and searchSiste keyword. if the keyword is empty, return all systems
+    const filteredSystems = systems.filter(sys => sys.name.toLowerCase().includes(searchSistem.toLowerCase()));
+
     return (
         <div className={`sys-sliding-panel ${isOpen ? 'open' : ''}`}>
             <div className={`sys-sliding-panel-header ${isOpen ? 'open' : ''}`} onClick={togglePanel} >
                 <IconButton className="sys-toggle-button" >
                     {isOpen ? <CloseIcon /> : <KeyboardArrowLeftIcon />}
                 </IconButton>
-                <div className="sys-panel-content">Sistemler&Malzemeler</div>
+                <div className="sys-panel-content">{"Sistemler & Malzemeler"}</div>
             </div>
 
             <div className='sys-panel-scroll'>
                 {isOpen && (
-                    <Tooltip title="Tabular Görünüm ve Sistem Ekleme" >
-                        <Typography variant="h6" className="system-hover-effect-link" onClick={toSystems}>
-                            Tüm Sistemler ve Malzemeleri
-                            <IconButton className="system-directing-icon-style">
-                                <ArrowOutwardIcon />
-                            </IconButton>
-                        </Typography>
-                    </Tooltip>
+                    <div>
+                        <Tooltip title="Tabular Görünüm" >
+                            <Typography variant="h6" className="system-hover-effect-link" onClick={toSystems}>
+                                Tüm Sistemler ve Malzemeleri
+                                <IconButton className="system-directing-icon-style">
+                                    <ArrowOutwardIcon />
+                                </IconButton>
+                            </Typography>
+                        </Tooltip>
+
+                        <CustomTextField
+                            style={{ paddingLeft: '10px', marginBottom: '5px' }}
+                            autoComplete="off"
+                            fullWidth
+                            variant="outlined"
+                            placeholder="Ara..."
+                            value={searchSistem}
+                            onChange={(e) => { if (isOpen) setSearchSistem(e.target.value); }}
+                            InputProps={{
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton disabled={!searchSistem}>
+                                            <SearchIcon />
+                                        </IconButton>
+                                    </InputAdornment>
+                                )
+                            }}
+                        />
+                    </div>
                 )}
-                {systems.length > 0 && (
-                    systems.map(sys => (
+                {filteredSystems.length > 0 && (
+                    filteredSystems.map(sys => (
                         <div key={sys.id}>
                             <div className="sys-panel-all-list">
                                 <Box sx={{ flexGrow: 1, maxWidth: 752 }}>
                                     <Grid item xs={12} md={6}>
                                         <List>
-                                            <ListItem disablePadding
-                                            // secondaryAction={
-                                            //     isRoleAdmin & (
-                                            //         <Tooltip title="Sil">
-                                            //             <IconButton edge="end" onClick={(event) => handleDeleteSystemClick(sys.id, event)} aria-label="delete">
-                                            //                 <DeleteIcon />
-                                            //             </IconButton>
-                                            //         </Tooltip>
-                                            //     )
-                                            // }
-                                            >
+                                            <ListItem disablePadding>
                                                 <ListItemButton onClick={() => handleEditSystemClick(sys)}>
                                                     <ListItemText sx={{
                                                         '.MuiListItemText-primary': { fontSize: '1.3rem', color: 'white', fontWeight: 'bold' }
@@ -124,7 +270,7 @@ const SystemPanel = ({ systems, fetchSystems, isOpen, togglePanel, isRoleAdmin }
                         </div>
                     ))
                 )}
-                {systems.length === 0 && isOpen && (
+                {filteredSystems.length === 0 && isOpen && (
                     <Typography className='sys-panel-empty-message'>
                         Görüntülenecek Sistem bulunmamaktadır.
                     </Typography>

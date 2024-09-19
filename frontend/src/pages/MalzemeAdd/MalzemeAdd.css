@@ -1,71 +1,70 @@
 .app.dark .malzeme-add-container,
 .malzeme-add-container {
-    margin-top: 64px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    padding: 0px !important;
-    box-shadow: none !important;
-    background-image: none !important;
-    background-color: transparent !important;
-    position: relative !important;
-    overflow: hidden !important;
-    max-width: 100vw !important;
-    height: 90vh;
-    align-items: center !important;
+  margin-top: 64px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0px !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  position: relative !important;
+  max-width: 100vw !important;
+  height: 90vh;
+  align-items: center !important;
 }
-
 
 .app.dark .malzeme-add-big-header,
 .malzeme-add-big-header {
-    font-size: 4rem !important;
-    font-weight: 600 !important;
-    color: white !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 20px 20px 0px 20px !important;
+  font-size: 4rem !important;
+  font-weight: 600 !important;
+  color: white !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 20px 0px 20px !important;
 }
-
 
 .app.dark .malzeme-add-main-div-class,
 .malzeme-add-main-div-class {
-    align-items: center;
-    flex-direction: column;
-    display: flex;
-    height: 100%;
-    justify-content: flex-start;
-    padding: 20px;
-    width: 100%;
+  align-items: center;
+  flex-direction: column;
+  display: flex;
+  height: 100%;
+  justify-content: flex-start;
+  padding: 20px;
+  width: 100%;
 }
-
 
 .app.dark .malzeme-add-direction-row,
 .malzeme-add-direction-row {
-    align-items: flex-start;
-    display: flex;
-    flex-direction: row;
-    gap: 5vw;
+  align-items: flex-start;
+  display: flex;
+  flex-direction: row;
+  gap: 5vw;
 }
 
 .app.dark .malzeme-add-to-the-right,
 .malzeme-add-to-the-right,
 .app.dark .malzeme-add-to-the-left,
 .malzeme-add-to-the-left {
-    width: 40vw;
+  width: 40vw;
 }
-
-
 
 .app.dark .malzeme-add-form,
 .malzeme-add-form {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding-bottom: 100px;
 }
-
 
 .app.dark .malzeme-add-calender,
 .malzeme-add-calender {
-    width: inherit !important;
+  width: inherit !important;
+}
+
+.Mui-selected,
+.Mui-selected {
+  background-color: #4f7d55 !important;
 }

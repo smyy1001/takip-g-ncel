@@ -1,5 +1,5 @@
-.app.dark .mevziler-main-container,
-.mevziler-main-container {
+.app.dark .malzemeler-main-container,
+.malzemeler-main-container {
   margin-top: 64px !important;
   display: flex !important;
   flex-direction: column !important;
@@ -15,33 +15,32 @@
 }
 
 tr.MuiTableRow-root:hover {
+  /* background-color: rgba(255, 255, 255, 0.08); */
   background-color: rgb(79, 125, 85, 0.2);
 }
 
-.app.dark .mevzi-delete-icon,
-.mevzi-delete-icon,
-.app.dark .mevzi-ip-icon,
-.mevzi-ip-icon,
-.app.dark .mevzi-edit-icon,
-.mevzi-edit-icon,
-.mevzi-alty-icon,
-.app.dark .mevzi-alty-icon {
+.app.dark .malzeme-delete-icon,
+.malzeme-delete-icon {
   color: white !important;
 }
 
-.app.dark .mevzi-delete-icon:hover,
-.mevzi-delete-icon:hover,
-.app.dark .mevzi-ip-icon:hover,
-.mevzi-ip-icon:hover,
-.app.dark .mevzi-edit-icon:hover,
-.mevzi-edit-icon:hover,
-.app.dark .mevzi-alty-icon:hover,
-.mevzi-alty-icon:hover {
+.app.dark .malzeme-delete-icon:hover,
+.malzeme-delete-icon:hover {
   color: #cecece !important;
 }
 
-.app.dark .no-mevzi-empty-message,
-.no-mevzi-empty-message {
+.app.dark .malzeme-edit-icon,
+.malzeme-edit-icon {
+  color: white !important;
+}
+
+.app.dark .malzeme-edit-icon:hover,
+.malzeme-edit-icon:hover {
+  color: #cecece !important;
+}
+
+.app.dark .no-malzeme-empty-message,
+.no-malzeme-empty-message {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -61,8 +60,8 @@ tr.MuiTableRow-root:hover {
   background-color: #1f1f1f !important;
 }
 
-.app.dark .mevziler-table-main-container,
-.mevziler-table-main-container {
+.app.dark .malzemeler-table-main-container,
+.malzemeler-table-main-container {
   margin-bottom: 30px !important;
   border-radius: 8px !important;
   width: calc(100% - 48px) !important;
@@ -70,8 +69,8 @@ tr.MuiTableRow-root:hover {
   scrollbar-width: thin !important;
 }
 
-.app.dark .mevziler-main-big-header,
-.mevziler-main-big-header {
+.app.dark .malzemeler-main-big-header,
+.malzemeler-main-big-header {
   font-size: 2rem !important;
   font-weight: 600 !important;
   color: white !important;
@@ -81,7 +80,7 @@ tr.MuiTableRow-root:hover {
   margin: 20px 20px 0px 20px !important;
 }
 
-.mevziler-sticky-header {
+.malzemeler-sticky-header {
   background-color: transparent !important;
   z-index: 10 !important;
 }
@@ -91,12 +90,12 @@ tr.MuiTableRow-root:hover {
   position: relative !important;
 }
 
-.mevzi-add-button-in-header:hover {
+.malzeme-add-button-in-header:hover {
   background-color: rgb(79, 125, 85, 0.2) !important;
 }
 
 
-.mevziler-page-header-container {
+.malzemeler-page-header-container {
   align-items: center;
   display: flex;
   justify-content: center;
@@ -104,7 +103,7 @@ tr.MuiTableRow-root:hover {
 }
 
 
-.mevziler-page-search-bar {
+.malzemeler-page-search-bar {
   max-width: 400px;
   width: 400px;
   right: 0;

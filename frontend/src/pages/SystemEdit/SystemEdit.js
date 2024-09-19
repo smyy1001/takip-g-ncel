@@ -31,6 +31,8 @@ function SystemEdit({
   fetchAllMevzi,
   freeMalzemeler,
   fetchFreeMalzemeler,
+  malzemeler,
+  fetchMalzemeler,
 }) {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -38,7 +40,7 @@ function SystemEdit({
 
   const [openSystem, setOpenSystem] = useState({});
   const [system, setSystem] = useState(null);
-  const [malzemeler, setMalzemeler] = useState([]);
+  const [systemMalzemeler, setSystemMalzemeler] = useState([]);
   const [selectedSystem, setSelectedSystem] = useState(null);
 
   useEffect(() => {
@@ -51,10 +53,11 @@ function SystemEdit({
     const fetchCurrentSystem = async () => {
       try {
         const response = await Axios.get(`/api/system/get/${id}`);
+
         setSystem(response.data);
 
         const malzemeResponse = await Axios.get(`/api/malzeme/get/${id}`);
-        setMalzemeler(malzemeResponse.data);
+        setSystemMalzemeler(malzemeResponse.data); // Değişiklik burada
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -65,24 +68,11 @@ function SystemEdit({
   }, [id]);
 
   useEffect(() => {
-    console.log(itemRefs.current);
-
-    if (systems.length > 0 && id) {
-      const index = systems.findIndex((sys) => sys.id === id);
-      const ref = itemRefs.current[index];
-
-      console.log(ref);
-
-      if (ref && ref.current) {
-        ref.current.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      } else {
-        console.error("Ref not found or not attached to a DOM element");
-      }
+    const fetchedSystem = systems.find((system) => system.id === id);
+    if (fetchedSystem) {
+      setSelectedSystem(fetchedSystem);
     }
-  }, [systems, id]);
+  }, [id, systems]);
 
   const toggleSystemOpen = (id, event) => {
     event.stopPropagation();
@@ -116,18 +106,44 @@ function SystemEdit({
     navigate(`/sistemler/${system.id}`);
   };
 
+  const handleToSystems = () => {
+    navigate(`/sistemler`);
+  };
+
+
   return (
     <Container className="system-edit-container">
       <div className="system-edit-main-div-class">
         <div className="system-edit-left-div">
+          <Tooltip title="Tabular Görünüm"
+            style={{ cursor: 'pointer' }}
+            onClick={() => handleToSystems()}
+          >
+
+            <Typography
+              component="span"
+              sx={{
+                fontSize: "1.5rem",
+                color: "white",
+                fontWeight: "bold",
+                justifyContent: "center",
+                alignItems: "center",
+                textAlign: "center",
+                marginBottom: "20px",
+                marginTop: "35px",
+              }}
+            >
+              SİSTEMLER
+            </Typography>
+          </Tooltip>
+
           <div className="system-edit-scroll">
             {systems.length > 0 ? (
               systems.map((sys, index) => (
                 <div
                   key={sys.id}
-                  className={`sys-edit-all-list ${
-                    sys.id === id ? "chosen" : ""
-                  }`}
+                  className={`sys-edit-all-list ${sys.id === id ? "chosen" : ""
+                    }`}
                 >
                   <Box sx={{ flexGrow: 1, maxWidth: 752 }}>
                     <Grid item xs={12} md={6}>
@@ -150,9 +166,8 @@ function SystemEdit({
                           }
                         >
                           <ListItemButton
-                            className={`system-edit-list-item ${
-                              sys.id === id ? "chosen" : ""
-                            }`}
+                            className={`system-edit-list-item ${sys.id === id ? "chosen" : ""
+                              }`}
                             onClick={() => handleEditSystemClick(sys)}
                           >
                             <ListItemText
@@ -240,6 +255,8 @@ function SystemEdit({
               fetchAllMevzi={fetchAllMevzi}
               freeMalzemeler={freeMalzemeler}
               fetchFreeMalzemeler={fetchFreeMalzemeler}
+              malzemeler={malzemeler}
+              fetchMalzemeler={fetchMalzemeler}
             />
           )}
         </div>
