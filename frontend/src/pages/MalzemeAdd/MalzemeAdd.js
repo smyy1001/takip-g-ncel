@@ -237,7 +237,7 @@ function MalzemeAdd({
         ...updatedFolders[folderIndex].selectedImages,
         ...files,
       ];
-      console.log("Güncellenmiş Klasörler:", updatedFolders);
+      // console.log("Güncellenmiş Klasörler:", updatedFolders);
       return updatedFolders;
     });
   };
@@ -251,7 +251,6 @@ function MalzemeAdd({
       updatedFolders[folderIndex].deletedImages.push(imageName);
       return updatedFolders;
     });
-    console.log(folders);
   };
   const handleFolderNameChange = (index, value) => {
     const updatedFolders = [...folders];
@@ -346,7 +345,7 @@ function MalzemeAdd({
   const addNewType = async (typeName) => {
     try {
       const response = await Axios.post("/api/type/add", { name: typeName });
-      console.log("Yeni tür eklendi:", response.data);
+      // console.log("Yeni tür eklendi:", response.data);
       fetchAllTypes();
       return response.data.id;
     } catch (error) {
@@ -401,7 +400,7 @@ function MalzemeAdd({
   const addNewMarka = async (markaName) => {
     try {
       const response = await Axios.post("/api/marka/add", { name: markaName });
-      console.log("Yeni marka eklendi:", response.data);
+      // console.log("Yeni marka eklendi:", response.data);
       fetchAllMarkalar();
       return response.data.id;
     } catch (error) {
@@ -460,7 +459,7 @@ function MalzemeAdd({
   const addNewModel = async (modelName) => {
     try {
       const response = await Axios.post("/api/model/add", { name: modelName });
-      console.log("Yeni model eklendi:", response.data);
+      // console.log("Yeni model eklendi:", response.data);
       fetchAllModels();
       return response.data.id;
     } catch (error) {
@@ -606,7 +605,7 @@ function MalzemeAdd({
   const addNewMevzi = async (MevziName) => {
     try {
       const response = await Axios.post("/api/mevzi/add", { name: MevziName });
-      console.log("Yeni mevzi eklendi:", response.data);
+      // console.log("Yeni mevzi eklendi:", response.data);
       fetchAllMevzi();
       return response.data.id;
     } catch (error) {
@@ -676,7 +675,7 @@ function MalzemeAdd({
 
     const folderImageCounts = [];
     const deletedImagesData = [];
-    console.log("gönderme folders " + folders);
+    // console.log("gönderme folders " + folders);
     folders.forEach((folder, folderIndex) => {
       formData.append("folderNames", folder.folderName);
       folderImageCounts.push(folder.selectedImages.length);
@@ -699,9 +698,9 @@ function MalzemeAdd({
       formData.append("deletedImagesData", JSON.stringify(deletedImagesData));
     }
 
-    for (let [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
+    // for (let [key, value] of formData.entries()) {
+    //   console.log(key, value);
+    // }
 
     try {
       let response;

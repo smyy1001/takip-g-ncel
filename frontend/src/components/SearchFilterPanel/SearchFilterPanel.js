@@ -98,6 +98,7 @@ const SearchFilterPanel = ({searchContent, setSearchContent}) => {
                 <div className='sfp-panel-search-bar'>
                     <Tooltip title="Arama sonuçları haritadan görüntülenebilir!">
                         <CustomTextField
+                            autoComplete="off"
                             fullWidth
                             variant="outlined"
                             placeholder="Ara..."

@@ -360,7 +360,7 @@ function SystemAdd({
         ...updatedFolders[folderIndex].selectedImages,
         ...files,
       ];
-      console.log("Güncellenmiş Klasörler:", updatedFolders);
+      // console.log("Güncellenmiş Klasörler:", updatedFolders);
       return updatedFolders;
     });
   };
@@ -438,7 +438,7 @@ function SystemAdd({
   const addNewType = async (typeName) => {
     try {
       const response = await Axios.post("/api/systype/add", { name: typeName });
-      console.log("Yeni tür eklendi:", response.data);
+      // console.log("Yeni tür eklendi:", response.data);
       fetchAllTypes();
       return response.data.id;
     } catch (error) {
@@ -494,7 +494,7 @@ function SystemAdd({
       const response = await Axios.post("/api/sys_marka/add", {
         name: markaName,
       });
-      console.log("Yeni marka eklendi:", response.data);
+      // console.log("Yeni marka eklendi:", response.data);
       fetchAllMarkalar();
       return response.data.id;
     } catch (error) {
@@ -551,10 +551,10 @@ function SystemAdd({
 
   // FREE MALZEMELER
   const handleChosenMalzemelerChange = (event, newValue) => {
-    console.log("malzemeler add:" + malzemeler);
-    console.log("selectedMalzemeler add:" + selectedMalzemeler);
+    // console.log("malzemeler add:" + malzemeler);
+    // console.log("selectedMalzemeler add:" + selectedMalzemeler);
     if (newValue.length === 0) {
-      console.log("içerisi boş");
+      // console.log("içerisi boş");
       setSystemInfo((prev) => ({
         ...prev,
         selectedMalzemeler: [],
@@ -565,7 +565,7 @@ function SystemAdd({
         selectedMalzemeler: newValue.map((malzeme) => malzeme.id),
       }));
     }
-    console.log("onchange new value: " + newValue);
+    // console.log("onchange new value: " + newValue);
     setSelectedMalzemeler(newValue);
   };
 
@@ -589,7 +589,7 @@ function SystemAdd({
       const response = await Axios.post("/api/sys_model/add", {
         name: modelName,
       });
-      console.log("Yeni model eklendi:", response.data);
+      // console.log("Yeni model eklendi:", response.data);
       fetchAllModels();
       return response.data.id;
     } catch (error) {
@@ -641,7 +641,7 @@ function SystemAdd({
   const addNewMevzi = async (MevziName) => {
     try {
       const response = await Axios.post("/api/mevzi/add", { name: MevziName });
-      console.log("Yeni mevzi eklendi:", response.data);
+      // console.log("Yeni mevzi eklendi:", response.data);
       fetchAllMevzi();
       return response.data.id;
     } catch (error) {
@@ -666,17 +666,17 @@ function SystemAdd({
   // UPDATE MALZEME
   const handleUpdateMalzeme = async (system_idd) => {
     const malzemeIds = selectedMalzemeler?.map((malzeme) => malzeme.id) || [];
-    console.log("update malzeme malzemeIds:" + malzemeIds);
-    console.log("malzemeler" + malzemeler);
+    // console.log("update malzeme malzemeIds:" + malzemeIds);
+    // console.log("malzemeler" + malzemeler);
     const previouslySelectedMalzemeler =
       malzemeler?.filter((malzeme) => malzeme.system_id === system_idd) || [];
 
-    console.log("önceden seçilen malzemeler: " + previouslySelectedMalzemeler);
+    // console.log("önceden seçilen malzemeler: " + previouslySelectedMalzemeler);
     if (malzemeIds.length === 0) {
-      console.log("update malzeme id boş");
-      console.log(
-        "önceden seçilen malzemeler 2 : " + previouslySelectedMalzemeler
-      );
+      // console.log("update malzeme id boş");
+      // console.log(
+      //   "önceden seçilen malzemeler 2 : " + previouslySelectedMalzemeler
+      // );
       try {
         await Promise.all(
           previouslySelectedMalzemeler.map(async (malzeme) => {
@@ -716,7 +716,7 @@ function SystemAdd({
         "/api/malzeme/reg-system/",
         requestBody
       );
-      console.log("Response:", response?.data);
+      // console.log("Response:", response?.data);
       message.success("Malzemeler güncellendi!");
 
       await Promise.all(
@@ -746,7 +746,7 @@ function SystemAdd({
   // EKLE
   const handleAddSystem = async (event) => {
     event.preventDefault();
-    console.log("Gönderilecek Unsurlar: ", selectedUnsurlar);
+    // console.log("Gönderilecek Unsurlar: ", selectedUnsurlar);
 
     let lok =
       selectedRadioBValue === "b" ? 0 : selectedRadioBValue === "y" ? 1 : 2;
@@ -772,7 +772,7 @@ function SystemAdd({
         .map((item) => (typeof item === "object" ? item.id : item))
         .filter((id) => id !== null && id !== undefined),
     };
-    console.log("systemData.ilskili_unsur" + systemData.ilskili_unsur);
+    // console.log("systemData.ilskili_unsur" + systemData.ilskili_unsur);
 
     const formData = new FormData();
     formData.append("system", JSON.stringify(systemData));
@@ -807,9 +807,9 @@ function SystemAdd({
       formData.append("deletedImagesData", JSON.stringify(deletedImagesData));
     }
 
-    for (let [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
+    // for (let [key, value] of formData.entries()) {
+    //   console.log(key, value);
+    // }
 
     try {
       let response;
@@ -871,7 +871,7 @@ function SystemAdd({
   useEffect(() => {
     resetForm();
     if (system) {
-      console.log("sysytem veirleri  : ", system);
+      // console.log("sysytem veirleri  : ", system);
       setSystemInfo({
         name: system.name,
         seri_num: system.seri_num,
@@ -886,7 +886,7 @@ function SystemAdd({
       const depoValue = system.depo === 0 ? "b" : system.depo === 1 ? "y" : "m";
       setSelectedRadioBValue(depoValue);
       setSelectedUnsurlar(system.ilskili_unsur || []);
-      console.log("Selected Unsurlar useEffect içinde: ", system.ilskili_unsur);
+      // console.log("Selected Unsurlar useEffect içinde: ", system.ilskili_unsur);
 
       const selectedMevziFromMalzeme = mevziler.find(
         (mevzi) => mevzi.id === system.mevzi_id

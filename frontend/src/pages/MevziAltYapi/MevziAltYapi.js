@@ -46,36 +46,36 @@ function MevziAltYapi({ isRoleAdmin, mevziler, fetchAllMevzi }) {
             // Fetch the alt_y data using the alt_y_id
             const altYResponse = await Axios.get(`/api/alt_y/${alt_y_id}`);
             const altYData = altYResponse.data;
-            console.log(altYData);
+            // console.log(altYData);
 
             // Fetch the individual related info based on the foreign keys
             if (altYData.iklim_alty) {
                 const iklimResponse = await Axios.get(`/api/alt_y/iklim/${altYData.iklim_alty}`);
-                console.log(iklimResponse.data);
+                // console.log(iklimResponse.data);
                 setIklim(iklimResponse.data);
             }
 
             if (altYData.haberlesme_alty) {
                 const haberResponse = await Axios.get(`/api/alt_y/haber/${altYData.haberlesme_alty}`);
-                console.log(haberResponse.data);
+                // console.log(haberResponse.data);
                 setHaber(haberResponse.data);
             }
 
             if (altYData.kapali_alan_alty) {
                 const kalanResponse = await Axios.get(`/api/alt_y/k_alan/${altYData.kapali_alan_alty}`);
-                console.log(kalanResponse.data);
+                // console.log(kalanResponse.data);
                 setKAlan(kalanResponse.data);
             }
 
             if (altYData.enerji_alty) {
                 const enerjiResponse = await Axios.get(`/api/alt_y/enerji/${altYData.enerji_alty}`);
-                console.log(enerjiResponse.data);
+                // console.log(enerjiResponse.data);
                 setEnerji(enerjiResponse.data);
             }
 
             if (altYData.kabin_alty) {
                 const kabinResponse = await Axios.get(`/api/alt_y/kabin/${altYData.kabin_alty}`);
-                console.log(kabinResponse.data);
+                // console.log(kabinResponse.data);
                 setKabin(kabinResponse.data);
             }
         } catch (error) {

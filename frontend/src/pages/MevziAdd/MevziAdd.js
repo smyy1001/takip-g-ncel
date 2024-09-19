@@ -705,7 +705,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
         ...updatedFolders[folderIndex].selectedImages,
         ...files,
       ];
-      console.log("Güncellenmiş Klasörler:", updatedFolders);
+      // console.log("Güncellenmiş Klasörler:", updatedFolders);
       return updatedFolders;
     });
   };
@@ -1060,7 +1060,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
 
   // ALT YAPI BILGISI EKLE
   const handleSaveAltY = async () => {
-    console.log(altY);
+    // console.log(altY);
     try {
       // Add Iklim (index 0)
       let haberID;
@@ -1072,7 +1072,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
         iklimID = await Axios.post("/api/alt_y/iklim/add/", {
           klima: altY[0].klima,
         });
-        console.log("Iklim added successfully", iklimID.data.id);
+        // console.log("Iklim added successfully", iklimID.data.id);
       }
 
       // Add Kabin (index 1)
@@ -1080,7 +1080,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
         kabinID = await Axios.post("/api/alt_y/kabin/add/", {
           rack_kabin: altY[1].rack_kabin,
         });
-        console.log("Kabin added successfully");
+        // console.log("Kabin added successfully");
       }
 
       // Add KAlan (index 4)
@@ -1088,7 +1088,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
         kalanID = await Axios.post("/api/alt_y/k_alan/add/", {
           konteyner: altY[2].konteyner,
         });
-        console.log("Kalan added successfully");
+        // console.log("Kalan added successfully");
       }
 
       // Add Enerji (index 3)
@@ -1101,7 +1101,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
         enerjiID = await Axios.post("/api/alt_y/enerji/add/", {
           ...altY[3],
         });
-        console.log("Enerji added successfully");
+        // console.log("Enerji added successfully");
       }
 
       // Add Haber (index 2)
@@ -1115,7 +1115,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
         haberID = await Axios.post("/api/alt_y/haber/add/", {
           ...altY[4],
         });
-        console.log("Haber added successfully");
+        // console.log("Haber added successfully");
       }
 
       const altYData = {
@@ -1126,11 +1126,11 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
         kapali_alan_alty: kalanID?.data?.id || null,
       };
 
-      console.log("altyyyyyyyyyyyyyyy", altYData);
+      // console.log("altyyyyyyyyyyyyyyy", altYData);
       const addedAltY = await Axios.post("/api/alt_y/add/", altYData);
-      console.log("alt id:     ", addedAltY.data.id);
+      // console.log("alt id:     ", addedAltY.data.id);
       setMevziInfo({ ...mevziInfo, alt_y_id: addedAltY.data.id });
-      console.log("AltY entry added successfully");
+      // console.log("AltY entry added successfully");
       setAltYMessage("Alt Yapı bilgileri eklendi!");
     } catch (error) {
       console.error("Error adding items:", error);
@@ -1194,9 +1194,9 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
       formData.append("deletedImagesData", JSON.stringify(deletedImagesData));
     }
 
-    for (let [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
+    // for (let [key, value] of formData.entries()) {
+    //   console.log(key, value);
+    // }
 
     try {
       if (mevzi) {
