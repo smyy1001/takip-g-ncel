@@ -1230,7 +1230,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
         );
         if (response.status === 200) {
           message.success("Mevzi güncellendi!");
-          resetForm();
+          // resetForm();
         }
       } else {
         // Yeni mevzi ekleme isteği
