@@ -41,6 +41,8 @@ function CollapsibleRow({
   const [malzemePage, setMalzemePage] = useState(0);
   const [malzemeRowsPerPage, setMalzemeRowsPerPage] = useState(5);
   const navigate = useNavigate();
+  const [order2, setOrder2] = useState("asc");
+  const [orderBy2, setOrderBy2] = useState("name");
 
   const handleEditSystemClick = async (id) => {
     navigate(`/sistemler/${id}`);
@@ -96,6 +98,28 @@ function CollapsibleRow({
   const handleChangeMalzemeRowsPerPage = (event) => {
     setMalzemeRowsPerPage(parseInt(event.target.value, 10));
     setMalzemePage(0); // Reset page to 0 when changing rows per page
+  };
+
+  const handleRequestSort2 = (property) => {
+    const isAsc = orderBy2 === property && order2 === "asc";
+    setOrder2(isAsc ? "desc" : "asc");
+    setOrderBy2(property);
+  };
+
+  const sortArray2 = (array, comparator) => {
+    const stabilizedThis = array.map((el, index) => [el, index]);
+    stabilizedThis.sort((a, b) => {
+      const order = comparator(a[0], b[0]);
+      if (order !== 0) return order;
+      return a[1] - b[1];
+    });
+    return stabilizedThis.map((el) => el[0]);
+  };
+
+  const getComparator2 = (order2, orderBy2) => {
+    return order2 === "desc"
+      ? (a, b) => (b[orderBy2] < a[orderBy2] ? -1 : 1)
+      : (a, b) => (a[orderBy2] < b[orderBy2] ? -1 : 1);
   };
 
   return (
@@ -162,10 +186,10 @@ function CollapsibleRow({
           {system.depo === 0
             ? "Birim Depo"
             : system.depo === 1
-            ? "Yedek Depo"
-            : system.depo === 2
-            ? system.mevzi_id
-            : "-"}
+              ? "Yedek Depo"
+              : system.depo === 2
+                ? system.mevzi_id
+                : "-"}
         </TableCell>
         <TableCell style={{ textAlign: "center" }}>
           {system.giris_tarihi ? system.giris_tarihi : "-"}
@@ -227,105 +251,140 @@ function CollapsibleRow({
               <Table size="small" aria-label="malzemeler">
                 <TableHead>
                   <TableRow style={{ backgroundColor: "#282828" }}>
-                    <TableCell
-                      style={{
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "small",
-                      }}
-                    >
-                      İsim
-                    </TableCell>
-                    <TableCell
-                      style={{
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "small",
-                      }}
-                    >
-                      Tür
-                    </TableCell>
-                    <TableCell
-                      style={{
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "small",
-                      }}
-                    >
-                      Marka
-                    </TableCell>
-                    <TableCell
-                      style={{
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "small",
-                      }}
-                    >
-                      Model
-                    </TableCell>
-                    <TableCell
-                      style={{
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "small",
-                      }}
-                    >
-                      Seri No
-                    </TableCell>
-                    <TableCell
-                      style={{
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "small",
-                      }}
-                    >
-                      Lokasyon
-                    </TableCell>
-                    <TableCell
-                      style={{
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "small",
-                      }}
-                    >
-                      Envantere Giriş Tarihi
-                    </TableCell>
-                    <TableCell
-                      style={{
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "small",
-                      }}
-                    >
-                      Açıklama{" "}
-                    </TableCell>
-                    <TableCell
-                      style={{
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "small",
-                      }}
-                    >
-                      Arıza Tarihleri
-                    </TableCell>
-                    <TableCell
-                      style={{
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "small",
-                      }}
-                    >
-                      Onarım Tarihleri
-                    </TableCell>
-                    <TableCell
-                      style={{
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "small",
-                      }}
-                    >
-                      Bakım Tarihleri
-                    </TableCell>
+                    <Tooltip title="Sıralamak için tıklayınız">
+                      <TableCell
+                        style={{
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          fontSize: "small",
+                        }}
+                        onClick={() => handleRequestSort2("name")}
+                      >
+                        İsim
+                      </TableCell></Tooltip>
+                    <Tooltip title="Sıralamak için tıklayınız">
+                      <TableCell
+                        style={{
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          fontSize: "small",
+                        }}
+                        onClick={() => handleRequestSort2("type_id")}
+                      >
+                        Tür
+                      </TableCell>
+                    </Tooltip>
+                    <Tooltip title="Sıralamak için tıklayınız">
+                      <TableCell
+                        style={{
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          fontSize: "small",
+                        }}
+                        onClick={() => handleRequestSort2("marka_id")}
+                      >
+                        Marka
+                      </TableCell>
+                    </Tooltip>
+                    <Tooltip title="Sıralamak için tıklayınız">
+                      <TableCell
+                        style={{
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          fontSize: "small",
+                        }}
+                        onClick={() => handleRequestSort2("mmodel_id")}
+                      >
+                        Model
+                      </TableCell>
+                    </Tooltip>
+                    <Tooltip title="Sıralamak için tıklayınız">
+                      <TableCell
+                        style={{
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          fontSize: "small",
+                        }}
+                        onClick={() => handleRequestSort2("seri_num")}
+                      >
+                        Seri No
+                      </TableCell>
+                    </Tooltip>
+                    <Tooltip title="Sıralamak için tıklayınız">
+
+                      <TableCell
+                        style={{
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          fontSize: "small",
+                        }}
+                        onClick={() => handleRequestSort2("depo")}
+                      >
+                        Lokasyon
+                      </TableCell>
+                    </Tooltip>
+                    <Tooltip title="Sıralamak için tıklayınız">
+                      <TableCell
+                        style={{
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          fontSize: "small",
+                        }}
+                        onClick={() => handleRequestSort2("giris_tarihi")}
+                      >
+                        Envantere Giriş Tarihi
+                      </TableCell>
+                    </Tooltip>
+                    <Tooltip title="Sıralamak için tıklayınız">
+                      <TableCell
+                        style={{
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          fontSize: "small",
+                        }}
+                        onClick={() => handleRequestSort2("description")}
+                      >
+                        Açıklama{" "}
+                      </TableCell>
+                    </Tooltip>
+                    <Tooltip title="Sıralamak için tıklayınız">
+                      <TableCell
+                        style={{
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          fontSize: "small",
+                        }}
+                        onClick={() => handleRequestSort2("arizalar")}
+                      >
+                        Arıza Tarihleri
+                      </TableCell>
+                    </Tooltip>
+                    <Tooltip title="Sıralamak için tıklayınız">
+                      <TableCell
+                        style={{
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          fontSize: "small",
+                        }}
+                        onClick={() => handleRequestSort2("onarimlar")}
+                      >
+                        Onarım Tarihleri
+                      </TableCell>
+                    </Tooltip>
+                    <Tooltip title="Sıralamak için tıklayınız">
+
+                      <TableCell
+                        style={{
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          fontSize: "small",
+                        }}
+                        onClick={() => handleRequestSort2("bakimlar")}
+                      >
+                        Bakım Tarihleri
+                      </TableCell>
+                    </Tooltip>
+
                     <TableCell
                       style={{
                         textAlign: "center",
@@ -352,11 +411,11 @@ function CollapsibleRow({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {system.malzemeler
+                  {sortArray2(system.malzemeler
                     .slice(
                       malzemePage * malzemeRowsPerPage,
                       (malzemePage + 1) * malzemeRowsPerPage
-                    )
+                    ), getComparator2(order2, orderBy2))
                     .map((malzeme, index) => (
                       <TableRow key={index}>
                         <TableCell style={{ textAlign: "center" }}>
@@ -378,10 +437,10 @@ function CollapsibleRow({
                           {malzeme.depo === 0
                             ? "Birim Depo"
                             : malzeme.depo === 1
-                            ? "Yedek Depo"
-                            : malzeme.depo === 2
-                            ? malzeme.mevzi_id
-                            : "-"}
+                              ? "Yedek Depo"
+                              : malzeme.depo === 2
+                                ? malzeme.mevzi_id
+                                : "-"}
                         </TableCell>
                         <TableCell style={{ textAlign: "center" }}>
                           {malzeme.giris_tarihi ? malzeme.giris_tarihi : "-"}
@@ -396,7 +455,7 @@ function CollapsibleRow({
                         </TableCell>
                         <TableCell style={{ textAlign: "center" }}>
                           {(malzeme.onarimlar && malzeme.onarimlar.length > 0) >
-                          0
+                            0
                             ? malzeme.onarimlar.join(", ")
                             : "-"}
                         </TableCell>
@@ -536,6 +595,9 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
   const navigate = useNavigate();
   const [systems, setSystems] = useState([]);
   const [searchSistem, setSearchSistem] = useState("");
+  const [order, setOrder] = useState("asc");
+  const [orderBy, setOrderBy] = useState("name");
+
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -618,8 +680,8 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
       ilskili_unsur:
         Array.isArray(system.ilskili_unsur) && system.ilskili_unsur.length > 0
           ? system.ilskili_unsur.map(
-              (id) => unsurlar.find((u) => u.id === id)?.name || id
-            )
+            (id) => unsurlar.find((u) => u.id === id)?.name || id
+          )
           : null,
 
       malzemeler: system.malzemeler.map((malzeme) => ({
@@ -647,6 +709,29 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
   useEffect(() => {
     fetchSystems();
   }, []);
+
+
+  const handleRequestSort = (property) => {
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(property);
+  };
+
+  const sortArray = (array, comparator) => {
+    const stabilizedThis = array.map((el, index) => [el, index]);
+    stabilizedThis.sort((a, b) => {
+      const order = comparator(a[0], b[0]);
+      if (order !== 0) return order;
+      return a[1] - b[1];
+    });
+    return stabilizedThis.map((el) => el[0]);
+  };
+
+  const getComparator = (order, orderBy) => {
+    return order === "desc"
+      ? (a, b) => (b[orderBy] < a[orderBy] ? -1 : 1)
+      : (a, b) => (a[orderBy] < b[orderBy] ? -1 : 1);
+  };
 
   // filter systems reagrding searchSistem keyword. if the keyword is empty, return all systems
   const filteredSystems = systems.filter((sys) =>
@@ -719,87 +804,113 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                     Sistemdeki Malzemeler
                   </TableCell>
                   {/* <TableCell style={{ textAlign: 'center', fontWeight: 'bold', fontSize: 'medium' }}>ID</TableCell> */}
-                  <TableCell
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "bold",
-                      fontSize: "medium",
-                    }}
-                  >
-                    İsim
-                  </TableCell>
-                  <TableCell
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "bold",
-                      fontSize: "medium",
-                    }}
-                  >
-                    Tür
-                  </TableCell>
-                  <TableCell
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "bold",
-                      fontSize: "medium",
-                    }}
-                  >
-                    Marka
-                  </TableCell>
-                  <TableCell
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "bold",
-                      fontSize: "medium",
-                    }}
-                  >
-                    Model
-                  </TableCell>
-                  <TableCell
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "bold",
-                      fontSize: "medium",
-                    }}
-                  >
-                    Seri No
-                  </TableCell>
-                  <TableCell
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "bold",
-                      fontSize: "medium",
-                    }}
-                  >
-                    İlişkili Unsurlar
-                  </TableCell>
-                  <TableCell
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "bold",
-                      fontSize: "medium",
-                    }}
-                  >
-                    Lokasyon
-                  </TableCell>
-                  <TableCell
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "bold",
-                      fontSize: "medium",
-                    }}
-                  >
-                    Envantere Giriş Tarihi
-                  </TableCell>
-                  <TableCell
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "bold",
-                      fontSize: "medium",
-                    }}
-                  >
-                    Açıklama
-                  </TableCell>
+                  <Tooltip title="Sıralamak için tıklayınız">
+                    <TableCell
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "medium",
+                      }}
+                      onClick={() => handleRequestSort("name")}
+                    >
+
+                      İsim
+                    </TableCell>
+                  </Tooltip>
+                  <Tooltip title="Sıralamak için tıklayınız">
+                    <TableCell
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "medium",
+                      }}
+                      onClick={() => handleRequestSort("type_id")}
+                    >
+                      Tür
+                    </TableCell></Tooltip>
+                  <Tooltip title="Sıralamak için tıklayınız">
+                    <TableCell
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "medium",
+                      }}
+                      onClick={() => handleRequestSort("marka_id")}
+                    >
+                      Marka
+                    </TableCell></Tooltip>
+                  <Tooltip title="Sıralamak için tıklayınız">
+                    <TableCell
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "medium",
+                      }}
+                      onClick={() => handleRequestSort("mmodel_id")}
+                    >
+                      Model
+                    </TableCell></Tooltip>
+                  <Tooltip title="Sıralamak için tıklayınız">
+                    <TableCell
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "medium",
+                      }}
+                      onClick={() => handleRequestSort("seri_num")}
+                    >
+                      Seri No
+                    </TableCell></Tooltip>
+                  <Tooltip title="Sıralamak için tıklayınız">
+                    <TableCell
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "medium",
+                      }}
+                      onClick={() => handleRequestSort("ilskili_unsur")}
+                    >
+                      İlişkili Unsurlar
+                    </TableCell>
+                  </Tooltip>
+                  <Tooltip title="Sıralamak için tıklayınız">
+                    <TableCell
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "medium",
+                      }}
+                      onClick={() => handleRequestSort("depo")}
+                    >
+                      Lokasyon
+                    </TableCell>
+                  </Tooltip>
+                  <Tooltip title="Sıralamak için tıklayınız">
+
+                    <TableCell
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "medium",
+                      }}
+                      onClick={() => handleRequestSort("giris_tarihi")}
+                    >
+                      Envantere Giriş Tarihi
+                    </TableCell>
+                  </Tooltip>
+                  <Tooltip title="Sıralamak için tıklayınız">
+                    <TableCell
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "medium",
+                      }}
+                      onClick={() => handleRequestSort("description")}
+                    >
+                      Açıklama
+                    </TableCell>
+                  </Tooltip>
+
                   <TableCell
                     style={{
                       textAlign: "center",
@@ -809,6 +920,7 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                   >
                     Fotoğraflar
                   </TableCell>
+
                   {isRoleAdmin && (
                     <>
                       <TableCell
@@ -826,8 +938,9 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredSystems
-                  .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+                {sortArray(filteredSystems
+                  .slice(page * rowsPerPage, (page + 1) * rowsPerPage),
+                  getComparator(order, orderBy))
                   .map((system) => (
                     <CollapsibleRow
                       key={system.id}

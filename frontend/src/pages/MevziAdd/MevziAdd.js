@@ -40,7 +40,7 @@ import "dayjs/locale/tr";
 import { ListItemIcon, ListItemText } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { Switch } from "@mui/material";
-import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
+import ConstructionIcon from '@mui/icons-material/Construction';
 
 const CustomAutocompleteTextField = styled(TextField)({
   "& label.Mui-focused": {
@@ -218,11 +218,13 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
   const [folders, setFolders] = useState([
     {
       folderName: "",
+      oldFolderName: "",
       selectedImages: [],
       deletedImages: [],
       existingImages: [],
     },
   ]);
+  const [originalFolderNames, setOriginalFolderNames] = useState([]);
   // ALT Y
   const [isSwitchOn, setIsSwitchOn] = useState(false);
   const [iklimKlima, setIklimKlima] = useState(false);
@@ -710,6 +712,16 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
     });
   };
 
+  const handleDeleteSelectedImage = (folderIndex, imageIndex) => {
+    setFolders((prevFolders) => {
+      const updatedFolders = [...prevFolders];
+      updatedFolders[folderIndex].selectedImages = updatedFolders[
+        folderIndex
+      ].selectedImages.filter((img, index) => index !== imageIndex);
+      return updatedFolders;
+    });
+  };
+
   const handleDeleteImage = (folderIndex, imageName) => {
     setFolders((prevFolders) => {
       const updatedFolders = [...prevFolders];
@@ -721,10 +733,28 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
     });
   };
 
-  const handleFolderNameChange = (index, value) => {
-    const updatedFolders = [...folders];
-    updatedFolders[index].folderName = value;
-    setFolders(updatedFolders);
+  const handleFolderNameChange = (index, newFolderName) => {
+    setFolders((prevFolders) => {
+      const updatedFolders = [...prevFolders];
+      const currentFolder = updatedFolders[index];
+
+      const originalFolderIndex = originalFolderNames.findIndex(
+        (name) => name === currentFolder.folderName
+      );
+
+      if (
+        originalFolderIndex !== -1 &&
+        currentFolder.folderName !== newFolderName
+      ) {
+        if (!currentFolder.oldFolderName) {
+          updatedFolders[index].oldFolderName = currentFolder.folderName;
+        }
+      }
+
+      updatedFolders[index].folderName = newFolderName;
+
+      return updatedFolders;
+    });
   };
 
   const handleAddFolder = () => {
@@ -938,6 +968,8 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
           }
           return acc;
         }, {});
+        const originalNames = Object.keys(foldersFromSystem);
+        setOriginalFolderNames(originalNames);
         setFolders(Object.values(foldersFromSystem));
       }
       setSelectedSistemler(selectedSistemlerData);
@@ -954,13 +986,11 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
       const response = await Axios.get(
         `/api/malzeme/malzmatches/get?mevzi_id=${mevzi.id}`
       );
-      if (response.data.status === "success") {
-        // Gelen veriyi doğrudan ips state'ine ata
-        const fetchedIps = response.data.data.map(
+      if (response.status === 200 && Array.isArray(response.data)) {
+        const fetchedIps = response.data.map(
           ({ malzeme_name, mevzi_id, ip }) => [malzeme_name, mevzi_id, ip]
         );
-
-        setIps(fetchedIps); // Tüm IP'leri ips'e set et
+        setIps(fetchedIps);
       }
     } catch (error) {
       console.error("Error fetching IPs:", error);
@@ -1143,6 +1173,15 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
   const handleAddMevzi = async (event) => {
     event.preventDefault();
 
+    const isFolderNameMissing = folders.some(
+      (folder) => folder.selectedImages.length > 0 && !folder.folderName.trim()
+    );
+
+    if (isFolderNameMissing) {
+      message.error("Fotoğraf seçtiyseniz klasör ismi girmelisiniz!");
+      return;
+    }
+
     // Mevzi verilerini formData için hazırlıyoruz
     const mevziData = {
       name: mevziInfo?.name || null,
@@ -1185,6 +1224,12 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
           folderName: folder.folderName,
           deletedImages: folder.deletedImages,
         });
+      }
+
+      if (folder.oldFolderName) {
+        formData.append("oldFolderNames", folder.oldFolderName);
+      } else {
+        formData.append("oldFolderNames", null);
       }
     });
 
@@ -1863,7 +1908,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                     >
                       Alt Yapı Bilgisi
                       <Tooltip title="Alt Yapı">
-                        <AnalyticsOutlinedIcon />
+                        <ConstructionIcon />
                       </Tooltip>
                     </div>
                   )}
@@ -2465,6 +2510,19 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                                       }}
                                     >
                                       <span>{image.name}</span>
+                                      <IconButton
+                                        aria-label="delete"
+                                        size="small"
+                                        onClick={() =>
+                                          handleDeleteSelectedImage(
+                                            folderIndex,
+                                            imageIndex
+                                          )
+                                        }
+                                        style={{ marginLeft: "10px" }}
+                                      >
+                                        <CloseIcon fontSize="small" />
+                                      </IconButton>
                                     </li>
                                   )
                                 )}

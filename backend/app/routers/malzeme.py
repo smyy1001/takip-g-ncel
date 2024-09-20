@@ -7,13 +7,13 @@ from pydantic import UUID4
 from typing import Dict
 from pydantic import BaseModel
 from typing import List, Optional
+import subprocess
 import io
 from minio import Minio
 from PIL import Image
-from .minio_utils import upload_image_to_minio, delete_folder_from_minio, format_bucket_name
+from .minio_utils import upload_image_to_minio, delete_folder_from_minio, format_bucket_name, move_files_in_minio
 import json
 from sqlalchemy.orm.attributes import flag_modified
-
 
 
 router = APIRouter()
@@ -290,6 +290,7 @@ async def update_malzeme(
     malzeme_id: UUID4, 
     malzeme: str = Form(...), 
     folderNames: Optional[List[str]] = Form(None),
+    oldFolderNames: Optional[List[str]] = Form(None),
     folderImageCounts: Optional[str] = Form(None), 
     images: Optional[List[UploadFile]] = File(None),
     deletedImagesData: Optional[str] = Form(None),
@@ -315,6 +316,26 @@ async def update_malzeme(
 
         folder_image_counts = json.loads(folderImageCounts) if folderImageCounts not in [None, "null", ""] else []
         image_index = 0
+
+
+        if oldFolderNames and folderNames and len(oldFolderNames) == len(folderNames):
+                for index, old_folder_name in enumerate(oldFolderNames):
+             
+                    if old_folder_name and folderNames[index]:
+                        new_folder_name = folderNames[index]
+                        
+                        
+                        image_urls = [
+                        photo.replace(f"/{old_folder_name}/", f"/{new_folder_name}/")
+                        for photo in image_urls
+                        ]
+                   
+                        await move_files_in_minio(
+                            format_bucket_name(db_malzeme.name),
+                            old_folder_name,
+                            new_folder_name
+                        )
+
 
         if folderNames and folder_image_counts:
             for folder_index, folder_name in enumerate(folderNames):
@@ -373,24 +394,47 @@ def update_malz_matches(ips: List[schemas.MalzMatchCreate], db: Session = Depend
     for item in ips:
         # Check if the malzeme_name already exists in the database
         malz_match = (
-            db.query(models.MalzMatch)
-            .filter(models.MalzMatch.malzeme_name == item.malzeme_name)
-            .first()
+        db.query(models.MalzMatch)
+        .filter(models.MalzMatch.malzeme_name == item.malzeme_name)
+        .first()
         )
 
+        # Function to ping the IP address
+        def ping_ip(ip: str) -> bool:
+            try:
+                result = subprocess.run(
+                ["ping", "-c", "1", "-W", "0.5", ip],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                )
+                return result.returncode == 0 # returncode 0 means successful ping
+            except Exception as e:
+                return False
+
+        # Check if the malz_match already exists in the database
         if malz_match:
+            # Ping the IP and set the state accordingly
+            malz_match.state = 2 if ping_ip(item.ip) else 0
+
             # Update the existing record
             malz_match.ip = item.ip
             malz_match.mevzi_id = item.mevzi_id
         else:
+            # Ping the IP and set the state accordingly
+            state = 2 if ping_ip(item.ip) else 0
+
             # Insert a new record
             new_malz_match = models.MalzMatch(
-                malzeme_name=item.malzeme_name, mevzi_id=item.mevzi_id, ip=item.ip
+                malzeme_name=item.malzeme_name,
+                mevzi_id=item.mevzi_id,
+                ip=item.ip,
+                state=state,
             )
             db.add(new_malz_match)
 
-    db.commit()  # Commit all changes
+        db.commit() # Commit all changes
     return {"status": "success", "message": "Malz matches updated successfully."}
+
 
 
 @router.get("/malzmatches/get")
@@ -404,7 +448,8 @@ def get_malz_matches(mevzi_id: Optional[UUID4] = None, db: Session = Depends(get
         {
             "malzeme_name": match.malzeme_name,
             "mevzi_id": match.mevzi_id,
-            "ip": match.ip
+            "ip": match.ip,
+            "state": match.state,
         }
         for match in malz_matches
     ]
@@ -440,3 +485,18 @@ def get_malzeme_photos(malzeme_name: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Malzemeye ait fotoğraf bulunamadı")
 
     return malzeme.photos
+
+
+@router.put("/unset-system/{malzeme_id}", response_model=schemas.Malzeme)
+async def unset_system_id_for_malzeme(malzeme_id: UUID4, db: Session = Depends(get_db)):
+    db_malzeme = db.query(models.Malzeme).filter(models.Malzeme.id == malzeme_id).first()
+
+    if not db_malzeme:
+        raise HTTPException(status_code=404, detail="Malzeme bulunamadı")
+
+    db_malzeme.system_id = None
+
+    db.commit()
+    db.refresh(db_malzeme)
+
+    return db_malzeme

@@ -573,10 +573,9 @@ BEGIN
             id SERIAL PRIMARY KEY,
             malzeme_name TEXT REFERENCES malzeme(name),
             mevzi_id UUID REFERENCES mevzi(id),
-            ip TEXT DEFAULT ''
+            ip TEXT DEFAULT '',
+            state INTEGER DEFAULT 1  ---- 0: down, 1: unknown, 2: up
         );
-        INSERT INTO malz_matches (malzeme_name, mevzi_id, ip)
-        VALUES ('Malzeme-002','a16f634c-48ff-4f6b-90d4-7cbf8f9856e4','192.168.1.20');
     END IF;
 
 END $$;

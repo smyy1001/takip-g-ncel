@@ -341,12 +341,13 @@ function SystemAdd({
   const [folders, setFolders] = useState([
     {
       folderName: "",
+      oldFolderName: "",
       selectedImages: [],
       deletedImages: [],
       existingImages: [],
     },
   ]);
-
+  const [originalFolderNames, setOriginalFolderNames] = useState([]);
   const [errors, setErrors] = useState({
     girisTarihi: "",
   });
@@ -360,7 +361,16 @@ function SystemAdd({
         ...updatedFolders[folderIndex].selectedImages,
         ...files,
       ];
-      // console.log("Güncellenmiş Klasörler:", updatedFolders);
+      return updatedFolders;
+    });
+  };
+
+  const handleDeleteSelectedImage = (folderIndex, imageIndex) => {
+    setFolders((prevFolders) => {
+      const updatedFolders = [...prevFolders];
+      updatedFolders[folderIndex].selectedImages = updatedFolders[
+        folderIndex
+      ].selectedImages.filter((img, index) => index !== imageIndex);
       return updatedFolders;
     });
   };
@@ -376,10 +386,28 @@ function SystemAdd({
     });
   };
 
-  const handleFolderNameChange = (index, value) => {
-    const updatedFolders = [...folders];
-    updatedFolders[index].folderName = value;
-    setFolders(updatedFolders);
+  const handleFolderNameChange = (index, newFolderName) => {
+    setFolders((prevFolders) => {
+      const updatedFolders = [...prevFolders];
+      const currentFolder = updatedFolders[index];
+
+      const originalFolderIndex = originalFolderNames.findIndex(
+        (name) => name === currentFolder.folderName
+      );
+
+      if (
+        originalFolderIndex !== -1 &&
+        currentFolder.folderName !== newFolderName
+      ) {
+        if (!currentFolder.oldFolderName) {
+          updatedFolders[index].oldFolderName = currentFolder.folderName;
+        }
+      }
+
+      updatedFolders[index].folderName = newFolderName;
+
+      return updatedFolders;
+    });
   };
 
   const handleAddFolder = () => {
@@ -666,41 +694,8 @@ function SystemAdd({
   // UPDATE MALZEME
   const handleUpdateMalzeme = async (system_idd) => {
     const malzemeIds = selectedMalzemeler?.map((malzeme) => malzeme.id) || [];
-    // console.log("update malzeme malzemeIds:" + malzemeIds);
-    // console.log("malzemeler" + malzemeler);
     const previouslySelectedMalzemeler =
       malzemeler?.filter((malzeme) => malzeme.system_id === system_idd) || [];
-
-    // console.log("önceden seçilen malzemeler: " + previouslySelectedMalzemeler);
-    if (malzemeIds.length === 0) {
-      // console.log("update malzeme id boş");
-      // console.log(
-      //   "önceden seçilen malzemeler 2 : " + previouslySelectedMalzemeler
-      // );
-      try {
-        await Promise.all(
-          previouslySelectedMalzemeler.map(async (malzeme) => {
-            try {
-              await Axios.put(`/api/malzeme/update/${malzeme.id}`, {
-                ...malzeme,
-                system_id: null,
-              });
-            } catch (error) {
-              console.error(`Error updating malzeme ${malzeme.id}`, error);
-            }
-          })
-        );
-
-        // message.success("Tüm malzemeler boşa çıkarıldı.");
-      } catch (error) {
-        console.error(
-          "Error:",
-          error.response ? error.response.data : error.message
-        );
-        message.error("Malzemeler boşa çıkarılamadı.");
-      }
-      return;
-    }
 
     const malzemelerToBeUnset = previouslySelectedMalzemeler.filter(
       (malzeme) => !malzemeIds.includes(malzeme.id)
@@ -716,15 +711,12 @@ function SystemAdd({
         "/api/malzeme/reg-system/",
         requestBody
       );
-      // console.log("Response:", response?.data);
       message.success("Malzemeler güncellendi!");
 
       await Promise.all(
         malzemelerToBeUnset.map(async (malzeme) => {
           try {
-            await Axios.put(`/api/malzeme/update/${malzeme.id}`, {
-              system_id: null,
-            });
+            await Axios.put(`/api/malzeme/unset-system/${malzeme.id}`);
           } catch (error) {
             console.error(`Error updating malzeme ${malzeme.id}`, error);
           }
@@ -747,6 +739,15 @@ function SystemAdd({
   const handleAddSystem = async (event) => {
     event.preventDefault();
     // console.log("Gönderilecek Unsurlar: ", selectedUnsurlar);
+
+    const isFolderNameMissing = folders.some(
+      (folder) => folder.selectedImages.length > 0 && !folder.folderName.trim()
+    );
+
+    if (isFolderNameMissing) {
+      message.error("Fotoğraf seçtiyseniz klasör ismi girmelisiniz!");
+      return;
+    }
 
     let lok =
       selectedRadioBValue === "b" ? 0 : selectedRadioBValue === "y" ? 1 : 2;
@@ -799,6 +800,12 @@ function SystemAdd({
           deletedImages: folder.deletedImages,
         });
       }
+
+      if (folder.oldFolderName) {
+        formData.append("oldFolderNames", folder.oldFolderName);
+      } else {
+        formData.append("oldFolderNames", null);
+      }
     });
 
     formData.append("folderImageCounts", JSON.stringify(folderImageCounts));
@@ -826,7 +833,7 @@ function SystemAdd({
         );
         if (response.status === 200) {
           message.success("Sistem güncellendi!");
-          await handleUpdateMalzeme(system.id);
+          await handleUpdateMalzeme(response.data.id);
           fetchSystems();
         }
       } else {
@@ -871,6 +878,9 @@ function SystemAdd({
   useEffect(() => {
     resetForm();
     if (system) {
+      const selectedMalzemeler = malzemeler.filter(
+        (malzeme) => malzeme.system_id === system.id
+      );
       // console.log("sysytem veirleri  : ", system);
       setSystemInfo({
         name: system.name,
@@ -880,14 +890,14 @@ function SystemAdd({
         description: system.description,
         type_id: system.type_id,
         selectedUnsurlar: system.ilskili_unsur || [],
-        selectedMalzemeler: system.malzemeler || [],
+        selectedMalzemeler: selectedMalzemeler || [],
         mevzi_id: system.mevzi_id || null,
       });
       const depoValue = system.depo === 0 ? "b" : system.depo === 1 ? "y" : "m";
       setSelectedRadioBValue(depoValue);
       setSelectedUnsurlar(system.ilskili_unsur || []);
       // console.log("Selected Unsurlar useEffect içinde: ", system.ilskili_unsur);
-
+      setSelectedMalzemeler(selectedMalzemeler);
       const selectedMevziFromMalzeme = mevziler.find(
         (mevzi) => mevzi.id === system.mevzi_id
       );
@@ -918,6 +928,9 @@ function SystemAdd({
           }
           return acc;
         }, {});
+
+        const originalNames = Object.keys(foldersFromSystem);
+        setOriginalFolderNames(originalNames);
         setFolders(Object.values(foldersFromSystem));
       }
     }
@@ -1217,7 +1230,7 @@ function SystemAdd({
                       variant="filled"
                       label={
                         system
-                          ? "Sistemideki Malzemeler"
+                          ? "Sistemdeki Malzemeler"
                           : "Sistemi Olmayan Malzemeler"
                       }
                       placeholder="Malzeme Seç"
@@ -1372,6 +1385,19 @@ function SystemAdd({
                                       }}
                                     >
                                       <span>{image.name}</span>
+                                      <IconButton
+                                        aria-label="delete"
+                                        size="small"
+                                        onClick={() =>
+                                          handleDeleteSelectedImage(
+                                            folderIndex,
+                                            imageIndex
+                                          )
+                                        }
+                                        style={{ marginLeft: "10px" }}
+                                      >
+                                        <CloseIcon fontSize="small" />
+                                      </IconButton>
                                     </li>
                                   )
                                 )}

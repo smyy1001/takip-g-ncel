@@ -12,6 +12,7 @@ import os
 from dotenv import load_dotenv
 import httpx
 import mgrs
+import subprocess
 
 
 load_dotenv()
@@ -61,16 +62,16 @@ def create_refresh_token(subject: str):
 
 # # get city from car plates
 # def get_city(city, plate, mode):
-    # plates = ["ADANA", "ADIYAMAN", "AFYONKARAHİSAR", "AĞRI", "AMASYA", "ANKARA",
-    #         "ANTALYA", "ARTVİN", "AYDIN", "BALIKESİR", "BİLECİK", "BİNGÖL", "BİTLİS",
-    #         "BOLU", "BURDUR", "BURSA", "ÇANAKKALE", "ÇANKIRI", "ÇORUM", "DENİZLİ", "DİYARBAKIR",
-    #         "EDİRNE", "ELAZIĞ", "ERZİNCAN", "ERZURUM", "ESKİŞEHIR", "GAZİANTEP", "GİRESUN", "GÜMÜŞHANE",
-    #         "HAKKARİ", "HATAY", "ISPARTA", "MERSİN", "İSTANBUL", "İZMİR", "KARS", "KASTAMONU",
-    #         "KAYSERİ", "KIRKLARELİ", "KIRŞEHİR", "KOCAELİ", "KONYA", "KÜTAHYA", "MALATYA", "MANİSA",
-    #         "KAHRAMANMARAŞ", "MARDİN", "MUĞLA", "MUŞ", "NEVŞEHİR", "NİĞDE", "ORDU", "RİZE", "SAKARYA",
-    #         "SAMSUN", "SİİRT", "SİNOP", "SİVAS", "TEKİRDAĞ", "TOKAT", "TRABZON", "TUNCELİ", "ŞANLIURFA",
-    #         "UŞAK", "VAN", "YOZGAT", "ZONGULDAK", "AKSARAY", "BAYBURT", "KARAMAN", "KIRIKKALE", "BATMAN",
-    #         "ŞIRNAK", "BARTIN", "ARDAHAN", "IĞDIR", "YALOVA", "KARABÜK", "KİLİS", "OSMANİYE", "DÜZCE"]
+# plates = ["ADANA", "ADIYAMAN", "AFYONKARAHİSAR", "AĞRI", "AMASYA", "ANKARA",
+#         "ANTALYA", "ARTVİN", "AYDIN", "BALIKESİR", "BİLECİK", "BİNGÖL", "BİTLİS",
+#         "BOLU", "BURDUR", "BURSA", "ÇANAKKALE", "ÇANKIRI", "ÇORUM", "DENİZLİ", "DİYARBAKIR",
+#         "EDİRNE", "ELAZIĞ", "ERZİNCAN", "ERZURUM", "ESKİŞEHIR", "GAZİANTEP", "GİRESUN", "GÜMÜŞHANE",
+#         "HAKKARİ", "HATAY", "ISPARTA", "MERSİN", "İSTANBUL", "İZMİR", "KARS", "KASTAMONU",
+#         "KAYSERİ", "KIRKLARELİ", "KIRŞEHİR", "KOCAELİ", "KONYA", "KÜTAHYA", "MALATYA", "MANİSA",
+#         "KAHRAMANMARAŞ", "MARDİN", "MUĞLA", "MUŞ", "NEVŞEHİR", "NİĞDE", "ORDU", "RİZE", "SAKARYA",
+#         "SAMSUN", "SİİRT", "SİNOP", "SİVAS", "TEKİRDAĞ", "TOKAT", "TRABZON", "TUNCELİ", "ŞANLIURFA",
+#         "UŞAK", "VAN", "YOZGAT", "ZONGULDAK", "AKSARAY", "BAYBURT", "KARAMAN", "KIRIKKALE", "BATMAN",
+#         "ŞIRNAK", "BARTIN", "ARDAHAN", "IĞDIR", "YALOVA", "KARABÜK", "KİLİS", "OSMANİYE", "DÜZCE"]
 
 #     if mode:
 #         if city != "not found":
@@ -152,3 +153,20 @@ def convert_mgrs_to_lat_long(mgrs_string):
 # mgrs_coordinate = "33TWN0008000800"
 # latitude, longitude = convert_mgrs_to_lat_long(mgrs_coordinate)
 # print(f"Latitude: {latitude}, Longitude: {longitude}")
+
+
+def check_ip(ip_address):
+    try:
+        # For Windows, the command would be ['ping', '-n', '1', '-w', '200', ip_address]
+        # For Unix/Linux, the command is as below
+        result = subprocess.run(
+            ["ping", "-c", "1", "-W", "0.3", ip_address],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        # result.returncode == 0 indicates success
+        return result.returncode == 0
+    except Exception as e:
+        print(f"Error pinging {ip_address}: {e}")
+        return False

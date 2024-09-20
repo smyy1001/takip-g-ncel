@@ -208,12 +208,13 @@ function MalzemeAdd({
   const [folders, setFolders] = useState([
     {
       folderName: "",
+      oldFolderName: "",
       selectedImages: [],
       deletedImages: [],
       existingImages: [],
     },
   ]);
-
+  const [originalFolderNames, setOriginalFolderNames] = useState([]);
   const calculateTimeDifference = (startDate, endDate) => {
     const diffInMilliseconds = dayjs(endDate).diff(dayjs(startDate));
     const diffInMinutes = Math.floor(diffInMilliseconds / (1000 * 60));
@@ -237,7 +238,16 @@ function MalzemeAdd({
         ...updatedFolders[folderIndex].selectedImages,
         ...files,
       ];
-      // console.log("Güncellenmiş Klasörler:", updatedFolders);
+      return updatedFolders;
+    });
+  };
+
+  const handleDeleteSelectedImage = (folderIndex, imageIndex) => {
+    setFolders((prevFolders) => {
+      const updatedFolders = [...prevFolders];
+      updatedFolders[folderIndex].selectedImages = updatedFolders[
+        folderIndex
+      ].selectedImages.filter((img, index) => index !== imageIndex);
       return updatedFolders;
     });
   };
@@ -252,10 +262,28 @@ function MalzemeAdd({
       return updatedFolders;
     });
   };
-  const handleFolderNameChange = (index, value) => {
-    const updatedFolders = [...folders];
-    updatedFolders[index].folderName = value;
-    setFolders(updatedFolders);
+  const handleFolderNameChange = (index, newFolderName) => {
+    setFolders((prevFolders) => {
+      const updatedFolders = [...prevFolders];
+      const currentFolder = updatedFolders[index];
+
+      const originalFolderIndex = originalFolderNames.findIndex(
+        (name) => name === currentFolder.folderName
+      );
+
+      if (
+        originalFolderIndex !== -1 &&
+        currentFolder.folderName !== newFolderName
+      ) {
+        if (!currentFolder.oldFolderName) {
+          updatedFolders[index].oldFolderName = currentFolder.folderName;
+        }
+      }
+
+      updatedFolders[index].folderName = newFolderName;
+
+      return updatedFolders;
+    });
   };
 
   const handleAddFolder = () => {
@@ -632,6 +660,15 @@ function MalzemeAdd({
   const handleAddMalzeme = async (event) => {
     event.preventDefault();
 
+    const isFolderNameMissing = folders.some(
+      (folder) => folder.selectedImages.length > 0 && !folder.folderName.trim()
+    );
+
+    if (isFolderNameMissing) {
+      message.error("Fotoğraf seçtiyseniz klasör ismi girmelisiniz!");
+      return;
+    }
+
     let lok =
       selectedRadioBValue === "b" ? 0 : selectedRadioBValue === "y" ? 1 : 2;
 
@@ -689,6 +726,12 @@ function MalzemeAdd({
           folderName: folder.folderName,
           deletedImages: folder.deletedImages,
         });
+      }
+
+      if (folder.oldFolderName) {
+        formData.append("oldFolderNames", folder.oldFolderName);
+      } else {
+        formData.append("oldFolderNames", null);
       }
     });
 
@@ -806,6 +849,9 @@ function MalzemeAdd({
           }
           return acc;
         }, {});
+
+        const originalNames = Object.keys(foldersFromSystem);
+        setOriginalFolderNames(originalNames);
         setFolders(Object.values(foldersFromSystem));
       }
     }
@@ -1508,6 +1554,19 @@ function MalzemeAdd({
                                       }}
                                     >
                                       <span>{image.name}</span>
+                                      <IconButton
+                                        aria-label="delete"
+                                        size="small"
+                                        onClick={() =>
+                                          handleDeleteSelectedImage(
+                                            folderIndex,
+                                            imageIndex
+                                          )
+                                        }
+                                        style={{ marginLeft: "10px" }}
+                                      >
+                                        <CloseIcon fontSize="small" />
+                                      </IconButton>
                                     </li>
                                   )
                                 )}

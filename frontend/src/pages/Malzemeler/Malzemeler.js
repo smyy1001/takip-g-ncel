@@ -113,13 +113,21 @@ function Malzemeler({ isRoleAdmin, initialMalzemeler, fetchMalzemeler }) {
       return response.data;
     };
 
+    const fetchSystems = async () => {
+      const response = await Axios.get("/api/system/all");
+      return response.data;
+    };
+
     // Execute all fetches concurrently
-    const [models, markalar, types, mevziler] = await Promise.all([
+    const [models, markalar, types, mevziler, systems] = await Promise.all([
       fetchMModels(),
       fetchMMarkalar(),
       fetchMTypes(),
       fetchMevzi(),
+      fetchSystems(),
     ]);
+    // console.log('systems:', systems);
+    
 
     // Update systems with mapped values
     return malzemeler.map((malzeme) => ({
@@ -135,6 +143,9 @@ function Malzemeler({ isRoleAdmin, initialMalzemeler, fetchMalzemeler }) {
       mevzi_id:
         mevziler.find((m) => m.id === malzeme.mevzi_id)?.name ||
         malzeme.mevzi_id,
+      system_id:
+        systems.find((m) => m.id === malzeme.system_id)?.name ||
+        malzeme.system_id,
     }));
   };
 

@@ -23,7 +23,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import SearchIcon from "@mui/icons-material/Search";
 import styled from "@mui/material/styles/styled";
 import CollectionsIcon from "@mui/icons-material/Collections";
-import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
+import ConstructionIcon from '@mui/icons-material/Construction';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 const CustomTextField = styled(TextField)({
@@ -475,7 +475,7 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       onClick={() => handleAltyClick(mevzi.id)}
                     >
                       <Tooltip title="Alt Yapı">
-                        <AnalyticsOutlinedIcon />
+                        <ConstructionIcon />
                       </Tooltip>
                     </IconButton>
                   </TableCell>

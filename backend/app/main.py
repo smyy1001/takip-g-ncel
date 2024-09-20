@@ -4,7 +4,11 @@ from .db.database import init_db
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from app.routers.router import api_router
-from app.utils import check_postgres_connection
+from app.utils import check_postgres_connection, check_ip
+from app.db.database import SessionLocal
+from app.db.models import MalzMatch
+import asyncio
+from sqlalchemy.orm import Session
 
 app = FastAPI()
 
@@ -18,9 +22,33 @@ app.add_middleware(
 
 app.include_router(api_router, prefix="/api")
 
+
+async def update_ip_statuses():
+    while True:
+        try:
+            db: Session = SessionLocal()
+
+            matches = db.query(MalzMatch).all()
+
+            for match in matches:
+                ip_address = match.ip
+                is_up = check_ip(ip_address)
+
+                match.state = 2 if is_up else 0
+
+            db.commit()
+            db.close()
+
+        except Exception as e:
+            print(f"Error updating IP statuses: {e}")
+
+        await asyncio.sleep(60)
+
+
 @app.on_event("startup")
 def on_startup():
     init_db()
+    asyncio.create_task(update_ip_statuses())
 
 
 @app.get("/health")

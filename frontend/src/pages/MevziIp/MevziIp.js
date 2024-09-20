@@ -13,6 +13,75 @@ import Typography from "@mui/material/Typography";
 import "./MevziIp.css";
 import { useParams } from "react-router-dom";
 import TablePagination from "@mui/material/TablePagination";
+import IconButton from "@mui/material/IconButton";
+import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp';
+import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
+import RemoveIcon from '@mui/icons-material/Remove';
+import InputAdornment from "@mui/material/InputAdornment";
+import SearchIcon from "@mui/icons-material/Search";
+import TextField from "@mui/material/TextField";
+import styled from "@mui/material/styles/styled";
+import Tooltip from "@mui/material/Tooltip";
+
+
+const CustomTextField = styled(TextField)({
+  "& .MuiInput-underline:after": {
+    borderBottomColor: "white",
+  },
+  "& .MuiOutlinedInput-root": {
+    "& fieldset": {
+      borderColor: "white",
+    },
+    "&:hover fieldset": {
+      borderColor: "white",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "white !important",
+    },
+    "& input:valid:focus + fieldset": {
+      borderColor: "white !important",
+    },
+  },
+  "& .MuiFilledInput-root": {
+    "&:before": {
+      borderBottomColor: "white",
+    },
+    "&:hover:before": {
+      borderBottomColor: "white",
+    },
+    "&:after": {
+      borderBottomColor: "white",
+    },
+    "&:hover fieldset": {
+      borderColor: "white",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "white",
+    },
+  },
+  "& label.Mui-focused": {
+    color: "white",
+  },
+  "& label": {
+    color: "white",
+  },
+  "& .MuiInputBase-root": {
+    "&::selection": {
+      backgroundColor: "rgba(255, 255, 255, 0.99)",
+      color: "#241b19",
+    },
+    "& input": {
+      caretColor: "white",
+    },
+  },
+  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+    borderColor: "white !important",
+  },
+  "& .MuiInputBase-input::selection": {
+    backgroundColor: "rgba(255, 255, 255, 0.99)",
+    color: "#241b19",
+  },
+});
 
 function MevziIp({
   isRoleAdmin,
@@ -24,12 +93,13 @@ function MevziIp({
   const { id } = useParams();
   const [chosenMalzMatch, setChosenMalzMatch] = useState([]);
   const [mevzi, setMevzi] = useState(null);
+  const [searchMalz, setSearchMalz] = useState("");
 
-    useEffect(() => {
-        fetchMalzMatch();
-        fetchAllMevzi();
-    }, [id]);
-    
+  useEffect(() => {
+    fetchMalzMatch();
+    fetchAllMevzi();
+  }, [id]);
+
   useEffect(() => {
     if (mevziler) {
       const mevzi = mevziler.find((mevzi) => mevzi.id === id);
@@ -45,13 +115,17 @@ function MevziIp({
 
   useEffect(() => {
     if (Array.isArray(malzMatch)) {
-      const chosenMalzMatchtemp = malzMatch.filter(
+      let chosenMalzMatchtemp = malzMatch.filter(
         (m) => m.mevzi_id.toString() === id.toString()
       );
-        setChosenMalzMatch(chosenMalzMatchtemp);
+      if (searchMalz !== "") {
+        chosenMalzMatchtemp = chosenMalzMatchtemp.filter((m) =>
+          m.malzeme_name?.toLowerCase().includes(searchMalz.toLowerCase())
+        );
+      }
+      setChosenMalzMatch(chosenMalzMatchtemp);
     }
-  }, [malzMatch, id]);
-
+  }, [malzMatch, id, searchMalz]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -84,6 +158,8 @@ function MevziIp({
       : (a, b) => (a[orderBy] < b[orderBy] ? -1 : 1);
   };
 
+
+
   return (
     <Container className="mevziler-main-container">
       <div className="mevziler-page-header-container">
@@ -98,11 +174,31 @@ function MevziIp({
           </Typography>
         </div>
       </div>
+      <div className="mevzi-ip-page-search-bar">
+        <CustomTextField
+          autoComplete="off"
+          fullWidth
+          variant="outlined"
+          placeholder="Ara..."
+          value={searchMalz}
+          onChange={(e) => setSearchMalz(e.target.value)}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton disabled={!searchMalz}>
+                  <SearchIcon />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+      </div>
+
       {chosenMalzMatch && chosenMalzMatch.length > 0 ? (
         <>
           {/* ALTY */}
           <TableContainer
-            className="mevziler-table-main-container"
+            className="mevziler-ip-table-main-container"
             component={Paper}
           >
             <>
@@ -113,13 +209,14 @@ function MevziIp({
                       <TableCell
                         style={{
                           textAlign: "left",
-                          minWidth: "400px",
-                          maxWidth: "400px",
-                          width: "400px",
+                          minWidth: "230px",
+                          maxWidth: "230px",
+                          width: "230px",
                           fontWeight: "bold",
+                          fontSize: "larger",
                         }}
                       >
-                        Mevzideki Sistemlerin Malzemelerine atanan IP Adresleri
+                        Sistem Malzemeleri IP Adresleri
                       </TableCell>
                       {/* <TableCell style={{ textAlign: "left" }}>
                                             <Typography style={{ fontWeight: "bold" }}>
@@ -127,20 +224,34 @@ function MevziIp({
                                             </Typography>
                                         </TableCell> */}
                       <TableCell style={{ textAlign: "left" }}>
-                        <Typography
-                          style={{ fontWeight: "bold" }}
-                          onClick={() => handleRequestSort("malzeme_name")}
-                        >
-                          Malzeme Adı
-                        </Typography>
+                        <Tooltip title="Sıralamak için tıklayınız">
+                          <Typography
+                            style={{ fontWeight: "bold" }}
+                            onClick={() => handleRequestSort("malzeme_name")}
+                          >
+                            Malzeme Adı
+                          </Typography>
+                        </Tooltip>
                       </TableCell>
                       <TableCell style={{ textAlign: "left" }}>
-                        <Typography
-                          style={{ fontWeight: "bold" }}
-                          onClick={() => handleRequestSort("ip")}
-                        >
-                          Ip Adresi
-                        </Typography>
+                        <Tooltip title="Sıralamak için tıklayınız">
+                          <Typography
+                            style={{ fontWeight: "bold" }}
+                            onClick={() => handleRequestSort("ip")}
+                          >
+                            Ip Adresi
+                          </Typography>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell style={{ textAlign: "left" }}>
+                        <Tooltip title="Sıralamak için tıklayınız">
+                          <Typography
+                            style={{ fontWeight: "bold" }}
+                            onClick={() => handleRequestSort("state")}
+                          >
+                            Durum
+                          </Typography>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   </TableHead>
@@ -172,6 +283,44 @@ function MevziIp({
                           scope="row"
                         >
                           {malz?.ip ? malz.ip : "-"}
+                        </TableCell>
+                        <TableCell
+                          style={{ textAlign: "left" }}
+                          component="th"
+                          scope="row"
+                        >
+                          {malz.state !== null && malz.state !== undefined && (
+                            <>
+                              {malz.state < 1 && (
+                                <IconButton
+                                  className="noHighlight"
+                                  disableRipple
+                                >
+                                  <KeyboardDoubleArrowDownIcon style={{ color: 'red' }} />
+                                  <span style={{ fontSize: '16px', color: 'white' }}>Kapalı</span>
+                                </IconButton>
+                              )}
+                              {malz.state === 2 && (
+                                <IconButton
+                                  className="noHighlight"
+                                  disableRipple
+                                >
+                                  <KeyboardDoubleArrowUpIcon style={{ color: 'green' }} />
+                                  <span style={{ fontSize: '16px', color: 'white' }}>Açık</span>
+                                </IconButton>
+                              )}
+                              {malz.state === 1 && (
+                                <IconButton
+                                  className="noHighlight"
+                                  disableRipple
+                                >
+                                  <RemoveIcon style={{ color: 'yellow' }} />
+                                  <span style={{ fontSize: '16px', color: 'white' }}>Bilinmiyor</span>
+                                </IconButton>
+                              )}
+                            </>
+                          )}
+
                         </TableCell>
                       </TableRow>
                     ))}

@@ -5,6 +5,7 @@ from minio.error import S3Error
 import os  
 import re
 import json
+from minio.commonconfig import CopySource
 minio_client = Minio(
     "minio:9000", 
     access_key="user_minio",
@@ -96,3 +97,28 @@ def format_bucket_name(bucket_name: str) -> str:
         bucket_name = bucket_name[:63] 
 
     return bucket_name
+
+
+
+async def move_files_in_minio(bucket_name: str, old_folder: str, new_folder: str):
+    try:
+        
+        objects = minio_client.list_objects(bucket_name, prefix=old_folder, recursive=True)
+        for obj in objects:
+            old_object_name = obj.object_name
+            new_object_name = old_object_name.replace(old_folder, new_folder, 1)
+
+            copy_source = CopySource(bucket_name, old_object_name)
+            
+        
+            minio_client.copy_object(
+                bucket_name,     
+                new_object_name,   
+                copy_source        
+            )
+
+        delete_folder_from_minio(bucket_name, old_folder)
+        
+    except S3Error as e:
+        print(f"MinIO Hatası: {e}")
+        raise e

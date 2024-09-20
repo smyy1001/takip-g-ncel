@@ -8,7 +8,7 @@ from typing import List, Optional
 import io
 from minio import Minio
 from PIL import Image
-from .minio_utils import upload_image_to_minio, delete_folder_from_minio, format_bucket_name
+from .minio_utils import upload_image_to_minio, delete_folder_from_minio, format_bucket_name, move_files_in_minio
 import json
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -126,6 +126,7 @@ async def update_system(
     system_id: UUID4, 
     system: str = Form(...), 
     folderNames: Optional[List[str]] = Form(None),
+    oldFolderNames: Optional[List[str]] = Form(None),
     folderImageCounts: Optional[str] = Form(None), 
     images: Optional[List[UploadFile]] = File(None),
     deletedImagesData: Optional[str] = Form(None),
@@ -152,6 +153,24 @@ async def update_system(
         folder_image_counts = json.loads(folderImageCounts) if folderImageCounts not in [None, "null", ""] else []
 
         image_index = 0
+
+        if oldFolderNames and folderNames and len(oldFolderNames) == len(folderNames):
+                for index, old_folder_name in enumerate(oldFolderNames):
+             
+                    if old_folder_name and folderNames[index]:
+                        new_folder_name = folderNames[index]
+                        
+                        
+                        image_urls = [
+                        photo.replace(f"/{old_folder_name}/", f"/{new_folder_name}/")
+                        for photo in image_urls
+                        ]
+                   
+                        await move_files_in_minio(
+                            format_bucket_name(db_system.name),
+                            old_folder_name,
+                            new_folder_name
+                        )
 
         if folderNames and folder_image_counts:
             for folder_index, folder_name in enumerate(folderNames):

@@ -321,4 +321,5 @@ class MalzMatchCreate(MalzMathchBase):
 
 
 class MalzMatch(MalzMathchBase):
+    state: int
     id: int

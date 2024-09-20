@@ -234,7 +234,7 @@ class MalzMatch(Base):
     malzeme_name = Column(Text, ForeignKey("malzeme.name"), nullable=True)
     mevzi_id = Column(UUID(as_uuid=True), ForeignKey("mevzi.id"), nullable=True)
     ip = Column(Text)
+    state = Column(Integer, default=1)
 
     malzeme = relationship("Malzeme")
     mevzi = relationship("Mevzi")
-
