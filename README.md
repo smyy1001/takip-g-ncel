@@ -1,13 +1,32 @@
 # **TAKİP**
+**Takip**; içerisinde Sistem, Malzeme ve Mevzi olarak adlandırılan yapılar ve bu yapıların ekleme, güncelleme, görüntüleme gibi özelliklerini bulunduran takip sistemidir.
 
 ## Kurulum
 
-Takip'i admin olarak çalıştırmak için = takip/frontend/.env dosyasındaki REACT_APP_ROLE değişkenini 'admin' olarak bırakın. Kullanıcı olarak kullanmak istiyorsanız 'user' olarak değiştirin. (keycloak kullanılacağı için giriş ve çıkış özellikleri geçici olarak kaldırılmıştır.)
+detaylı anlatım 
 
-takip/frontend/.env dosyasındaki MAP_TILE_URL ifadesini kullanılacak harita altlığının adresi ile değiştirdikten sonra,
-"takip" klasörünün içerisinde `docker compose up --build` komutunu çalıştırınız.
+### Minikube
 
-Tarayıcınızdan "http://localhost:7070/home" adresine gidin.
+minikube kullanımı vs...
 
->7070 portu dolu ise, takip/.env dosyasının altındaki FRONTEND_PORT değişkeni ile değiştirilebilir.
->5432 postgres portu dolu ise takip/.env dosyasındaki POSTGRES_PORT değişkeni ile bu port değiştirilebilir. (DOCKER_POSTGRES_PORT değişkeni değiştirilmemelidir!)
+### Keycloak
+
+rollerin dağılımı, rollerin nasıl belirleneceği, realm ve client ekleme vs...
+
+
+## Ekleme, Güncelleme, Silme (Admin) / Görüntüleme (Admin & User)
+
+### Ekleme:
+- Sistem Ekleme:
+- Malzeme Ekleme:
+- Mevzi Ekleme:
+
+### Güncelleme:
+- Sistem Güncelleme:
+- Malzeme Güncelleme:
+- Mevzi Güncelleme:
+
+### Görüntüleme:
+- Sistem Görüntüleme:
+- Malzeme Görüntüleme:
+- Mevzi Görüntüleme:
