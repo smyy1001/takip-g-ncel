@@ -103,6 +103,10 @@ tr.MuiTableRow-root:hover {
   z-index: 10 !important;
   background-color: #1f1f1f !important;
 }
+.MuiTableContainer-root {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+}
 
 .MuiTableRow-root {
   /* z-index: 1; */

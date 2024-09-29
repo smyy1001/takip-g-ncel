@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Axios from "../../Axios";
+import axios from "axios";
 import {
   Container,
   Typography,
@@ -19,8 +19,15 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { message } from "antd";
 import "./MevziEdit.css";
 import MevziAdd from "../MevziAdd/MevziAdd";
+import GetAppIcon from "@mui/icons-material/GetApp";
 
-function MevziEdit({ isRoleAdmin, systems, fetchSystems, mevziler, fetchAllMevzi }) {
+function MevziEdit({
+  isRoleAdmin,
+  systems,
+  fetchSystems,
+  mevziler,
+  fetchAllMevzi,
+}) {
   const { id } = useParams();
   const navigate = useNavigate();
   const itemRefs = useRef([]);
@@ -62,7 +69,7 @@ function MevziEdit({ isRoleAdmin, systems, fetchSystems, mevziler, fetchAllMevzi
   const handleDeleteMevziClick = async (mevziId, event) => {
     event.stopPropagation();
     try {
-      const response = await Axios.delete(`/api/mevzi/delete/${mevziId}`);
+      const response = await axios.delete(`/api/mevzi/delete/${mevziId}`);
       if (response.status === 200 || response.status === 204) {
         message.success("Mevzi silindi!");
         fetchAllMevzi();
@@ -83,16 +90,52 @@ function MevziEdit({ isRoleAdmin, systems, fetchSystems, mevziler, fetchAllMevzi
     navigate(`/mevziler`);
   };
 
+  const handleExportMevziClick = async (mevzi) => {
+    try {
+      const response = await axios({
+        url: `/api/mevzi/export/${mevzi.id}`,
+        method: "POST",
+        responseType: "blob",
+      });
+
+      const date = new Date();
+      const formattedTimestamp = `${date.getFullYear()}-${(date.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}_${date
+        .getHours()
+        .toString()
+        .padStart(2, "0")}-${date
+        .getMinutes()
+        .toString()
+        .padStart(2, "0")}-${date.getSeconds().toString().padStart(2, "0")}`;
+
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      const formattedName = mevzi.name
+        .replace(/[\s-]/g, "")
+        .replace(/[^a-zA-Z0-9]/g, "_");
+      a.download = `${formattedName}_${formattedTimestamp}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (error) {
+      console.error("Error exporting mevzi data:", error);
+    }
+  };
 
   return (
     <Container className="mevzi-edit-container">
       <div className="mevzi-edit-main-div-class">
         <div className="mevzi-edit-left-div">
-          <Tooltip title="Tabular Görünüm"
-            style={{ cursor: 'pointer' }}
+          <Tooltip
+            title="Tabular Görünüm"
+            style={{ cursor: "pointer" }}
             onClick={() => handleToMevziler()}
           >
-
             <Typography
               component="span"
               sx={{
@@ -114,8 +157,9 @@ function MevziEdit({ isRoleAdmin, systems, fetchSystems, mevziler, fetchAllMevzi
               mevziler.map((mevzi, index) => (
                 <div
                   key={mevzi.id}
-                  className={`mevzi-edit-all-list ${mevzi.id === id ? "chosen" : ""
-                    }`}
+                  className={`mevzi-edit-all-list ${
+                    mevzi.id === id ? "chosen" : ""
+                  }`}
                 >
                   <Box sx={{ flexGrow: 1, maxWidth: 752 }}>
                     <Grid item xs={12} md={6}>
@@ -124,22 +168,39 @@ function MevziEdit({ isRoleAdmin, systems, fetchSystems, mevziler, fetchAllMevzi
                           disablePadding
                           ref={itemRefs.current[index]}
                           secondaryAction={
-                            <Tooltip title="Sil">
-                              <IconButton
-                                edge="end"
-                                onClick={(event) =>
-                                  handleDeleteMevziClick(mevzi.id, event)
-                                }
-                                aria-label="delete"
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
+                            isRoleAdmin && (
+                              <>
+                                <Tooltip title="Envanter Özeti Çıkart">
+                                  <IconButton
+                                    edge="end"
+                                    onClick={() =>
+                                      handleExportMevziClick(mevzi)
+                                    }
+                                    aria-label="export"
+                                  >
+                                    <GetAppIcon />
+                                  </IconButton>
+                                </Tooltip>
+
+                                <Tooltip title="Sil">
+                                  <IconButton
+                                    edge="end"
+                                    onClick={(event) =>
+                                      handleDeleteMevziClick(mevzi.id, event)
+                                    }
+                                    aria-label="delete"
+                                  >
+                                    <DeleteIcon />
+                                  </IconButton>
+                                </Tooltip>
+                              </>
+                            )
                           }
                         >
                           <ListItemButton
-                            className={`mevzi-edit-list-item ${mevzi.id === id ? "chosen" : ""
-                              }`}
+                            className={`mevzi-edit-list-item ${
+                              mevzi.id === id ? "chosen" : ""
+                            }`}
                             onClick={() => handleEditMevziClick(mevzi)}
                           >
                             <ListItemText
@@ -168,7 +229,12 @@ function MevziEdit({ isRoleAdmin, systems, fetchSystems, mevziler, fetchAllMevzi
         </div>
         <div className="mevzi-edit-right-div">
           {selectedMevzi && (
-            <MevziAdd isRoleAdmin={isRoleAdmin} systems={systems} fetchSystems={fetchSystems} mevzi={selectedMevzi} />
+            <MevziAdd
+              isRoleAdmin={isRoleAdmin}
+              systems={systems}
+              fetchSystems={fetchSystems}
+              mevzi={selectedMevzi}
+            />
           )}
         </div>
       </div>

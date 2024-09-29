@@ -1,0 +1,57 @@
+.mevzi-bilgi-main-container {
+  margin-top: 64px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0px !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  position: relative !important;
+  max-width: 100vw !important;
+  height: auto;
+}
+
+.mevzi-bilgi-header-container {
+  text-align: center;
+}
+
+.mevzi-bilgi-main-header {
+  font-size: 2rem !important;
+  font-weight: 600 !important;
+  color: white !important;
+  margin: 20px;
+}
+
+.mevzi-bilgi-table-container {
+  margin-top: 20px;
+  width: calc(100% - 48px) !important;
+  background-color: transparent !important;
+  border-radius: 8px;
+  margin-bottom: 30px !important;
+}
+
+.mevzi-bilgi-no-data {
+  color: white;
+  font-size: 1.5rem;
+  margin-top: 20px;
+  text-align: center;
+}
+.mevzi-bilgi-icons-container {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  margin: 10px;
+}
+.mevzi-bilgi-edit-icon,
+.mevzi-bilgi-photo-gallery-icon,
+.mevzi-bilgi-alty-icon,
+.mevzi-bilgi-delete-icon {
+  color: white !important;
+}
+.mevzi-bilgi-edit-icon:hover,
+.mevzi-bilgi-delete-icon:hover,
+.mevzi-bilgi-alty-icon:hover,
+.mevzi-bilgi-photo-gallery-icon:hover {
+  color: #cecece !important;
+}

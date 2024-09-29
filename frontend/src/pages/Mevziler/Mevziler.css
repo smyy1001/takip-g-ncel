@@ -18,8 +18,15 @@ tr.MuiTableRow-root:hover {
   background-color: rgb(79, 125, 85, 0.2);
 }
 
+.MuiTableContainer-root {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+}
+
 .app.dark .mevzi-delete-icon,
 .mevzi-delete-icon,
+.app.dark .mevzi-export-icon,
+.mevzi-export-icon,
 .app.dark .mevzi-ip-icon,
 .mevzi-ip-icon,
 .app.dark .mevzi-edit-icon,
@@ -31,6 +38,8 @@ tr.MuiTableRow-root:hover {
 
 .app.dark .mevzi-delete-icon:hover,
 .mevzi-delete-icon:hover,
+.app.dark .mevzi-export-icon:hover,
+.mevzi-export-icon:hover,
 .app.dark .mevzi-ip-icon:hover,
 .mevzi-ip-icon:hover,
 .app.dark .mevzi-edit-icon:hover,

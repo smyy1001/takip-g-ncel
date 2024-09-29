@@ -5,6 +5,8 @@ from app.deps import get_db
 import app.schemas as schemas
 from pydantic import UUID4
 from typing import List
+from fastapi import Query
+from typing import Optional
 
 
 router = APIRouter()
@@ -105,8 +107,50 @@ def get_all_iklim(db: Session = Depends(get_db)):
 def get_type(type_id: int, db: Session = Depends(get_db)):
     db_type = db.query(models.Iklim).filter(models.Iklim.id == type_id).first()
     if not db_type:
-        raise HTTPException(status_code=404, detail="Model bulunamadı")
+        raise HTTPException(status_code=404, detail="İklim bulunamadı")
     return db_type
+
+
+@router.post("/iklim/klima/add/", response_model=schemas.Klima)
+def create_sistem(sistem: schemas.KlimaCreate, db: Session = Depends(get_db)):
+    # check if the namw is unique
+    db_sistem = db.query(models.Klima).filter(models.Klima.name == sistem.name).first()
+    if db_sistem:
+        raise HTTPException(status_code=400, detail="Bu isimde bir klima zaten var")
+    db_sistem = models.Klima(**sistem.dict())
+    db.add(db_sistem)
+    db.commit()
+    db.refresh(db_sistem)
+    return db_sistem
+
+
+@router.delete("/iklim/klima/delete/{sistem_id}", response_model=schemas.Klima)
+def delete_sistem(sistem_id: int, db: Session = Depends(get_db)):
+    db_sistem = db.query(models.Klima).filter(models.Klima.id == sistem_id).first()
+    if not db_sistem:
+        raise HTTPException(status_code=404, detail="Klima bulunamadı")
+    db.delete(db_sistem)
+    db.commit()
+    return db_sistem
+
+
+@router.get("/iklim/klima/all/", response_model=List[schemas.Klima])
+def get_all_sistems(db: Session = Depends(get_db)):
+    systems = db.query(models.Klima).all()
+    return systems
+
+
+@router.get("/iklim/klima/", response_model=List[schemas.Klima])
+def get_klima(ids: Optional[str] = None, db: Session = Depends(get_db)):
+    if ids is None or len(ids) == 0:
+        return []
+    id_list = [int(id) for id in ids.split(",")]
+    klima_records = db.query(models.Klima).filter(models.Klima.id.in_(id_list)).all()
+
+    if not klima_records:
+        raise HTTPException(status_code=404, detail="Klima bulunamadı")
+
+    return klima_records
 
 
 @router.post("/haber/add/", response_model=schemas.Haber)
@@ -172,6 +216,144 @@ def get_type(type_id: int, db: Session = Depends(get_db)):
     if not db_type:
         raise HTTPException(status_code=404, detail="Model bulunamadı")
     return db_type
+
+
+@router.post("/enerji/guck/add/", response_model=schemas.EnerjiMinor)
+def create_sistem(sistem: schemas.EnerjiMinorCreate, db: Session = Depends(get_db)):
+    # check if the namw is unique
+    db_sistem = db.query(models.GucK).filter(models.GucK.name == sistem.name).first()
+    if db_sistem:
+        raise HTTPException(status_code=400, detail="Bu isimde bir Güç Kaynağı zaten var")
+    db_sistem = models.GucK(**sistem.dict())
+    db.add(db_sistem)
+    db.commit()
+    db.refresh(db_sistem)
+    return db_sistem
+
+
+@router.delete("/enerji/guck/delete/{sistem_id}", response_model=schemas.EnerjiMinor)
+def delete_sistem(sistem_id: int, db: Session = Depends(get_db)):
+    db_sistem = db.query(models.GucK).filter(models.GucK.id == sistem_id).first()
+    if not db_sistem:
+        raise HTTPException(status_code=404, detail="Güç Kaynağı bulunamadı")
+    db.delete(db_sistem)
+    db.commit()
+    return db_sistem
+
+
+@router.get("/enerji/guck/all/", response_model=List[schemas.EnerjiMinor])
+def get_all_sistems(db: Session = Depends(get_db)):
+    systems = db.query(models.GucK).all()
+    return systems
+
+
+@router.get("/enerji/guck/", response_model=List[schemas.EnerjiMinor])
+def get_guck(ids: Optional[str] = None, db: Session = Depends(get_db)):
+    if ids is None or len(ids) == 0:
+        return []
+    id_list = [int(id) for id in ids.split(",")]
+    guck_records = db.query(models.GucK).filter(models.GucK.id.in_(id_list)).all()
+
+    if not guck_records:
+        raise HTTPException(status_code=404, detail="Güç Kaynağı bulunamadı")
+
+    return guck_records
+
+
+@router.post("/enerji/regulator/add/", response_model=schemas.EnerjiMinor)
+def create_sistem(sistem: schemas.EnerjiMinorCreate, db: Session = Depends(get_db)):
+    # check if the namw is unique
+    db_sistem = (
+        db.query(models.Regulator).filter(models.Regulator.name == sistem.name).first()
+    )
+    if db_sistem:
+        raise HTTPException(status_code=400, detail="Bu isimde bir Regülator zaten var")
+    db_sistem = models.Regulator(**sistem.dict())
+    db.add(db_sistem)
+    db.commit()
+    db.refresh(db_sistem)
+    return db_sistem
+
+
+@router.delete(
+    "/enerji/regulator/delete/{sistem_id}", response_model=schemas.EnerjiMinor
+)
+def delete_sistem(sistem_id: int, db: Session = Depends(get_db)):
+    db_sistem = (
+        db.query(models.Regulator).filter(models.Regulator.id == sistem_id).first()
+    )
+    if not db_sistem:
+        raise HTTPException(status_code=404, detail="Regülatör bulunamadı")
+    db.delete(db_sistem)
+    db.commit()
+    return db_sistem
+
+
+@router.get("/enerji/regulator/all/", response_model=List[schemas.EnerjiMinor])
+def get_all_sistems(db: Session = Depends(get_db)):
+    systems = db.query(models.Regulator).all()
+    return systems
+
+
+@router.get("/enerji/regulator/", response_model=List[schemas.EnerjiMinor])
+def get_regulator(ids: Optional[str] = None, db: Session = Depends(get_db)):
+    if ids is None or len(ids) == 0:
+        return []
+    id_list = [int(id) for id in ids.split(",")]
+    regulator_records = db.query(models.Regulator).filter(models.Regulator.id.in_(id_list)).all()
+
+    if not regulator_records:
+        raise HTTPException(status_code=404, detail="Regulator bulunamadı")
+
+    return regulator_records
+
+
+@router.post("/enerji/jenerator/add/", response_model=schemas.EnerjiMinor)
+def create_sistem(sistem: schemas.EnerjiMinorCreate, db: Session = Depends(get_db)):
+    # check if the namw is unique
+    db_sistem = (
+        db.query(models.Regulator).filter(models.Jenerator.name == sistem.name).first()
+    )
+    if db_sistem:
+        raise HTTPException(status_code=400, detail="Bu isimde bir Jeneratör zaten var")
+    db_sistem = models.Jenerator(**sistem.dict())
+    db.add(db_sistem)
+    db.commit()
+    db.refresh(db_sistem)
+    return db_sistem
+
+
+@router.delete(
+    "/enerji/jenerator/delete/{sistem_id}", response_model=schemas.EnerjiMinor
+)
+def delete_sistem(sistem_id: int, db: Session = Depends(get_db)):
+    db_sistem = (
+        db.query(models.Jenerator).filter(models.Jenerator.id == sistem_id).first()
+    )
+    if not db_sistem:
+        raise HTTPException(status_code=404, detail="Jeneratör bulunamadı")
+    db.delete(db_sistem)
+    db.commit()
+    return db_sistem
+
+
+@router.get("/enerji/jenerator/all/", response_model=List[schemas.EnerjiMinor])
+def get_all_sistems(db: Session = Depends(get_db)):
+    systems = db.query(models.Jenerator).all()
+    return systems
+
+
+@router.get("/enerji/jenerator/", response_model=List[schemas.EnerjiMinor])
+def get_jenerator(ids: Optional[str] = None, db: Session = Depends(get_db)):
+    if ids is None or len(ids) == 0:
+        return []
+    id_list = [int(id) for id in ids.split(",")]
+    jenerator_records = db.query(models.Jenerator).filter(models.Jenerator.id.in_(id_list)).all()
+
+    if not jenerator_records:
+        raise HTTPException(status_code=404, detail="Jenerator bulunamadı")
+
+    return jenerator_records
 
 
 @router.post("/enerji/add/", response_model=schemas.Enerji)

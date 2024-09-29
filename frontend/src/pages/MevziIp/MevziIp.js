@@ -96,9 +96,17 @@ function MevziIp({
   const [searchMalz, setSearchMalz] = useState("");
 
   useEffect(() => {
-    fetchMalzMatch();
     fetchAllMevzi();
+    fetchMalzMatch();
   }, [id]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchMalzMatch();
+    }, 60000);
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     if (mevziler) {

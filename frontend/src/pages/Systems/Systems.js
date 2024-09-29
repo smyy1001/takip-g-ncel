@@ -20,7 +20,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import Tooltip from "@mui/material/Tooltip";
 import AddIcon from "@mui/icons-material/Add";
-import Axios from "../../Axios";
+import axios from "axios";
 import { message } from "antd";
 import "./Systems.css";
 import TextField from "@mui/material/TextField";
@@ -28,6 +28,11 @@ import InputAdornment from "@mui/material/InputAdornment";
 import SearchIcon from "@mui/icons-material/Search";
 import styled from "@mui/material/styles/styled";
 import CollectionsIcon from "@mui/icons-material/Collections";
+import SwapVertIcon from "@mui/icons-material/SwapVert";
+import InfoIcon from "@mui/icons-material/Info";
+import KeyboardDoubleArrowUpIcon from "@mui/icons-material/KeyboardDoubleArrowUp";
+import KeyboardDoubleArrowDownIcon from "@mui/icons-material/KeyboardDoubleArrowDown";
+import RemoveIcon from "@mui/icons-material/Remove";
 
 function CollapsibleRow({
   system,
@@ -54,7 +59,7 @@ function CollapsibleRow({
 
   const handleDeleteSystemClick = async (id) => {
     try {
-      const response = await Axios.delete(`/api/system/delete/${id}`);
+      const response = await axios.delete(`/api/system/delete/${id}`);
       if (response.status === 200 || response.status === 204) {
         message.success("Sistem silindi!");
         setSystems((prevSystems) =>
@@ -75,7 +80,7 @@ function CollapsibleRow({
 
   const handleDeleteMalzemeClick = async (id) => {
     try {
-      const response = await Axios.delete(`/api/malzeme/delete/${id}`);
+      const response = await axios.delete(`/api/malzeme/delete/${id}`);
       if (response.status === 200 || response.status === 204) {
         message.success("Malzeme silindi!");
         fetchSystems();
@@ -122,6 +127,11 @@ function CollapsibleRow({
       : (a, b) => (a[orderBy2] < b[orderBy2] ? -1 : 1);
   };
 
+  const handleViewSystemClick = async (id) => {
+    navigate(`/system/${id}/bilgi`);
+  };
+
+
   return (
     <React.Fragment>
       <TableRow>
@@ -165,7 +175,6 @@ function CollapsibleRow({
             </IconButton>
           )}
         </TableCell>
-        {/* <TableCell style={{ textAlign: 'center' }}>{system.id}</TableCell> */}
         <TableCell style={{ textAlign: "center" }}>{system.name}</TableCell>
         <TableCell style={{ textAlign: "center" }}>
           {system.type_id ? system.type_id : "-"}
@@ -186,13 +195,86 @@ function CollapsibleRow({
           {system.depo === 0
             ? "Birim Depo"
             : system.depo === 1
-              ? "Yedek Depo"
-              : system.depo === 2
-                ? system.mevzi_id
-                : "-"}
+            ? "Yedek Depo"
+            : system.depo === 2
+            ? system.mevzi_id
+            : "-"}
         </TableCell>
         <TableCell style={{ textAlign: "center" }}>
           {system.giris_tarihi ? system.giris_tarihi : "-"}
+        </TableCell>
+        <TableCell style={{ textAlign: "center" }}>
+          {system.state !== null && system.state !== undefined ? (
+            <>
+              {system.state < 1 && (
+                <>
+                  <IconButton className="noHighlight" disableRipple>
+                    <KeyboardDoubleArrowDownIcon
+                      style={{ color: "red" }}
+                    />
+                    <span
+                      style={{ fontSize: "16px", color: "white" }}
+                    >
+                      Kapalı
+                    </span>
+                  </IconButton>
+                  <br />
+                  <span
+                    style={{
+                      fontSize: "14px",
+                      color: "white",
+                      justifyContent: "center",
+                      display: "flex",
+                    }}
+                  >
+                    Ip: {system.ip}
+                  </span>
+                </>
+              )}
+              {system.state === 2 && (
+                <>
+                  <IconButton className="noHighlight" disableRipple>
+                    <KeyboardDoubleArrowUpIcon
+                      style={{ color: "green" }}
+                    />
+                    <span
+                      style={{ fontSize: "16px", color: "white" }}
+                    >
+                      Açık
+                    </span>
+                  </IconButton>
+                  <br />
+                  <span
+                    style={{
+                      fontSize: "14px",
+                      color: "white",
+                      justifyContent: "center",
+                      display: "flex",
+                    }}
+                  >
+                    Ip: {system.ip}
+                  </span>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <IconButton className="noHighlight" disableRipple>
+                <RemoveIcon style={{ color: "yellow" }} />
+              </IconButton>
+              <br />
+              <span
+                style={{
+                  fontSize: "14px",
+                  color: "white",
+                  justifyContent: "center",
+                  display: "flex",
+                }}
+              >
+                Bilinmiyor
+              </span>
+            </>
+          )}
         </TableCell>
         <TableCell style={{ textAlign: "center" }}>
           {system.description ? system.description : "-"}
@@ -206,6 +288,18 @@ function CollapsibleRow({
           >
             <Tooltip title="Fotoğraflar">
               <CollectionsIcon />
+            </Tooltip>
+          </IconButton>
+        </TableCell>
+        <TableCell style={{ textAlign: "center" }}>
+          <IconButton
+            aria-label="edit"
+            size="small"
+            className="system-edit-icon"
+            onClick={() => handleViewSystemClick(system.id)}
+          >
+            <Tooltip title="Detaylı Bilgi">
+              <InfoIcon />
             </Tooltip>
           </IconButton>
         </TableCell>
@@ -245,7 +339,7 @@ function CollapsibleRow({
           backgroundColor: "transparent",
         }}
       >
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={14} >
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 1 }}>
               <Table size="small" aria-label="malzemeler">
@@ -261,7 +355,17 @@ function CollapsibleRow({
                         onClick={() => handleRequestSort2("name")}
                       >
                         İsim
-                      </TableCell></Tooltip>
+                        {orderBy2 && orderBy2 === "name" && (
+                          <IconButton
+                            aria-label="edit"
+                            size="small"
+                            style={{ margin: "0px", padding: "0px" }}
+                          >
+                            <SwapVertIcon />
+                          </IconButton>
+                        )}
+                      </TableCell>
+                    </Tooltip>
                     <Tooltip title="Sıralamak için tıklayınız">
                       <TableCell
                         style={{
@@ -272,6 +376,15 @@ function CollapsibleRow({
                         onClick={() => handleRequestSort2("type_id")}
                       >
                         Tür
+                        {orderBy2 && orderBy2 === "type_id" && (
+                          <IconButton
+                            aria-label="edit"
+                            size="small"
+                            style={{ margin: "0px", padding: "0px" }}
+                          >
+                            <SwapVertIcon />
+                          </IconButton>
+                        )}
                       </TableCell>
                     </Tooltip>
                     <Tooltip title="Sıralamak için tıklayınız">
@@ -284,6 +397,15 @@ function CollapsibleRow({
                         onClick={() => handleRequestSort2("marka_id")}
                       >
                         Marka
+                        {orderBy2 && orderBy2 === "marka_id" && (
+                          <IconButton
+                            aria-label="edit"
+                            size="small"
+                            style={{ margin: "0px", padding: "0px" }}
+                          >
+                            <SwapVertIcon />
+                          </IconButton>
+                        )}
                       </TableCell>
                     </Tooltip>
                     <Tooltip title="Sıralamak için tıklayınız">
@@ -296,6 +418,15 @@ function CollapsibleRow({
                         onClick={() => handleRequestSort2("mmodel_id")}
                       >
                         Model
+                        {orderBy2 && orderBy2 === "mmodel_id" && (
+                          <IconButton
+                            aria-label="edit"
+                            size="small"
+                            style={{ margin: "0px", padding: "0px" }}
+                          >
+                            <SwapVertIcon />
+                          </IconButton>
+                        )}
                       </TableCell>
                     </Tooltip>
                     <Tooltip title="Sıralamak için tıklayınız">
@@ -308,10 +439,18 @@ function CollapsibleRow({
                         onClick={() => handleRequestSort2("seri_num")}
                       >
                         Seri No
+                        {orderBy2 && orderBy2 === "seri_num" && (
+                          <IconButton
+                            aria-label="edit"
+                            size="small"
+                            style={{ margin: "0px", padding: "0px" }}
+                          >
+                            <SwapVertIcon />
+                          </IconButton>
+                        )}
                       </TableCell>
                     </Tooltip>
                     <Tooltip title="Sıralamak için tıklayınız">
-
                       <TableCell
                         style={{
                           textAlign: "center",
@@ -321,6 +460,15 @@ function CollapsibleRow({
                         onClick={() => handleRequestSort2("depo")}
                       >
                         Lokasyon
+                        {orderBy2 && orderBy2 === "depo" && (
+                          <IconButton
+                            aria-label="edit"
+                            size="small"
+                            style={{ margin: "0px", padding: "0px" }}
+                          >
+                            <SwapVertIcon />
+                          </IconButton>
+                        )}
                       </TableCell>
                     </Tooltip>
                     <Tooltip title="Sıralamak için tıklayınız">
@@ -333,6 +481,15 @@ function CollapsibleRow({
                         onClick={() => handleRequestSort2("giris_tarihi")}
                       >
                         Envantere Giriş Tarihi
+                        {orderBy2 && orderBy2 === "giris_tarihi" && (
+                          <IconButton
+                            aria-label="edit"
+                            size="small"
+                            style={{ margin: "0px", padding: "0px" }}
+                          >
+                            <SwapVertIcon />
+                          </IconButton>
+                        )}
                       </TableCell>
                     </Tooltip>
                     <Tooltip title="Sıralamak için tıklayınız">
@@ -344,7 +501,16 @@ function CollapsibleRow({
                         }}
                         onClick={() => handleRequestSort2("description")}
                       >
-                        Açıklama{" "}
+                        Açıklama
+                        {orderBy2 && orderBy2 === "description" && (
+                          <IconButton
+                            aria-label="edit"
+                            size="small"
+                            style={{ margin: "0px", padding: "0px" }}
+                          >
+                            <SwapVertIcon />
+                          </IconButton>
+                        )}
                       </TableCell>
                     </Tooltip>
                     <Tooltip title="Sıralamak için tıklayınız">
@@ -357,6 +523,15 @@ function CollapsibleRow({
                         onClick={() => handleRequestSort2("arizalar")}
                       >
                         Arıza Tarihleri
+                        {orderBy2 && orderBy2 === "arizalar" && (
+                          <IconButton
+                            aria-label="edit"
+                            size="small"
+                            style={{ margin: "0px", padding: "0px" }}
+                          >
+                            <SwapVertIcon />
+                          </IconButton>
+                        )}
                       </TableCell>
                     </Tooltip>
                     <Tooltip title="Sıralamak için tıklayınız">
@@ -369,10 +544,18 @@ function CollapsibleRow({
                         onClick={() => handleRequestSort2("onarimlar")}
                       >
                         Onarım Tarihleri
+                        {orderBy2 && orderBy2 === "onarimlar" && (
+                          <IconButton
+                            aria-label="edit"
+                            size="small"
+                            style={{ margin: "0px", padding: "0px" }}
+                          >
+                            <SwapVertIcon />
+                          </IconButton>
+                        )}
                       </TableCell>
                     </Tooltip>
                     <Tooltip title="Sıralamak için tıklayınız">
-
                       <TableCell
                         style={{
                           textAlign: "center",
@@ -382,6 +565,15 @@ function CollapsibleRow({
                         onClick={() => handleRequestSort2("bakimlar")}
                       >
                         Bakım Tarihleri
+                        {orderBy2 && orderBy2 === "bakimlar" && (
+                          <IconButton
+                            aria-label="edit"
+                            size="small"
+                            style={{ margin: "0px", padding: "0px" }}
+                          >
+                            <SwapVertIcon />
+                          </IconButton>
+                        )}
                       </TableCell>
                     </Tooltip>
 
@@ -411,105 +603,101 @@ function CollapsibleRow({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {sortArray2(system.malzemeler
-                    .slice(
+                  {sortArray2(
+                    system.malzemeler.slice(
                       malzemePage * malzemeRowsPerPage,
                       (malzemePage + 1) * malzemeRowsPerPage
-                    ), getComparator2(order2, orderBy2))
-                    .map((malzeme, index) => (
-                      <TableRow key={index}>
-                        <TableCell style={{ textAlign: "center" }}>
-                          {malzeme.name}
-                        </TableCell>
-                        <TableCell style={{ textAlign: "center" }}>
-                          {malzeme.type_id ? malzeme.type_id : "-"}
-                        </TableCell>
-                        <TableCell style={{ textAlign: "center" }}>
-                          {malzeme.marka_id ? malzeme.marka_id : "-"}
-                        </TableCell>
-                        <TableCell style={{ textAlign: "center" }}>
-                          {malzeme.mmodel_id ? malzeme.mmodel_id : "-"}
-                        </TableCell>
-                        <TableCell style={{ textAlign: "center" }}>
-                          {malzeme.seri_num ? malzeme.seri_num : "-"}
-                        </TableCell>
-                        <TableCell style={{ textAlign: "center" }}>
-                          {malzeme.depo === 0
-                            ? "Birim Depo"
-                            : malzeme.depo === 1
-                              ? "Yedek Depo"
-                              : malzeme.depo === 2
-                                ? malzeme.mevzi_id
-                                : "-"}
-                        </TableCell>
-                        <TableCell style={{ textAlign: "center" }}>
-                          {malzeme.giris_tarihi ? malzeme.giris_tarihi : "-"}
-                        </TableCell>
-                        <TableCell style={{ textAlign: "center" }}>
-                          {malzeme.description ? malzeme.description : "-"}
-                        </TableCell>
-                        <TableCell style={{ textAlign: "center" }}>
-                          {(malzeme.arizalar && malzeme.arizalar.length > 0) > 0
-                            ? malzeme.arizalar.join(", ")
-                            : "-"}
-                        </TableCell>
-                        <TableCell style={{ textAlign: "center" }}>
-                          {(malzeme.onarimlar && malzeme.onarimlar.length > 0) >
-                            0
-                            ? malzeme.onarimlar.join(", ")
-                            : "-"}
-                        </TableCell>
-                        <TableCell style={{ textAlign: "center" }}>
-                          {(malzeme.bakimlar && malzeme.bakimlar.length > 0) > 0
-                            ? malzeme.bakimlar.join(", ")
-                            : "-"}
-                        </TableCell>
-                        <TableCell style={{ textAlign: "center" }}>
-                          <IconButton
-                            aria-label="photo-gallery"
-                            size="small"
-                            className="system-photo-gallery-icon"
-                            onClick={() =>
-                              handleMalzemePhotoClick(malzeme.name)
-                            }
-                          >
-                            <Tooltip title="Fotoğraflar">
-                              <CollectionsIcon />
-                            </Tooltip>
-                          </IconButton>
-                        </TableCell>
-                        {isRoleAdmin && (
-                          <>
-                            <TableCell style={{ textAlign: "center" }}>
-                              <IconButton
-                                aria-label="edit"
-                                size="small"
-                                className="system-edit-icon"
-                                onClick={() =>
-                                  handleEditMalzemeClick(malzeme.id)
-                                }
-                              >
-                                <Tooltip title="Düzenle">
-                                  <EditIcon />
-                                </Tooltip>
-                              </IconButton>
-                              <IconButton
-                                aria-label="delete"
-                                size="small"
-                                className="system-delete-icon"
-                                onClick={() =>
-                                  handleDeleteMalzemeClick(malzeme.id)
-                                }
-                              >
-                                <Tooltip title="Sil">
-                                  <DeleteIcon />
-                                </Tooltip>
-                              </IconButton>
-                            </TableCell>
-                          </>
-                        )}
-                      </TableRow>
-                    ))}
+                    ),
+                    getComparator2(order2, orderBy2)
+                  ).map((malzeme, index) => (
+                    <TableRow key={index}>
+                      <TableCell style={{ textAlign: "center" }}>
+                        {malzeme.name}
+                      </TableCell>
+                      <TableCell style={{ textAlign: "center" }}>
+                        {malzeme.type_id ? malzeme.type_id : "-"}
+                      </TableCell>
+                      <TableCell style={{ textAlign: "center" }}>
+                        {malzeme.marka_id ? malzeme.marka_id : "-"}
+                      </TableCell>
+                      <TableCell style={{ textAlign: "center" }}>
+                        {malzeme.mmodel_id ? malzeme.mmodel_id : "-"}
+                      </TableCell>
+                      <TableCell style={{ textAlign: "center" }}>
+                        {malzeme.seri_num ? malzeme.seri_num : "-"}
+                      </TableCell>
+                      <TableCell style={{ textAlign: "center" }}>
+                        {malzeme.depo === 0
+                          ? "Birim Depo"
+                          : malzeme.depo === 1
+                          ? "Yedek Depo"
+                          : malzeme.depo === 2
+                          ? malzeme.mevzi_id
+                          : "-"}
+                      </TableCell>
+                      <TableCell style={{ textAlign: "center" }}>
+                        {malzeme.giris_tarihi ? malzeme.giris_tarihi : "-"}
+                      </TableCell>
+                      <TableCell style={{ textAlign: "center" }}>
+                        {malzeme.description ? malzeme.description : "-"}
+                      </TableCell>
+                      <TableCell style={{ textAlign: "center" }}>
+                        {(malzeme.arizalar && malzeme.arizalar.length > 0) > 0
+                          ? malzeme.arizalar.join(", ")
+                          : "-"}
+                      </TableCell>
+                      <TableCell style={{ textAlign: "center" }}>
+                        {(malzeme.onarimlar && malzeme.onarimlar.length > 0) > 0
+                          ? malzeme.onarimlar.join(", ")
+                          : "-"}
+                      </TableCell>
+                      <TableCell style={{ textAlign: "center" }}>
+                        {(malzeme.bakimlar && malzeme.bakimlar.length > 0) > 0
+                          ? malzeme.bakimlar.join(", ")
+                          : "-"}
+                      </TableCell>
+                      <TableCell style={{ textAlign: "center" }}>
+                        <IconButton
+                          aria-label="photo-gallery"
+                          size="small"
+                          className="system-photo-gallery-icon"
+                          onClick={() => handleMalzemePhotoClick(malzeme.name)}
+                        >
+                          <Tooltip title="Fotoğraflar">
+                            <CollectionsIcon />
+                          </Tooltip>
+                        </IconButton>
+                      </TableCell>
+                      {isRoleAdmin && (
+                        <>
+                          <TableCell style={{ textAlign: "center" }}>
+                            <IconButton
+                              aria-label="edit"
+                              size="small"
+                              className="system-edit-icon"
+                              onClick={() => handleEditMalzemeClick(malzeme.id)}
+                            >
+                              <Tooltip title="Düzenle">
+                                <EditIcon />
+                              </Tooltip>
+                            </IconButton>
+                            <IconButton
+                              aria-label="delete"
+                              size="small"
+                              className="system-delete-icon"
+                              onClick={() =>
+                                handleDeleteMalzemeClick(malzeme.id)
+                              }
+                            >
+                              <Tooltip title="Sil">
+                                <DeleteIcon />
+                              </Tooltip>
+                            </IconButton>
+                          </TableCell>
+                        </>
+                      )}
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
               <TablePagination
@@ -598,7 +786,6 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
   const [order, setOrder] = useState("asc");
   const [orderBy, setOrderBy] = useState("name");
 
-
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
@@ -615,43 +802,43 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
   const updateSystemDetails = async (systems) => {
     // Define your fetching functions here
     const fetchModels = async () => {
-      const response = await Axios.get("/api/sys_model/all");
+      const response = await axios.get("/api/sys_model/all/");
       return response.data;
     };
 
     const fetchMarkalar = async () => {
-      const response = await Axios.get("/api/sys_marka/all");
+      const response = await axios.get("/api/sys_marka/all/");
       return response.data;
     };
 
     const fetchTypes = async () => {
-      const response = await Axios.get("/api/systype/all");
+      const response = await axios.get("/api/systype/all/");
       return response.data;
     };
 
     const fetchUnsur = async () => {
-      const response = await Axios.get("/api/unsur/all");
+      const response = await axios.get("/api/unsur/all/");
       return response.data;
     };
 
     const fetchMevzi = async () => {
-      const response = await Axios.get("/api/mevzi/all");
+      const response = await axios.get("/api/mevzi/all/");
       return response.data;
     };
 
     // Fetch additional models, markalar, and types for malzemeler
     const fetchMModels = async () => {
-      const response = await Axios.get("/api/model/all");
+      const response = await axios.get("/api/model/all/");
       return response.data;
     };
 
     const fetchMMarkalar = async () => {
-      const response = await Axios.get("/api/marka/all");
+      const response = await axios.get("/api/marka/all/");
       return response.data;
     };
 
     const fetchMTypes = async () => {
-      const response = await Axios.get("/api/type/all");
+      const response = await axios.get("/api/type/all/");
       return response.data;
     };
 
@@ -680,8 +867,8 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
       ilskili_unsur:
         Array.isArray(system.ilskili_unsur) && system.ilskili_unsur.length > 0
           ? system.ilskili_unsur.map(
-            (id) => unsurlar.find((u) => u.id === id)?.name || id
-          )
+              (id) => unsurlar.find((u) => u.id === id)?.name || id
+            )
           : null,
 
       malzemeler: system.malzemeler.map((malzeme) => ({
@@ -706,9 +893,6 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
     updateData();
   }, [initialSystems]);
 
-  useEffect(() => {
-    fetchSystems();
-  }, []);
 
 
   const handleRequestSort = (property) => {
@@ -737,6 +921,52 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
   const filteredSystems = systems.filter((sys) =>
     sys.name.toLowerCase().includes(searchSistem.toLowerCase())
   );
+
+  useEffect(() => {
+    // Store interval IDs for all systems
+    const stateIntervalIds = [];
+
+    const updateState = async (systemId) => {
+      try {
+        const response = await axios.get(`/api/system/update-state/${systemId}`);
+        setSystems((prevSystems) =>
+          prevSystems.map((system) =>
+            system.id === systemId
+              ? { ...system, state: response.data.state } // Update the state for the matched system
+              : system // Keep other systems unchanged
+          )
+        );
+      } catch (error) {
+        console.error(`Durum güncellenirken hata alındı (System ID: ${systemId}):`, error);
+      }
+    };
+
+    const startStateInterval = (system) => {
+      const intervalId = setInterval(() => {
+        updateState(system.id);
+      }, system.frequency * 60000);
+      return intervalId;
+    };
+
+    // Start intervals for all systems in the systems list
+    if (systems && systems.length > 0) {
+      systems.forEach((system) => {
+        if (system && system.frequency) {
+          const intervalId = startStateInterval(system);
+          stateIntervalIds.push({ systemId: system.id, intervalId });
+        }
+      });
+    }
+
+    return () => {
+      stateIntervalIds.forEach(({ intervalId }) => clearInterval(intervalId));
+    };
+  }, [systems]);
+
+  useEffect(() => {
+    fetchSystems();
+  }, []);
+
 
   return (
     <Container className="system-main-container">
@@ -803,7 +1033,7 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                   >
                     Sistemdeki Malzemeler
                   </TableCell>
-                  {/* <TableCell style={{ textAlign: 'center', fontWeight: 'bold', fontSize: 'medium' }}>ID</TableCell> */}
+
                   <Tooltip title="Sıralamak için tıklayınız">
                     <TableCell
                       style={{
@@ -813,8 +1043,16 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                       }}
                       onClick={() => handleRequestSort("name")}
                     >
-
                       İsim
+                      {orderBy && orderBy === "name" && (
+                        <IconButton
+                          aria-label="edit"
+                          size="small"
+                          style={{ margin: "0px", padding: "0px" }}
+                        >
+                          <SwapVertIcon />
+                        </IconButton>
+                      )}
                     </TableCell>
                   </Tooltip>
                   <Tooltip title="Sıralamak için tıklayınız">
@@ -827,7 +1065,17 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                       onClick={() => handleRequestSort("type_id")}
                     >
                       Tür
-                    </TableCell></Tooltip>
+                      {orderBy && orderBy === "type_id" && (
+                        <IconButton
+                          aria-label="edit"
+                          size="small"
+                          style={{ margin: "0px", padding: "0px" }}
+                        >
+                          <SwapVertIcon />
+                        </IconButton>
+                      )}
+                    </TableCell>
+                  </Tooltip>
                   <Tooltip title="Sıralamak için tıklayınız">
                     <TableCell
                       style={{
@@ -838,7 +1086,17 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                       onClick={() => handleRequestSort("marka_id")}
                     >
                       Marka
-                    </TableCell></Tooltip>
+                      {orderBy && orderBy === "marka_id" && (
+                        <IconButton
+                          aria-label="edit"
+                          size="small"
+                          style={{ margin: "0px", padding: "0px" }}
+                        >
+                          <SwapVertIcon />
+                        </IconButton>
+                      )}
+                    </TableCell>
+                  </Tooltip>
                   <Tooltip title="Sıralamak için tıklayınız">
                     <TableCell
                       style={{
@@ -849,7 +1107,17 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                       onClick={() => handleRequestSort("mmodel_id")}
                     >
                       Model
-                    </TableCell></Tooltip>
+                      {orderBy && orderBy === "mmodel_id" && (
+                        <IconButton
+                          aria-label="edit"
+                          size="small"
+                          style={{ margin: "0px", padding: "0px" }}
+                        >
+                          <SwapVertIcon />
+                        </IconButton>
+                      )}
+                    </TableCell>
+                  </Tooltip>
                   <Tooltip title="Sıralamak için tıklayınız">
                     <TableCell
                       style={{
@@ -860,7 +1128,17 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                       onClick={() => handleRequestSort("seri_num")}
                     >
                       Seri No
-                    </TableCell></Tooltip>
+                      {orderBy && orderBy === "seri_num" && (
+                        <IconButton
+                          aria-label="edit"
+                          size="small"
+                          style={{ margin: "0px", padding: "0px" }}
+                        >
+                          <SwapVertIcon />
+                        </IconButton>
+                      )}
+                    </TableCell>
+                  </Tooltip>
                   <Tooltip title="Sıralamak için tıklayınız">
                     <TableCell
                       style={{
@@ -871,6 +1149,15 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                       onClick={() => handleRequestSort("ilskili_unsur")}
                     >
                       İlişkili Unsurlar
+                      {orderBy && orderBy === "ilskili_unsur" && (
+                        <IconButton
+                          aria-label="edit"
+                          size="small"
+                          style={{ margin: "0px", padding: "0px" }}
+                        >
+                          <SwapVertIcon />
+                        </IconButton>
+                      )}
                     </TableCell>
                   </Tooltip>
                   <Tooltip title="Sıralamak için tıklayınız">
@@ -883,10 +1170,18 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                       onClick={() => handleRequestSort("depo")}
                     >
                       Lokasyon
+                      {orderBy && orderBy === "depo" && (
+                        <IconButton
+                          aria-label="edit"
+                          size="small"
+                          style={{ margin: "0px", padding: "0px" }}
+                        >
+                          <SwapVertIcon />
+                        </IconButton>
+                      )}
                     </TableCell>
                   </Tooltip>
                   <Tooltip title="Sıralamak için tıklayınız">
-
                     <TableCell
                       style={{
                         textAlign: "center",
@@ -896,6 +1191,36 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                       onClick={() => handleRequestSort("giris_tarihi")}
                     >
                       Envantere Giriş Tarihi
+                      {orderBy && orderBy === "giris_tarihi" && (
+                        <IconButton
+                          aria-label="edit"
+                          size="small"
+                          style={{ margin: "0px", padding: "0px" }}
+                        >
+                          <SwapVertIcon />
+                        </IconButton>
+                      )}
+                    </TableCell>
+                  </Tooltip>
+                  <Tooltip title="Sıralamak için tıklayınız">
+                    <TableCell
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "medium",
+                      }}
+                      onClick={() => handleRequestSort("ip")}
+                    >
+                      IP Adresi
+                      {orderBy && orderBy === "ip" && (
+                        <IconButton
+                          aria-label="edit"
+                          size="small"
+                          style={{ margin: "0px", padding: "0px" }}
+                        >
+                          <SwapVertIcon />
+                        </IconButton>
+                      )}
                     </TableCell>
                   </Tooltip>
                   <Tooltip title="Sıralamak için tıklayınız">
@@ -908,6 +1233,15 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                       onClick={() => handleRequestSort("description")}
                     >
                       Açıklama
+                      {orderBy && orderBy === "description" && (
+                        <IconButton
+                          aria-label="edit"
+                          size="small"
+                          style={{ margin: "0px", padding: "0px" }}
+                        >
+                          <SwapVertIcon />
+                        </IconButton>
+                      )}
                     </TableCell>
                   </Tooltip>
 
@@ -920,6 +1254,17 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                   >
                     Fotoğraflar
                   </TableCell>
+                  <Tooltip title="Detaylı Bilgi">
+                    <TableCell
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "medium",
+                      }}
+                    >
+                      Görüntüle
+                    </TableCell>
+                  </Tooltip>
 
                   {isRoleAdmin && (
                     <>
@@ -932,24 +1277,26 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                       >
                         Düzenle & Sil
                       </TableCell>
-                      {/* <TableCell style={{ textAlign: 'center', fontWeight: 'bold', fontSize: 'medium' }}>Sil</TableCell> */}
                     </>
                   )}
                 </TableRow>
               </TableHead>
               <TableBody>
-                {sortArray(filteredSystems
-                  .slice(page * rowsPerPage, (page + 1) * rowsPerPage),
-                  getComparator(order, orderBy))
-                  .map((system) => (
-                    <CollapsibleRow
-                      key={system.id}
-                      system={system}
-                      fetchSystems={fetchSystems}
-                      isRoleAdmin={isRoleAdmin}
-                      setSystems={setSystems}
-                    />
-                  ))}
+                {sortArray(
+                  filteredSystems.slice(
+                    page * rowsPerPage,
+                    (page + 1) * rowsPerPage
+                  ),
+                  getComparator(order, orderBy)
+                ).map((system) => (
+                  <CollapsibleRow
+                    key={system.id}
+                    system={system}
+                    fetchSystems={fetchSystems}
+                    isRoleAdmin={isRoleAdmin}
+                    setSystems={setSystems}
+                  />
+                ))}
               </TableBody>
             </Table>
             <TablePagination

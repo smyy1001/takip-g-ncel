@@ -6,13 +6,42 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  IconButton,
+  Button,
+  TextField,
+  Tooltip,
+  styled,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { useParams } from "react-router-dom";
+import axios from "axios";
+import { message } from "antd";
 
+const CustomOutlinedButton = styled(Button)({
+  "&.MuiButton-outlined": {
+    color: "white", // Text color
+    borderColor: "white", // Border color
+    "&:hover": {
+      borderColor: "white", // Border color on hover
+      backgroundColor: "rgba(255, 255, 255, 0.1)", // Slight background color on hover
+    },
+    "&.Mui-focused": {
+      borderColor: "white !important", // Border color when focused
+    },
+    "&.Mui-disabled": {
+      borderColor: "rgba(255, 255, 255, 0.3)", // Border color when disabled
+      color: "rgba(255, 255, 255, 0.3)", // Text color when disabled
+    },
+  },
+});
 function PhotoGallery({ isRoleAdmin }) {
   const { "sis-malz-mev": sisMalzMev, name } = useParams();
   const [photos, setPhotos] = useState({});
+  const [deletedImagesData, setDeletedImagesData] = useState([]);
+  const [systemId, setSystemId] = useState(null);
+  const [expandedAccordions, setExpandedAccordions] = useState([]);
+  const [folders, setFolders] = useState([]);
 
   const groupPhotosByFolder = (photoUrls) => {
     if (!Array.isArray(photoUrls)) {
@@ -29,21 +58,158 @@ function PhotoGallery({ isRoleAdmin }) {
   };
 
   useEffect(() => {
+    const fetchSystemId = async () => {
+      try {
+        const response = await axios.get(
+          `/api/${sisMalzMev}/get-id-by-name/${name}`
+        );
+        setSystemId(response.data);
+      } catch (error) {
+        console.error("Sistem ID'si alınırken hata oluştu:", error);
+      }
+    };
+
+    fetchSystemId();
+  }, [name]);
+
+  useEffect(() => {
     const fetchPhotos = async () => {
       try {
-        const response = await fetch(`/api/${sisMalzMev}/${name}/photos`);
-        const data = await response.json();
+        const response = await axios.get(`/api/${sisMalzMev}/${name}/photos`);
+        const data = response.data;
         if (data) {
           const groupedPhotos = groupPhotosByFolder(data);
-          setPhotos(groupedPhotos);
+          const foldersWithOldName = Object.keys(groupedPhotos).map(
+            (folderName) => ({
+              folderName,
+              oldFolderName: null,
+              photos: groupedPhotos[folderName],
+            })
+          );
+          setFolders(foldersWithOldName);
         }
       } catch (error) {
-        console.error("Error fetching photos:", error);
+        console.error("Fotoğraf bilgisi çekilemedi:", error);
       }
     };
 
     fetchPhotos();
   }, [sisMalzMev, name]);
+
+  const handleDeleteImage = (folderName, imageName) => {
+    setDeletedImagesData((prev) => [
+      ...prev,
+      { folderName, deletedImages: [imageName] },
+    ]);
+
+    setFolders((prevFolders) =>
+      prevFolders.map((folder) =>
+        folder.folderName === folderName
+          ? {
+              ...folder,
+              photos: folder.photos.filter(
+                (photo) => !photo.includes(imageName)
+              ),
+            }
+          : folder
+      )
+    );
+  };
+
+  const handleFolderNameChange = (index, newFolderName) => {
+    setFolders((prevFolders) => {
+      const updatedFolders = [...prevFolders];
+      const currentFolder = updatedFolders[index];
+
+      if (
+        !currentFolder.oldFolderName &&
+        currentFolder.folderName !== newFolderName
+      ) {
+        updatedFolders[index].oldFolderName = currentFolder.folderName;
+      }
+
+      updatedFolders[index].folderName = newFolderName;
+      return updatedFolders;
+    });
+  };
+
+  const handleDeleteFolder = (folderName) => {
+    setDeletedImagesData((prev) => {
+      const updatedDeletedImagesData = [...prev];
+
+      const folderToDelete = folders.find(
+        (folder) => folder.folderName === folderName
+      );
+      if (folderToDelete) {
+        const deletedImages = folderToDelete.photos.map((photo) =>
+          photo.split("/").pop()
+        );
+
+        updatedDeletedImagesData.push({
+          folderName,
+          deletedImages,
+        });
+      }
+
+      return updatedDeletedImagesData;
+    });
+    setFolders((prevFolders) =>
+      prevFolders.map((folder) =>
+        folder.folderName === folderName ? { ...folder, photos: [] } : folder
+      )
+    );
+  };
+
+  const handleSubmitDeletions = async () => {
+    try {
+      const formData = new FormData();
+      for (const folder of folders) {
+        if (!folder.folderName || folder.folderName.trim() === "") {
+          message.warning("Klasör ismi boş olamaz");
+          return;
+        }
+        formData.append("folderNames", folder.folderName);
+        if (folder.oldFolderName) {
+          formData.append("oldFolderNames", folder.oldFolderName);
+        } else {
+          formData.append("oldFolderNames", null);
+        }
+      }
+
+      if (deletedImagesData.length > 0) {
+        formData.append("deletedImagesData", JSON.stringify(deletedImagesData));
+      }
+
+      const response = await axios.put(
+        `/api/${sisMalzMev}/update/${systemId}`,
+        formData
+      );
+
+      if (response.status === 200) {
+        message.success("Değişiklikler kaydedildi");
+        const groupedPhotos = groupPhotosByFolder(response.data.photos);
+
+        setFolders(
+          Object.keys(groupedPhotos).map((folderName) => ({
+            folderName,
+            oldFolderName: null,
+            photos: groupedPhotos[folderName],
+          }))
+        );
+        setDeletedImagesData([]);
+      }
+    } catch (error) {
+      message.error("işlem sırasında hata oluştu");
+    }
+  };
+
+  const handleAccordionChange = (folderName) => (event, isExpanded) => {
+    setExpandedAccordions((prevExpanded) =>
+      isExpanded
+        ? [...prevExpanded, folderName]
+        : prevExpanded.filter((name) => name !== folderName)
+    );
+  };
 
   return (
     <Container className="photo-gallery-container">
@@ -52,36 +218,105 @@ function PhotoGallery({ isRoleAdmin }) {
         variant="h6"
         gutterBottom
         component="div"
-        style={{ fontSize: 'xx-large', fontWeight: '600'}}
+        style={{ fontSize: "xx-large", fontWeight: "600" }}
       >
         {`${name}`}
       </Typography>
 
-      {Object.keys(photos).length > 0 ? (
+      {folders.length > 0 ? (
         <div className="photo-gallery">
-          {Object.keys(photos).map((folderName, index) => (
-            <Accordion key={index} defaultExpanded={true}>
+          {folders.map((folder, index) => (
+            <Accordion
+              key={index}
+              expanded={expandedAccordions.includes(folder.folderName)}
+              onChange={handleAccordionChange(folder.folderName)}
+            >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
                 aria-controls={`panel${index}-content`}
                 id={`panel${index}-header`}
               >
-                <Typography>{folderName}</Typography>
+                <div className="photo-gallery-folder-header">
+                  <Tooltip title="Klasör ismini değiştir">
+                    <TextField
+                      value={folder.folderName}
+                      onChange={(e) => {
+                        if (isRoleAdmin) {
+                          e.stopPropagation();
+                          handleFolderNameChange(index, e.target.value);
+                        }
+                      }}
+                      onClick={(event) => event.stopPropagation()}
+                      variant="outlined"
+                      className="photo-gallery-custom-textfield"
+                      onFocus={(event) => event.stopPropagation()}
+                      disabled={!isRoleAdmin}
+                    />
+                  </Tooltip>
+                  {expandedAccordions.includes(folder.folderName) &&
+                    isRoleAdmin && (
+                      <Tooltip title="Klasörü sil">
+                        <IconButton
+                          aria-label="delete-folder"
+                          size="small"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleDeleteFolder(folder.folderName);
+                          }}
+                          className="photo-gallery-delete-folder-button"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                </div>
               </AccordionSummary>
+
               <AccordionDetails>
                 <div className="photo-gallery-folder">
-                  {photos[folderName].map((photo, photoIndex) => (
-                    <img
-                      key={photoIndex}
-                      src={encodeURI(photo)}
-                      alt={`Photo ${photoIndex}`}
-                      className="photo-gallery-photo-item"
-                    />
-                  ))}
+                  {folder.photos.map((photo, photoIndex) => {
+                    const imageName = photo.split("/").pop();
+                    return (
+                      <div
+                        key={photoIndex}
+                        className="photo-gallery-photo-container"
+                      >
+                        <img
+                          src={encodeURI(photo)}
+                          alt={`Photo ${photoIndex}`}
+                          className="photo-gallery-photo-item"
+                        />
+                        {isRoleAdmin && (
+                          <Tooltip title="Fotoğrafı sil">
+                            <IconButton
+                              aria-label="delete-image"
+                              size="small"
+                              onClick={() =>
+                                handleDeleteImage(folder.folderName, imageName)
+                              }
+                              className="photo-gallery-delete-image-button"
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </AccordionDetails>
             </Accordion>
           ))}
+          {((deletedImagesData && deletedImagesData.length > 0) ||
+            folders.some((folder) => folder.oldFolderName)) && (
+            <CustomOutlinedButton
+              variant="outlined"
+              style={{ marginTop: "10px" }}
+              onClick={handleSubmitDeletions}
+            >
+              Kaydet
+            </CustomOutlinedButton>
+          )}
         </div>
       ) : (
         <Typography

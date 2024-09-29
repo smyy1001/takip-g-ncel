@@ -4,11 +4,24 @@ from datetime import date, datetime
 from fastapi import UploadFile
 
 
+class EnerjiMinorBase(BaseModel):
+    name: str
+    seri_num: str
+
+
+class EnerjiMinorCreate(EnerjiMinorBase):
+    pass
+
+
+class EnerjiMinor(EnerjiMinorBase):
+    id: int
+
+
 class EnerjiBase(BaseModel):
     voltaj: Optional[float] = None
-    jenerator: Optional[str] = None
-    guc_k: Optional[str] = None
-    regulator: Optional[str] = None
+    jenerator: Optional[List[int]] = None
+    guc_k: Optional[List[int]] = None
+    regulator: Optional[List[int]] = None
 
 
 class EnerjiCreate(EnerjiBase):
@@ -34,8 +47,25 @@ class Haber(HaberBase):
     id: int
 
 
+class IdsRequest(BaseModel):
+    ids: List[int]
+
+
+class KlimaBase(BaseModel):
+    name: str
+    seri_num: str
+
+
+class KlimaCreate(KlimaBase):
+    pass
+
+
+class Klima(KlimaBase):
+    id: int
+
+
 class IklimBase(BaseModel):
-    klima: Optional[str] = None
+    klima: Optional[List[int]] = None
 
 
 class IklimCreate(IklimBase):
@@ -194,6 +224,8 @@ class SystemBase(BaseModel):
     giris_tarihi: Optional[date] = None
     photos: Optional[List[str]] = None
     description: Optional[str] = None
+    ip: Optional[str] = None
+    frequency: Optional[float] = None
 
 class SystemCreate(SystemBase):
 
@@ -201,6 +233,7 @@ class SystemCreate(SystemBase):
 
 class System(SystemBase):
     id: UUID4
+    state: int
 
     class Config:
         from_attributes = True
@@ -298,6 +331,8 @@ class MevziBase(BaseModel):
     alt_y_id: Optional[int] = None
     y_sistemler: Optional[List[int]] = None
     photos: Optional[List[str]] = None
+    ip: Optional[str] = None
+    frequency: Optional[float] = None
 
 class MevziCreate(MevziBase):
     images: Optional[List[UploadFile]] = None
@@ -305,6 +340,7 @@ class MevziCreate(MevziBase):
 
 class Mevzi(MevziBase):
     id: UUID4
+    state: int
 
     class Config:
         from_attributes = True

@@ -5,6 +5,9 @@
   align-items: center;
   margin-top: 100px;
   width: 100%;
+  padding-left: 217px !important;
+  padding-right: 217px !important;
+  max-width: none !important;
 }
 
 .photo-gallery-header {
@@ -50,4 +53,71 @@
   gap: 20px;
   justify-content: flex-start;
   width: 100%;
+}
+.photo-gallery-folder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.photo-gallery-delete-folder-button {
+  margin-right: 10px;
+  justify-content: flex-end;
+}
+.photo-gallery-delete-image-button {
+  position: absolute;
+  bottom: 40%;
+  right: 45%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.photo-gallery-photo-container {
+  position: relative;
+  display: inline-block;
+}
+.photo-gallery-photo-container:hover .photo-gallery-delete-image-button {
+  opacity: 1;
+}
+.photo-gallery-photo-container:hover .photo-gallery-photo-item {
+  opacity: 0.3;
+}
+.photo-gallery-custom-textfield {
+  border: none;
+  background: none !important;
+  cursor: pointer;
+}
+
+.photo-gallery-custom-textfield .MuiOutlinedInput-root {
+  border: none;
+  background: none !important;
+}
+
+.photo-gallery-custom-textfield .MuiOutlinedInput-root.Mui-focused {
+  background: none !important;
+}
+
+.photo-gallery-custom-textfield
+  .MuiOutlinedInput-root:hover
+  .MuiOutlinedInput-notchedOutline {
+  border-color: transparent;
+}
+
+.photo-gallery-custom-textfield .MuiOutlinedInput-notchedOutline {
+  border: none;
+}
+
+.photo-gallery-custom-textfield .MuiOutlinedInput-input {
+  cursor: pointer;
+}
+
+.photo-gallery-custom-textfield .MuiOutlinedInput-input:focus {
+  outline: none;
+  background: none !important;
+}
+
+.photo-gallery-custom-textfield
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border: none;
 }

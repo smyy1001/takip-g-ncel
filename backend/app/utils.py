@@ -164,8 +164,6 @@ def check_ip(ip_address):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-
-        # result.returncode == 0 indicates success
         return result.returncode == 0
     except Exception as e:
         print(f"Error pinging {ip_address}: {e}")

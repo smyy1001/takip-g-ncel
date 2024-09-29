@@ -1,7 +1,8 @@
 import "./MalzemeAdd.css";
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useRef } from "react";
-import Axios from "../../Axios";
+import axios from "axios";
 import { Container, Typography, Button, IconButton } from "@mui/material";
 import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import {
@@ -186,7 +187,7 @@ function MalzemeAdd({
     bakimlar: [],
     onarimlar: [],
   });
-
+  const navigate = useNavigate();
   const [all_types, setAllTypes] = useState([]);
   const [tempType, setTempType] = useState("");
   const [tempMarka, setTempMarka] = useState("");
@@ -229,7 +230,11 @@ function MalzemeAdd({
       return `${days} gün, ${hours} saat, ${minutes} dakika`;
     }
   };
-
+  const handleGoruntuleClick = () => {
+    if (malzeme?.id) {
+      navigate(`/malzeme/${malzeme.id}/bilgi`);
+    }
+  };
   const handleImageChange = (event, folderIndex) => {
     const files = Array.from(event.target.files);
     setFolders((prevFolders) => {
@@ -363,7 +368,7 @@ function MalzemeAdd({
   // TYPE
   const fetchAllTypes = async () => {
     try {
-      const response = await Axios.get("/api/type/all/");
+      const response = await axios.get("/api/type/all/");
       setAllTypes(response.data);
     } catch (error) {
       message.error(error.response?.data?.detail || error.message);
@@ -372,7 +377,7 @@ function MalzemeAdd({
 
   const addNewType = async (typeName) => {
     try {
-      const response = await Axios.post("/api/type/add", { name: typeName });
+      const response = await axios.post("/api/type/add/", { name: typeName });
       // console.log("Yeni tür eklendi:", response.data);
       fetchAllTypes();
       return response.data.id;
@@ -418,7 +423,7 @@ function MalzemeAdd({
   // MARKA
   const fetchAllMarkalar = async () => {
     try {
-      const response = await Axios.get("/api/marka/all/");
+      const response = await axios.get("/api/marka/all/");
       setAllMarkalar(response.data);
     } catch (error) {
       message.error(error.response?.data?.detail || error.message);
@@ -427,7 +432,7 @@ function MalzemeAdd({
 
   const addNewMarka = async (markaName) => {
     try {
-      const response = await Axios.post("/api/marka/add", { name: markaName });
+      const response = await axios.post("/api/marka/add/", { name: markaName });
       // console.log("Yeni marka eklendi:", response.data);
       fetchAllMarkalar();
       return response.data.id;
@@ -472,7 +477,7 @@ function MalzemeAdd({
   // MODEL
   const fetchAllModels = async () => {
     try {
-      const response = await Axios.get("/api/model/all/");
+      const response = await axios.get("/api/model/all/");
       setAllModels(response.data);
     } catch (error) {
       message.error(error.response?.data?.detail || error.message);
@@ -486,7 +491,7 @@ function MalzemeAdd({
 
   const addNewModel = async (modelName) => {
     try {
-      const response = await Axios.post("/api/model/add", { name: modelName });
+      const response = await axios.post("/api/model/add/", { name: modelName });
       // console.log("Yeni model eklendi:", response.data);
       fetchAllModels();
       return response.data.id;
@@ -632,7 +637,7 @@ function MalzemeAdd({
 
   const addNewMevzi = async (MevziName) => {
     try {
-      const response = await Axios.post("/api/mevzi/add", { name: MevziName });
+      const response = await axios.post("/api/mevzi/add/", { name: MevziName });
       // console.log("Yeni mevzi eklendi:", response.data);
       fetchAllMevzi();
       return response.data.id;
@@ -749,7 +754,7 @@ function MalzemeAdd({
       let response;
 
       if (malzeme) {
-        response = await Axios.put(
+        response = await axios.put(
           `/api/malzeme/update/${malzeme.id}`,
           formData,
           {
@@ -764,7 +769,7 @@ function MalzemeAdd({
           fetchAllMevzi();
         }
       } else {
-        response = await Axios.post("/api/malzeme/add/", formData, {
+        response = await axios.post("/api/malzeme/add/", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
@@ -899,45 +904,63 @@ function MalzemeAdd({
                 variant="filled"
                 value={malzemeInfo?.name}
                 onChange={(e) => {
-                  setMalzemeInfo({ ...malzemeInfo, name: e.target.value });
+                  if (isRoleAdmin) {
+                    setMalzemeInfo({ ...malzemeInfo, name: e.target.value });
+                  }
                 }}
                 margin="normal"
+                disabled={!isRoleAdmin}
               />
 
-              <Autocomplete
-                fullWidth
-                placeholder="İlişkili Sistem"
-                options={systems}
-                getOptionLabel={(option) => option.name}
-                onChange={(event, value) => {
-                  setMalzemeInfo({
-                    ...malzemeInfo,
-                    system_id: value ? value.id : null,
-                  });
-                }}
-                value={
-                  systems.find(
-                    (system) => system.id === malzemeInfo?.system_id
-                  ) || null
-                }
-                renderInput={(params) => (
-                  <CustomAutocompleteTextField
-                    {...params}
-                    label="İlişkili Sistem"
-                    variant="filled"
-                    fullWidth
-                    margin="normal"
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <React.Fragment>
-                          {params.InputProps.endAdornment}
-                        </React.Fragment>
-                      ),
-                    }}
-                  />
-                )}
-              />
+              {isRoleAdmin ? (
+                <Autocomplete
+                  fullWidth
+                  placeholder="İlişkili Sistem"
+                  options={systems}
+                  getOptionLabel={(option) => option.name}
+                  onChange={(event, value) => {
+                    setMalzemeInfo({
+                      ...malzemeInfo,
+                      system_id: value ? value.id : null,
+                    });
+                  }}
+                  value={
+                    systems.find(
+                      (system) => system.id === malzemeInfo?.system_id
+                    ) || null
+                  }
+                  renderInput={(params) => (
+                    <CustomAutocompleteTextField
+                      {...params}
+                      label="İlişkili Sistem"
+                      variant="filled"
+                      fullWidth
+                      margin="normal"
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <React.Fragment>
+                            {params.InputProps.endAdornment}
+                          </React.Fragment>
+                        ),
+                      }}
+                    />
+                  )}
+                />
+              ) : (
+                <CustomTextField
+                  label="İlişkili Sistem"
+                  value={
+                    systems.find(
+                      (system) => system.id === malzemeInfo?.system_id
+                    )?.name || ""
+                  }
+                  variant="filled"
+                  fullWidth
+                  margin="normal"
+                  disabled
+                />
+              )}
 
               <CustomTextField
                 autoComplete="off"
@@ -947,9 +970,15 @@ function MalzemeAdd({
                 variant="filled"
                 value={malzemeInfo?.seri_num}
                 onChange={(e) => {
-                  setMalzemeInfo({ ...malzemeInfo, seri_num: e.target.value });
+                  if (isRoleAdmin) {
+                    setMalzemeInfo({
+                      ...malzemeInfo,
+                      seri_num: e.target.value,
+                    });
+                  }
                 }}
                 margin="normal"
+                disabled={!isRoleAdmin}
               />
 
               <CustomTextField
@@ -961,12 +990,15 @@ function MalzemeAdd({
                 variant="filled"
                 value={malzemeInfo?.description}
                 onChange={(e) => {
-                  setMalzemeInfo({
-                    ...malzemeInfo,
-                    description: e.target.value,
-                  });
+                  if (isRoleAdmin) {
+                    setMalzemeInfo({
+                      ...malzemeInfo,
+                      description: e.target.value,
+                    });
+                  }
                 }}
                 margin="normal"
+                disabled={!isRoleAdmin}
               />
 
               <div
@@ -977,42 +1009,57 @@ function MalzemeAdd({
                   gap: "10px",
                 }}
               >
-                <Autocomplete
-                  freeSolo
-                  fullWidth
-                  placeholder="Tür"
-                  options={all_types}
-                  getOptionLabel={(option) => option.name}
-                  onChange={handleTypeOptionChange}
-                  onInputChange={(event, newInputValue) => {
-                    if (newInputValue) {
-                      setTempType(newInputValue);
+                {isRoleAdmin ? (
+                  <Autocomplete
+                    freeSolo
+                    fullWidth
+                    placeholder="Tür"
+                    options={all_types}
+                    getOptionLabel={(option) => option.name}
+                    onChange={handleTypeOptionChange}
+                    onInputChange={(event, newInputValue) => {
+                      if (newInputValue) {
+                        setTempType(newInputValue);
+                      }
+                    }}
+                    filterOptions={filterTypeOptions}
+                    value={
+                      all_types.find(
+                        (type) => type.id === malzemeInfo?.type_id
+                      ) || null
                     }
-                  }}
-                  filterOptions={filterTypeOptions}
-                  value={
-                    all_types.find(
-                      (type) => type.id === malzemeInfo?.type_id
-                    ) || null
-                  }
-                  renderInput={(params) => (
-                    <CustomAutocompleteTextField
-                      {...params}
-                      label="Türü"
-                      variant="filled"
-                      fullWidth
-                      margin="normal"
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <React.Fragment>
-                            {params.InputProps.endAdornment}
-                          </React.Fragment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
+                    renderInput={(params) => (
+                      <CustomAutocompleteTextField
+                        {...params}
+                        label="Türü"
+                        variant="filled"
+                        fullWidth
+                        margin="normal"
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <React.Fragment>
+                              {params.InputProps.endAdornment}
+                            </React.Fragment>
+                          ),
+                        }}
+                      />
+                    )}
+                  />
+                ) : (
+                  <CustomTextField
+                    label="Türü"
+                    value={
+                      all_types.find((type) => type.id === malzemeInfo?.type_id)
+                        ?.name || ""
+                    }
+                    variant="filled"
+                    fullWidth
+                    margin="normal"
+                    disabled
+                  />
+                )}
+
                 <Tooltip
                   title="Yeni bir Tür ismi girebilirsiniz."
                   placement="right"
@@ -1021,6 +1068,92 @@ function MalzemeAdd({
                 </Tooltip>
               </div>
 
+            </div>
+
+            <div
+              className="malzeme-add-to-the-right"
+              style={{ width: malzeme ? "27vw" : "40vw", marginTop: "23px", marginBottom:'15px' }}
+            >
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <div>Bulunduğu yer:</div>
+                <div style={{ marginLeft: "10px" }}>
+                  <FormControlLabel
+                    control={<Radio {...controlProps("b")} color="default" />}
+                    label="Birim Depo"
+                    disabled={!isRoleAdmin}
+                  />
+
+                  <FormControlLabel
+                    control={<Radio {...controlProps("y")} color="default" />}
+                    label="Yedek Depo"
+                    disabled={!isRoleAdmin}
+                  />
+
+                  <FormControlLabel
+                    control={<Radio {...controlProps("m")} color="default" />}
+                    label="Mevzi"
+                    disabled={!isRoleAdmin}
+                  />
+                </div>
+              </div>
+              {selectedRadioBValue === "m" && (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: "10px",
+                  }}
+                >
+                  {isRoleAdmin ? (
+                    <Autocomplete
+                      freeSolo
+                      fullWidth
+                      options={mevziler}
+                      getOptionLabel={(option) => option.name}
+                      value={selectedMevzi}
+                      onChange={handleMevziOptionChange}
+                      filterOptions={filterTypeOptions}
+                      renderInput={(params) => (
+                        <CustomAutocompleteTextField
+                          {...params}
+                          label="Mevzi"
+                          variant="filled"
+                          fullWidth
+                          margin="normal"
+                          InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                              <React.Fragment>
+                                {params.InputProps.endAdornment}
+                              </React.Fragment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  ) : (
+                    <CustomTextField
+                      label="Mevzi"
+                      value={
+                        mevziler.find((mevzi) => mevzi.id === selectedMevzi?.id)
+                          ?.name || ""
+                      }
+                      variant="filled"
+                      fullWidth
+                      margin="normal"
+                      disabled
+                    />
+                  )}
+
+                  <Tooltip
+                    title="Sadece isim belirleyerek boş bir mevzi oluşturabilirsiniz. Daha sonra Mevzi'nizin detaylarını güncelleyebilirsiniz."
+                    placement="right"
+                  >
+                    <InfoIcon style={{ color: "white", marginLeft: "8px" }} />
+                  </Tooltip>
+                </div>
+              )}
               <div
                 style={{
                   display: "flex",
@@ -1029,40 +1162,56 @@ function MalzemeAdd({
                   gap: "10px",
                 }}
               >
-                <Autocomplete
-                  freeSolo
-                  fullWidth
-                  placeholder="Marka"
-                  options={markalar}
-                  getOptionLabel={(option) => option.name}
-                  onChange={handleMarkaOptionChange}
-                  onInputChange={(event, newInputValue) => {
-                    setTempMarka(newInputValue);
-                  }}
-                  filterOptions={filterMarkaOptions}
-                  value={
-                    markalar.find(
-                      (marka) => marka.id === malzemeInfo?.marka_id
-                    ) || null
-                  }
-                  renderInput={(params) => (
-                    <CustomAutocompleteTextField
-                      {...params}
-                      label="Marka"
-                      variant="filled"
-                      fullWidth
-                      margin="normal"
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <React.Fragment>
-                            {params.InputProps.endAdornment}
-                          </React.Fragment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
+                {isRoleAdmin ? (
+                  <Autocomplete
+                    freeSolo
+                    fullWidth
+                    placeholder="Marka"
+                    options={markalar}
+                    getOptionLabel={(option) => option.name}
+                    onChange={handleMarkaOptionChange}
+                    onInputChange={(event, newInputValue) => {
+                      setTempMarka(newInputValue);
+                    }}
+                    filterOptions={filterMarkaOptions}
+                    value={
+                      markalar.find(
+                        (marka) => marka.id === malzemeInfo?.marka_id
+                      ) || null
+                    }
+                    renderInput={(params) => (
+                      <CustomAutocompleteTextField
+                        {...params}
+                        label="Marka"
+                        variant="filled"
+                        fullWidth
+                        margin="normal"
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <React.Fragment>
+                              {params.InputProps.endAdornment}
+                            </React.Fragment>
+                          ),
+                        }}
+                      />
+                    )}
+                  />
+                ) : (
+                  <CustomTextField
+                    label="Marka"
+                    value={
+                      markalar.find(
+                        (marka) => marka.id === malzemeInfo?.marka_id
+                      )?.name || ""
+                    }
+                    variant="filled"
+                    fullWidth
+                    margin="normal"
+                    disabled
+                  />
+                )}
+
                 <Tooltip
                   title="Yeni bir Marka ismi girebilirsiniz."
                   placement="right"
@@ -1079,95 +1228,29 @@ function MalzemeAdd({
                   gap: "10px",
                 }}
               >
-                <Autocomplete
-                  freeSolo
-                  fullWidth
-                  placeholder="Model"
-                  options={models}
-                  getOptionLabel={(option) => option.name}
-                  onChange={handleModelOptionChange}
-                  onInputChange={(event, newInputValue) => {
-                    if (newInputValue) {
-                      setTempModel(newInputValue);
-                    }
-                  }}
-                  value={
-                    models.find(
-                      (model) => model.id === malzemeInfo?.mmodel_id
-                    ) || null
-                  }
-                  filterOptions={filterModelOptions}
-                  renderInput={(params) => (
-                    <CustomAutocompleteTextField
-                      {...params}
-                      label="Model"
-                      variant="filled"
-                      fullWidth
-                      margin="normal"
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <React.Fragment>
-                            {params.InputProps.endAdornment}
-                          </React.Fragment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-                <Tooltip
-                  title="Yeni bir Model ismi girebilirsiniz."
-                  placement="right"
-                >
-                  <InfoIcon style={{ color: "white", marginLeft: "8px" }} />
-                </Tooltip>
-              </div>
-            </div>
-
-            <div
-              className="malzeme-add-to-the-right"
-              style={{ width: malzeme ? "27vw" : "40vw", marginTop: "23px" }}
-            >
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <div>Bulunduğu yer:</div>
-                <div style={{ marginLeft: "10px" }}>
-                  <FormControlLabel
-                    control={<Radio {...controlProps("b")} color="default" />}
-                    label="Birim Depo"
-                  />
-
-                  <FormControlLabel
-                    control={<Radio {...controlProps("y")} color="default" />}
-                    label="Yedek Depo"
-                  />
-
-                  <FormControlLabel
-                    control={<Radio {...controlProps("m")} color="default" />}
-                    label="Mevzi"
-                  />
-                </div>
-              </div>
-              {selectedRadioBValue === "m" && (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: "10px",
-                  }}
-                >
+                {isRoleAdmin ? (
                   <Autocomplete
                     freeSolo
                     fullWidth
-                    options={mevziler}
+                    placeholder="Model"
+                    options={models}
                     getOptionLabel={(option) => option.name}
-                    value={selectedMevzi}
-                    onChange={handleMevziOptionChange}
-                    filterOptions={filterTypeOptions}
+                    onChange={handleModelOptionChange}
+                    onInputChange={(event, newInputValue) => {
+                      if (newInputValue) {
+                        setTempModel(newInputValue);
+                      }
+                    }}
+                    filterOptions={filterModelOptions}
+                    value={
+                      models.find(
+                        (model) => model.id === malzemeInfo?.mmodel_id
+                      ) || null
+                    }
                     renderInput={(params) => (
                       <CustomAutocompleteTextField
                         {...params}
-                        label="Mevzi"
+                        label="Model"
                         variant="filled"
                         fullWidth
                         margin="normal"
@@ -1182,221 +1265,295 @@ function MalzemeAdd({
                       />
                     )}
                   />
-                  <Tooltip
-                    title="Sadece isim belirleyerek boş bir mevzi oluşturabilirsiniz. Daha sonra Mevzi'nizin detaylarını güncelleyebilirsiniz."
-                    placement="right"
-                  >
-                    <InfoIcon style={{ color: "white", marginLeft: "8px" }} />
-                  </Tooltip>
-                </div>
-              )}
+                ) : (
+                  <CustomTextField
+                    label="Model"
+                    value={
+                      models.find(
+                        (model) => model.id === malzemeInfo?.mmodel_id
+                      )?.name || ""
+                    }
+                    variant="filled"
+                    fullWidth
+                    margin="normal"
+                    disabled
+                  />
+                )}
+
+                <Tooltip
+                  title="Yeni bir Model ismi girebilirsiniz."
+                  placement="right"
+                >
+                  <InfoIcon style={{ color: "white", marginLeft: "8px" }} />
+                </Tooltip>
+              </div>
               <LocalizationProvider
                 className="malzeme-add-calender"
                 style={{ marginTop: "30px" }}
                 dateAdapter={AdapterDayjs}
                 adapterLocale="tr"
               >
-                <DatePicker
-                  autoComplete="off"
-                  label="Envantere Giriş Tarihi"
-                  className="malzeme-add-calender"
-                  value={girisTarihi}
-                  onChange={(newValue) => {
-                    setGirisTarihi(newValue);
-                    setErrors((prev) => ({ ...prev, girisTarihi: "" }));
-                  }}
-                  renderInput={(params) => (
-                    <CustomTextField
-                      {...params}
-                      className="malzeme-add-calender"
-                      label="Envantere Giriş Tarihi"
-                      error={!!errors.girisTarihi}
-                      helperText={errors.girisTarihi ? "Geçersiz tarih!" : ""}
-                    />
-                  )}
-                />
-              </LocalizationProvider>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: "10px",
-                  width: "inherit",
-                  marginTop: "20px",
-                }}
-              >
-                <LocalizationProvider
-                  className="malzeme-add-calender"
-                  dateAdapter={AdapterDayjs}
-                  adapterLocale="tr"
-                >
+                {isRoleAdmin ? (
                   <DatePicker
                     autoComplete="off"
-                    label="Arıza Kaydı Ekle"
+                    label="Envantere Giriş Tarihi"
                     className="malzeme-add-calender"
-                    value={newChosenDate}
-                    onChange={(newValue) => setNewChosenDate(newValue)}
+                    value={girisTarihi}
+                    onChange={(newValue) => {
+                      setGirisTarihi(newValue);
+                      setErrors((prev) => ({ ...prev, girisTarihi: "" }));
+                    }}
                     renderInput={(params) => (
                       <CustomTextField
                         {...params}
                         className="malzeme-add-calender"
-                        label="Arıza Kaydı Ekle"
+                        label="Envantere Giriş Tarihi"
+                        error={!!errors.girisTarihi}
+                        helperText={errors.girisTarihi ? "Geçersiz tarih!" : ""}
                       />
                     )}
                   />
-                </LocalizationProvider>
+                ) : (
+                  <CustomTextField
+                    className="malzeme-add-calender"
+                    label="Envantere Giriş Tarihi"
+                    value={girisTarihi?.toLocaleDateString() || ""}
+                    variant="filled"
+                    fullWidth
+                    disabled
+                  />
+                )}
+              </LocalizationProvider>
 
-                <Tooltip title="Arıza Kaydı Ekle" placement="right">
-                  <IconButton
-                    onClick={() => handleArizaDateChange(newChosenDate)}
+              {malzeme && (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: "10px",
+                    width: "inherit",
+                    marginTop: "20px",
+                  }}
+                >
+                  <LocalizationProvider
+                    className="malzeme-add-calender"
+                    dateAdapter={AdapterDayjs}
+                    adapterLocale="tr"
                   >
-                    <AddCircleIcon
-                      style={{ color: "white", marginLeft: "8px" }}
-                    />
-                  </IconButton>
-                </Tooltip>
-              </div>
+                    {isRoleAdmin ? (
+                      <DatePicker
+                        autoComplete="off"
+                        label="Arıza Kaydı Ekle"
+                        className="malzeme-add-calender"
+                        value={newChosenDate}
+                        onChange={(newValue) => setNewChosenDate(newValue)}
+                        renderInput={(params) => (
+                          <CustomTextField
+                            {...params}
+                            className="malzeme-add-calender"
+                            label="Arıza Kaydı Ekle"
+                          />
+                        )}
+                      />
+                    ) : (
+                      <CustomTextField
+                        className="malzeme-add-calender"
+                        label="Arıza Kaydı Ekle"
+                        value={newChosenDate?.toLocaleDateString() || ""}
+                        variant="filled"
+                        fullWidth
+                        disabled
+                      />
+                    )}
+                  </LocalizationProvider>
+                  {isRoleAdmin && (
+                    <Tooltip title="Arıza Kaydı Ekle" placement="right">
+                      <IconButton
+                        onClick={() => handleArizaDateChange(newChosenDate)}
+                      >
+                        <AddCircleIcon
+                          style={{ color: "white", marginLeft: "8px" }}
+                        />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </div>
+              )}
               <div>
                 {malzemeInfo.arizalar && malzemeInfo.arizalar.length > 0 && (
                   <ul>
                     {malzemeInfo.arizalar.map((ariza, index) => (
                       <li key={index}>
                         {dayjs(ariza).locale("tr").format("DD/MM/YYYY")}
-                        <Tooltip title="Kaldır">
-                          <IconButton
-                            style={{
-                              paddingTop: "0px",
-                              paddingRight: "0px",
-                              paddingLeft: "0px",
-                              paddingButtom: "0px",
-                            }}
-                            onClick={() => handleDeleteAriza(index)}
-                            aria-label="delete"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
+                        {isRoleAdmin && (
+                          <Tooltip title="Kaldır">
+                            <IconButton
+                              style={{
+                                paddingTop: "0px",
+                                paddingRight: "0px",
+                                paddingLeft: "0px",
+                                paddingButtom: "0px",
+                              }}
+                              onClick={() => handleDeleteAriza(index)}
+                              aria-label="delete"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: "10px",
-                  width: "inherit",
-                  marginTop: "20px",
-                }}
-              >
-                <LocalizationProvider
-                  className="malzeme-add-calender"
-                  dateAdapter={AdapterDayjs}
-                  adapterLocale="tr"
+              {malzeme && (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: "10px",
+                    width: "inherit",
+                    marginTop: "20px",
+                  }}
                 >
-                  <DatePicker
-                    autoComplete="off"
-                    label="Onarım Kaydı Ekle"
+                  <LocalizationProvider
                     className="malzeme-add-calender"
-                    value={newChosenDate2}
-                    onChange={(newValue) => setNewChosenDate2(newValue)}
-                    renderInput={(params) => (
+                    dateAdapter={AdapterDayjs}
+                    adapterLocale="tr"
+                  >
+                    {isRoleAdmin ? (
+                      <DatePicker
+                        autoComplete="off"
+                        label="Onarım Kaydı Ekle"
+                        className="malzeme-add-calender"
+                        value={newChosenDate2}
+                        onChange={(newValue) => setNewChosenDate2(newValue)}
+                        renderInput={(params) => (
+                          <CustomTextField
+                            {...params}
+                            className="malzeme-add-calender"
+                            label="Onarım Kaydı Ekle"
+                          />
+                        )}
+                      />
+                    ) : (
                       <CustomTextField
-                        {...params}
                         className="malzeme-add-calender"
                         label="Onarım Kaydı Ekle"
+                        value={newChosenDate2?.toLocaleDateString() || ""}
+                        variant="filled"
+                        fullWidth
+                        disabled
                       />
                     )}
-                  />
-                </LocalizationProvider>
-
-                <Tooltip title="Onarım Kaydı Ekle" placement="right">
-                  <IconButton
-                    onClick={() => handleOnarimDateChange(newChosenDate2)}
-                  >
-                    <AddCircleIcon
-                      style={{ color: "white", marginLeft: "8px" }}
-                    />
-                  </IconButton>
-                </Tooltip>
-              </div>
+                  </LocalizationProvider>
+                  {isRoleAdmin && (
+                    <Tooltip title="Onarım Kaydı Ekle" placement="right">
+                      <IconButton
+                        onClick={() => handleOnarimDateChange(newChosenDate2)}
+                      >
+                        <AddCircleIcon
+                          style={{ color: "white", marginLeft: "8px" }}
+                        />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </div>
+              )}
               <div>
                 {malzemeInfo.onarimlar && malzemeInfo.onarimlar.length > 0 && (
                   <ul>
                     {malzemeInfo.onarimlar.map((onarim, index) => (
                       <li key={index}>
                         {dayjs(onarim).locale("tr").format("DD/MM/YYYY")}
-                        <Tooltip title="Kaldır">
-                          <IconButton
-                            onClick={() => handleDeleteOnarim(index)}
-                            aria-label="delete"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
+                        {isRoleAdmin && (
+                          <Tooltip title="Kaldır">
+                            <IconButton
+                              onClick={() => handleDeleteOnarim(index)}
+                              aria-label="delete"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: "10px",
-                  width: "inherit",
-                  marginTop: "20px",
-                }}
-              >
-                <LocalizationProvider
-                  className="malzeme-add-calender"
-                  dateAdapter={AdapterDayjs}
-                  adapterLocale="tr"
+              {malzeme && (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: "10px",
+                    width: "inherit",
+                    marginTop: "20px",
+                  }}
                 >
-                  <DatePicker
-                    autoComplete="off"
-                    label="Bakım Kaydı Ekle"
+                  <LocalizationProvider
                     className="malzeme-add-calender"
-                    value={newChosenDate3}
-                    onChange={(newValue) => setNewChosenDate3(newValue)}
-                    renderInput={(params) => (
+                    dateAdapter={AdapterDayjs}
+                    adapterLocale="tr"
+                  >
+                    {isRoleAdmin ? (
+                      <DatePicker
+                        autoComplete="off"
+                        label="Bakım Kaydı Ekle"
+                        className="malzeme-add-calender"
+                        value={newChosenDate3}
+                        onChange={(newValue) => setNewChosenDate3(newValue)}
+                        renderInput={(params) => (
+                          <CustomTextField
+                            {...params}
+                            className="malzeme-add-calender"
+                            label="Bakım Kaydı Ekle"
+                          />
+                        )}
+                      />
+                    ) : (
                       <CustomTextField
-                        {...params}
                         className="malzeme-add-calender"
                         label="Bakım Kaydı Ekle"
+                        value={newChosenDate3?.toLocaleDateString() || ""}
+                        variant="filled"
+                        fullWidth
+                        disabled
                       />
                     )}
-                  />
-                </LocalizationProvider>
-
-                <Tooltip title="Bakım Kaydı Ekle" placement="right">
-                  <IconButton
-                    onClick={() => handleBakimDateChange(newChosenDate3)}
-                  >
-                    <AddCircleIcon
-                      style={{ color: "white", marginLeft: "8px" }}
-                    />
-                  </IconButton>
-                </Tooltip>
-              </div>
+                  </LocalizationProvider>
+                  {isRoleAdmin && (
+                    <Tooltip title="Bakım Kaydı Ekle" placement="right">
+                      <IconButton
+                        onClick={() => handleBakimDateChange(newChosenDate3)}
+                      >
+                        <AddCircleIcon
+                          style={{ color: "white", marginLeft: "8px" }}
+                        />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </div>
+              )}
               <div>
                 {malzemeInfo.bakimlar && malzemeInfo.bakimlar.length > 0 && (
                   <ul>
                     {malzemeInfo.bakimlar.map((bakim, index) => (
                       <li key={index}>
                         {dayjs(bakim).locale("tr").format("DD/MM/YYYY")}
-                        <Tooltip title="Kaldır">
-                          <IconButton
-                            onClick={() => handleDeleteBakim(index)}
-                            aria-label="delete"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
+                        {isRoleAdmin && (
+                          <Tooltip title="Kaldır">
+                            <IconButton
+                              onClick={() => handleDeleteBakim(index)}
+                              aria-label="delete"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -1500,41 +1657,47 @@ function MalzemeAdd({
                       <TextField
                         label="Klasör Adı"
                         value={folder.folderName}
-                        onChange={(e) =>
-                          handleFolderNameChange(folderIndex, e.target.value)
-                        }
+                        onChange={(e) => {
+                          if (isRoleAdmin) {
+                            handleFolderNameChange(folderIndex, e.target.value);
+                          }
+                        }}
                         variant="outlined"
                         fullWidth
+                        disabled={!isRoleAdmin}
                       />
-
-                      <IconButton
-                        aria-label="delete"
-                        size="medium"
-                        onClick={() => handleDeleteFolder(folderIndex)}
-                        style={{ marginLeft: "10px" }}
-                      >
-                        <DeleteIcon fontSize="medium" />
-                      </IconButton>
+                      {isRoleAdmin && (
+                        <IconButton
+                          aria-label="delete"
+                          size="medium"
+                          onClick={() => handleDeleteFolder(folderIndex)}
+                          style={{ marginLeft: "10px" }}
+                        >
+                          <DeleteIcon fontSize="medium" />
+                        </IconButton>
+                      )}
                     </div>
+
                     {folder.folderName && (
                       <>
-                        <CustomOutlinedButton
-                          variant="outlined"
-                          component="label"
-                        >
-                          Fotoğraf Seç
-                          <input
-                            type="file"
-                            hidden
-                            multiple
-                            accept="image/*"
-                            onChange={(event) =>
-                              handleImageChange(event, folderIndex)
-                            }
-                          />
-                        </CustomOutlinedButton>
-
-                        {folder.selectedImages.length > 0 && (
+                        {isRoleAdmin && (
+                          <CustomOutlinedButton
+                            variant="outlined"
+                            component="label"
+                          >
+                            Fotoğraf Seç
+                            <input
+                              type="file"
+                              hidden
+                              multiple
+                              accept="image/*"
+                              onChange={(event) =>
+                                handleImageChange(event, folderIndex)
+                              }
+                            />
+                          </CustomOutlinedButton>
+                        )}
+                        {folder.selectedImages.length > 0 && isRoleAdmin && (
                           <Accordion style={{ marginTop: "10px" }}>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                               <Typography variant="subtitle1">
@@ -1574,6 +1737,7 @@ function MalzemeAdd({
                             </AccordionDetails>
                           </Accordion>
                         )}
+
                         {folder.existingImages.length > 0 && (
                           <Accordion style={{ marginTop: "10px" }}>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -1594,19 +1758,21 @@ function MalzemeAdd({
                                       }}
                                     >
                                       <span>{image.name}</span>
-                                      <IconButton
-                                        aria-label="delete"
-                                        size="small"
-                                        onClick={() =>
-                                          handleDeleteImage(
-                                            folderIndex,
-                                            image.name
-                                          )
-                                        }
-                                        style={{ marginLeft: "10px" }}
-                                      >
-                                        <CloseIcon fontSize="small" />
-                                      </IconButton>
+                                      {isRoleAdmin && (
+                                        <IconButton
+                                          aria-label="delete"
+                                          size="small"
+                                          onClick={() =>
+                                            handleDeleteImage(
+                                              folderIndex,
+                                              image.name
+                                            )
+                                          }
+                                          style={{ marginLeft: "10px" }}
+                                        >
+                                          <CloseIcon fontSize="small" />
+                                        </IconButton>
+                                      )}
                                     </li>
                                   )
                                 )}
@@ -1618,21 +1784,32 @@ function MalzemeAdd({
                     )}
                   </div>
                 ))}
-                <CustomOutlinedButton
-                  onClick={handleAddFolder}
-                  variant="outlined"
-                  style={{ marginTop: "20px" }}
-                >
-                  Yeni Klasör Ekle
-                </CustomOutlinedButton>
+                {isRoleAdmin && (
+                  <CustomOutlinedButton
+                    onClick={handleAddFolder}
+                    variant="outlined"
+                    style={{ marginTop: "20px" }}
+                  >
+                    Yeni Klasör Ekle
+                  </CustomOutlinedButton>
+                )}
               </div>
             </div>
           </div>
-
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <CustomOutlinedButton variant="outlined" type="submit">
-              {malzeme ? "Güncelle" : "Kaydet"}
-            </CustomOutlinedButton>
+          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+            {malzeme && (
+              <CustomOutlinedButton
+                variant="outlined"
+                onClick={handleGoruntuleClick}
+              >
+                Görüntüle
+              </CustomOutlinedButton>
+            )}
+            {isRoleAdmin && (
+              <CustomOutlinedButton variant="outlined" type="submit">
+                {malzeme ? "Güncelle" : "Kaydet"}
+              </CustomOutlinedButton>
+            )}
           </div>
         </form>
       </div>

@@ -10,6 +10,9 @@ import Home from "./pages/Home/home";
 import Systems from "./pages/Systems/Systems";
 import Mevziler from "./pages/Mevziler/Mevziler";
 import SystemEdit from "./pages/SystemEdit/SystemEdit";
+import SystemBilgi from "./pages/SystemBilgi/SystemBilgi";
+import MalzemeBilgi from "./pages/MalzemeBilgi/MalzemeBilgi";
+import MevziBilgi from "./pages/MevziBilgi/MevziBilgi";
 import MevziEdit from "./pages/MevziEdit/MevziEdit";
 import MalzemeEdit from "./pages/MalzemeEdit/MalzemeEdit";
 import Malzemeler from "./pages/Malzemeler/Malzemeler";
@@ -17,25 +20,47 @@ import SystemAdd from "./pages/SystemAdd/SystemAdd";
 import { useTheme } from "@mui/material/styles";
 import "./index.css";
 import AppBarComponent from "./components/AppBarComponent/AppBarComponent";
-import Axios from "axios";
+import axios from "axios";
 import { message } from "antd";
 import MalzemeAdd from "./pages/MalzemeAdd/MalzemeAdd";
 import MevziAdd from "./pages/MevziAdd/MevziAdd";
 import PhotoGallery from "./pages/PhotoGallery/PhotoGallery";
 import MevziAltYapi from "./pages/MevziAltYapi/MevziAltYapi";
 import MevziIp from "./pages/MevziIp/MevziIp";
+import { AuthProvider, useAuth } from "./AuthContext";
+import PrivateRoute from "./PrivateRoute";
 
 function App() {
   const theme = useTheme();
+  useEffect(() => {
+    if (theme.palette.mode === "dark") {
+      document.documentElement.classList.add("dark-mode");
+    } else {
+      document.documentElement.classList.add("dark-mode");
+    }
+  }, [theme.palette.mode]);
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
+  );
+}
+
+const AppContent = () => {
   const [mevziler, setMevziler] = useState([]);
   const [systems, setSystems] = useState([]);
   const [freeMalzemeler, setFreeMalzemeler] = useState([]);
   const [malzemeler, setMalzemeler] = useState([]);
   const [malzMatch, setMalzMatch] = useState([]);
-  const isAdmin = process.env.REACT_APP_ROLE;
-  let isRoleAdmin;
+  const { loading, isAdmin } = useAuth();
 
-  if (isAdmin === "admin") {
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  let isRoleAdmin;
+  if (isAdmin) {
     isRoleAdmin = true;
   } else {
     isRoleAdmin = false;
@@ -44,7 +69,7 @@ function App() {
   // FETCH ALL MEVZILER
   const fetchAllMevzi = async () => {
     try {
-      const response = await Axios.get("/api/mevzi/all/");
+      const response = await axios.get("/api/mevzi/all/");
       setMevziler(response.data);
     } catch (error) {
       message.error(error.response?.data?.detail || error.message);
@@ -54,7 +79,7 @@ function App() {
   // FETCH ALL MALZ MATCH
   const fetchMalzMatch = async () => {
     try {
-      const response = await Axios.get("/api/malzeme/malzmatches/get");
+      const response = await axios.get("/api/malzeme/malzmatches/get");
       setMalzMatch(response.data);
     } catch (error) {
       console.error(error.response?.data?.detail || error.message);
@@ -64,12 +89,12 @@ function App() {
   // FETCH SYSTEMS
   const fetchSystems = async () => {
     try {
-      const response = await Axios.get("/api/system/all/");
+      const response = await axios.get("/api/system/all/");
       const systemsData = response.data;
       // Fetch malzemeler for each system
       const systemsWithMalzemeler = await Promise.all(
         systemsData.map(async (system) => {
-          const malzemeResponse = await Axios.get(
+          const malzemeResponse = await axios.get(
             `/api/malzeme/get/${system.id}`
           );
           return { ...system, malzemeler: malzemeResponse.data };
@@ -84,7 +109,7 @@ function App() {
   // FETCH FREE MALZEME
   const fetchFreeMalzemeler = async () => {
     try {
-      const response = await Axios.get("/api/malzeme/free/");
+      const response = await axios.get("/api/malzeme/free/");
       setFreeMalzemeler(response.data);
     } catch (error) {
       console.error(error.response?.data?.detail || error.message);
@@ -93,28 +118,32 @@ function App() {
   // FETCH ALL MALZEMELER
   const fetchMalzemeler = async () => {
     try {
-      const response = await Axios.get("/api/malzeme/all/");
+      const response = await axios.get("/api/malzeme/all/");
       setMalzemeler(response.data);
     } catch (error) {
       console.error(error.response?.data?.detail || error.message);
     }
   };
 
-  useEffect(() => {
-    if (theme.palette.mode === "dark") {
-      document.documentElement.classList.add("dark-mode");
-    } else {
-      document.documentElement.classList.add("dark-mode");
-    }
-  }, [theme.palette.mode]);
-
   return (
-    <Router>
-      <>
-        <AppBarComponent isRoleAdmin={isRoleAdmin} />
-        <Routes>
+    <>
+      <AppBarComponent isRoleAdmin={isRoleAdmin} />
+      <Routes>
+        <Route element={<PrivateRoute />}>
           <Route
             path="/home"
+            element={
+              <Home
+                isRoleAdmin={isRoleAdmin}
+                mevziler={mevziler}
+                fetchAllMevzi={fetchAllMevzi}
+                systems={systems}
+                fetchSystems={fetchSystems}
+              />
+            }
+          />
+          <Route
+            path="/"
             element={
               <Home
                 isRoleAdmin={isRoleAdmin}
@@ -152,6 +181,10 @@ function App() {
             }
           />
           <Route
+            path="/system/:id/bilgi"
+            element={<SystemBilgi isRoleAdmin={isRoleAdmin} />}
+          />
+          <Route
             path="/mevziler"
             element={
               <Mevziler
@@ -172,6 +205,10 @@ function App() {
                 fetchAllMevzi={fetchAllMevzi}
               />
             }
+          />
+          <Route
+            path="/mevzi/:id/bilgi"
+            element={<MevziBilgi isRoleAdmin={isRoleAdmin} />}
           />
           <Route
             path="/mevziler/:id/altyapi"
@@ -202,6 +239,8 @@ function App() {
                 isRoleAdmin={isRoleAdmin}
                 initialMalzemeler={malzemeler}
                 fetchMalzemeler={fetchMalzemeler}
+                malzMatch={malzMatch}
+                fetchMalzMatch={fetchMalzMatch}
               />
             }
           />
@@ -220,6 +259,10 @@ function App() {
                 systems={systems}
               />
             }
+          />
+          <Route
+            path="/malzeme/:id/bilgi"
+            element={<MalzemeBilgi isRoleAdmin={isRoleAdmin} />}
           />
           <Route
             path="/sistem-ekle"
@@ -253,22 +296,22 @@ function App() {
           />
           <Route
             path="/mevzi-ekle"
-            element={<MevziAdd isRoleAdmin={isRoleAdmin} systems={systems}
-              fetchSystems={fetchSystems} />}
-          />
-          <Route
-            path="/:sis-malz-mev/gallery/:name"
             element={
-              <PhotoGallery
+              <MevziAdd
                 isRoleAdmin={isRoleAdmin}
+                systems={systems}
+                fetchSystems={fetchSystems}
               />
             }
           />
-
-        </Routes>
-      </>
-    </Router>
+          <Route
+            path="/:sis-malz-mev/gallery/:name"
+            element={<PhotoGallery isRoleAdmin={isRoleAdmin} />}
+          />
+        </Route>
+      </Routes>
+    </>
   );
-}
+};
 
 export default App;

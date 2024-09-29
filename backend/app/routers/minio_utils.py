@@ -5,12 +5,17 @@ from minio.error import S3Error
 import os  
 import re
 import json
+from fastapi import HTTPException
 from minio.commonconfig import CopySource
+from dotenv import load_dotenv
+
+load_dotenv()
+
 minio_client = Minio(
-    "minio:9000", 
-    access_key="user_minio",
-    secret_key="password_minio",
-    secure=False 
+    f"{os.getenv('MINIO_CONTAINER_NAME')}:{os.getenv('MINIO_DOCKER_INTERNAL_PORT')}",
+    access_key=os.getenv('MINIO_ROOT_USER'),
+    secret_key=os.getenv('MINIO_ROOT_PASSWORD'),
+    secure=False
 )
 
 def set_bucket_public_policy(bucket_name: str):
@@ -27,18 +32,14 @@ def set_bucket_public_policy(bucket_name: str):
 
     try:
         minio_client.set_bucket_policy(bucket_name, json.dumps(policy))
-        print(f"Bucket '{bucket_name}' public yapıldı.")
     except S3Error as e:
-        print(f"Policy ayarlanırken hata oluştu: {e}")
-        raise e
+        raise HTTPException(status_code=500, detail=f"Policy ayarlanırken hata oluştu: {str(e)}")
 
 
 def upload_image_to_minio(bucket_name: str, folder_name: str, image_file: bytes, image_name: str):
     try:
-        print(f"Bucket kontrol ediliyor: {bucket_name}")
         found = minio_client.bucket_exists(bucket_name)
         if not found:
-            print(f"Bucket oluşturuluyor: {bucket_name}")
             minio_client.make_bucket(bucket_name)
            
             set_bucket_public_policy(bucket_name)
@@ -46,16 +47,11 @@ def upload_image_to_minio(bucket_name: str, folder_name: str, image_file: bytes,
        
         base_image_name = os.path.splitext(image_name)[0]  
         object_name = f"{folder_name}/{base_image_name}.png"  
-
-        print(f"Resim yükleniyor: {object_name}")
-        
-        # Resim dosyasını PNG formatına dönüştür
         image = Image.open(io.BytesIO(image_file))
         png_image = io.BytesIO()
         image.save(png_image, format="PNG")
         png_image.seek(0)
         
-        # Resmi MinIO'ya yükle
         minio_client.put_object(
             bucket_name=bucket_name,
             object_name=object_name,
@@ -64,11 +60,9 @@ def upload_image_to_minio(bucket_name: str, folder_name: str, image_file: bytes,
             content_type="image/png"
         )
         
-        print(f"Resim yüklendi: {object_name}")
         return f"http://localhost:9010/{bucket_name}/{object_name}"
     except S3Error as e:
-        print(f"MinIO Hatası: {e}")
-        raise e
+        raise HTTPException(status_code=500, detail=f"MinIO Hatası: {str(e)}")
 
 
 def delete_folder_from_minio(bucket_name: str, folder_name: str):
@@ -76,9 +70,8 @@ def delete_folder_from_minio(bucket_name: str, folder_name: str):
     for obj in objects:
         try:
             minio_client.remove_object(bucket_name, obj.object_name)
-            print(f"Silinen dosya: {obj.object_name}")
         except Exception as e:
-            print(f"Dosya silinirken hata oluştu: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Dosya silinirken hata oluştu: {str(e)}")
 
 
 
@@ -120,5 +113,4 @@ async def move_files_in_minio(bucket_name: str, old_folder: str, new_folder: str
         delete_folder_from_minio(bucket_name, old_folder)
         
     except S3Error as e:
-        print(f"MinIO Hatası: {e}")
-        raise e
+        raise HTTPException(status_code=500, detail=f"MinIO Hatası: {str(e)}")

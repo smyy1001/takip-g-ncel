@@ -9,6 +9,10 @@ from app.db.database import SessionLocal
 from app.db.models import MalzMatch
 import asyncio
 from sqlalchemy.orm import Session
+from fastapi import Depends
+from .token_verification import verify_token  
+from .keycloak import token_router 
+
 
 app = FastAPI()
 
@@ -16,39 +20,41 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"], 
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(api_router, prefix="/api")
 
+app.include_router(api_router, prefix="/api", dependencies=[Depends(verify_token)])
 
-async def update_ip_statuses():
-    while True:
-        try:
-            db: Session = SessionLocal()
+app.include_router(token_router, prefix="/api/keycloak")
 
-            matches = db.query(MalzMatch).all()
+# async def update_ip_statuses():
+#     while True:
+#         try:
+#             db: Session = SessionLocal()
 
-            for match in matches:
-                ip_address = match.ip
-                is_up = check_ip(ip_address)
+#             matches = db.query(MalzMatch).all()
 
-                match.state = 2 if is_up else 0
+#             for match in matches:
+#                 ip_address = match.ip
+#                 is_up = check_ip(ip_address)
 
-            db.commit()
-            db.close()
+#                 match.state = 2 if is_up else 0
 
-        except Exception as e:
-            print(f"Error updating IP statuses: {e}")
+#             db.commit()
+#             db.close()
 
-        await asyncio.sleep(60)
+#         except Exception as e:
+#             print(f"Error updating IP statuses: {e}")
+
+#         await asyncio.sleep(60)
 
 
 @app.on_event("startup")
 def on_startup():
     init_db()
-    asyncio.create_task(update_ip_statuses())
+    # asyncio.create_task(update_ip_statuses())
 
 
 @app.get("/health")

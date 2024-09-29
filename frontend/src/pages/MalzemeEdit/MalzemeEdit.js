@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Axios from "../../Axios";
+import axios from "axios";
 import {
   Container,
   Typography,
@@ -53,7 +53,7 @@ function MalzemeEdit({
   useEffect(() => {
     const fetchCurrentMalzeme = async () => {
       try {
-        const response = await Axios.get(`/api/malzeme/get/${id}`);
+        const response = await axios.get(`/api/malzeme/get/${id}`);
         setMalzeme(response.data);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -80,7 +80,7 @@ function MalzemeEdit({
   const handleDeleteMalzemeClick = async (malzemeId, event) => {
     event.stopPropagation();
     try {
-      const response = await Axios.delete(`/api/malzeme/delete/${malzemeId}`);
+      const response = await axios.delete(`/api/malzeme/delete/${malzemeId}`);
       if (response.status === 200 || response.status === 204) {
         message.success("Malzeme silindi!");
         fetchMalzemeler();
@@ -93,19 +93,18 @@ function MalzemeEdit({
   };
 
   const handleToMalzmeler = () => {
-    navigate('/malzemeler');
+    navigate("/malzemeler");
   };
-
 
   return (
     <Container className="malzeme-edit-container">
       <div className="malzeme-edit-main-div-class">
         <div className="malzeme-edit-left-div">
-          <Tooltip title="Tabular Görünüm"
-            style={{ cursor: 'pointer' }}
+          <Tooltip
+            title="Tabular Görünüm"
+            style={{ cursor: "pointer" }}
             onClick={() => handleToMalzmeler()}
           >
-
             <Typography
               component="span"
               sx={{
@@ -127,8 +126,9 @@ function MalzemeEdit({
               malzemeler.map((malz, index) => (
                 <div
                   key={malz.id}
-                  className={`malz-edit-all-list ${malz.id === id ? "chosen" : ""
-                    }`}
+                  className={`malz-edit-all-list ${
+                    malz.id === id ? "chosen" : ""
+                  }`}
                 >
                   <Box sx={{ flexGrow: 1, maxWidth: 752 }}>
                     <Grid item xs={12} md={6}>
@@ -137,22 +137,25 @@ function MalzemeEdit({
                           disablePadding
                           ref={itemRefs.current[index]}
                           secondaryAction={
-                            <Tooltip title="Sil">
-                              <IconButton
-                                edge="end"
-                                onClick={(event) =>
-                                  handleDeleteMalzemeClick(malz.id, event)
-                                }
-                                aria-label="delete"
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
+                            isRoleAdmin && (
+                              <Tooltip title="Sil">
+                                <IconButton
+                                  edge="end"
+                                  onClick={(event) =>
+                                    handleDeleteMalzemeClick(malz.id, event)
+                                  }
+                                  aria-label="delete"
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Tooltip>
+                            )
                           }
                         >
                           <ListItemButton
-                            className={`malzeme-edit-list-item ${malz.id === id ? "chosen" : ""
-                              }`}
+                            className={`malzeme-edit-list-item ${
+                              malz.id === id ? "chosen" : ""
+                            }`}
                             onClick={() => handleEditMalzemeClick(malz)}
                           >
                             <ListItemText

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Axios from "../../Axios";
+import axios from "axios";
 import {
   Container,
   Typography,
@@ -52,11 +52,11 @@ function SystemEdit({
   useEffect(() => {
     const fetchCurrentSystem = async () => {
       try {
-        const response = await Axios.get(`/api/system/get/${id}`);
+        const response = await axios.get(`/api/system/get/${id}`);
 
         setSystem(response.data);
 
-        const malzemeResponse = await Axios.get(`/api/malzeme/get/${id}`);
+        const malzemeResponse = await axios.get(`/api/malzeme/get/${id}`);
         setSystemMalzemeler(malzemeResponse.data); // Değişiklik burada
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -85,7 +85,7 @@ function SystemEdit({
   const handleDeleteSystemClick = async (systemId, event) => {
     event.stopPropagation();
     try {
-      const response = await Axios.delete(`/api/system/delete/${systemId}`);
+      const response = await axios.delete(`/api/system/delete/${systemId}`);
       if (response.status === 200 || response.status === 204) {
         message.success("Sistem silindi!");
         fetchSystems();
@@ -110,16 +110,15 @@ function SystemEdit({
     navigate(`/sistemler`);
   };
 
-
   return (
     <Container className="system-edit-container">
       <div className="system-edit-main-div-class">
         <div className="system-edit-left-div">
-          <Tooltip title="Tabular Görünüm"
-            style={{ cursor: 'pointer' }}
+          <Tooltip
+            title="Tabular Görünüm"
+            style={{ cursor: "pointer" }}
             onClick={() => handleToSystems()}
           >
-
             <Typography
               component="span"
               sx={{
@@ -142,8 +141,9 @@ function SystemEdit({
               systems.map((sys, index) => (
                 <div
                   key={sys.id}
-                  className={`sys-edit-all-list ${sys.id === id ? "chosen" : ""
-                    }`}
+                  className={`sys-edit-all-list ${
+                    sys.id === id ? "chosen" : ""
+                  }`}
                 >
                   <Box sx={{ flexGrow: 1, maxWidth: 752 }}>
                     <Grid item xs={12} md={6}>
@@ -152,22 +152,25 @@ function SystemEdit({
                           disablePadding
                           ref={itemRefs.current[index]}
                           secondaryAction={
-                            <Tooltip title="Sil">
-                              <IconButton
-                                edge="end"
-                                onClick={(event) =>
-                                  handleDeleteSystemClick(sys.id, event)
-                                }
-                                aria-label="delete"
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
+                            isRoleAdmin && (
+                              <Tooltip title="Sil">
+                                <IconButton
+                                  edge="end"
+                                  onClick={(event) =>
+                                    handleDeleteSystemClick(sys.id, event)
+                                  }
+                                  aria-label="delete"
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Tooltip>
+                            )
                           }
                         >
                           <ListItemButton
-                            className={`system-edit-list-item ${sys.id === id ? "chosen" : ""
-                              }`}
+                            className={`system-edit-list-item ${
+                              sys.id === id ? "chosen" : ""
+                            }`}
                             onClick={() => handleEditSystemClick(sys)}
                           >
                             <ListItemText

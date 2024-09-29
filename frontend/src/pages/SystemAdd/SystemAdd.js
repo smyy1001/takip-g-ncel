@@ -1,7 +1,8 @@
 import "./SystemAdd.css";
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useRef } from "react";
-import Axios from "../../Axios";
+import axios from "axios";
 import {
   Container,
   Typography,
@@ -32,141 +33,6 @@ import "dayjs/locale/tr"; // For Turkish locale
 import { IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
-// const CustomDateTimeField = styled(DateTimeField)({
-//     '& label.Mui-focused': {
-//         color: 'white',
-//     },
-//     '& .MuiInput-underline:after': {
-//         borderBottomColor: 'white !important',
-//     },
-//     '& .MuiOutlinedInput-root': {
-//         '& fieldset': {
-//             borderColor: 'white',
-//         },
-//         '&:hover fieldset': {
-//             borderColor: 'white',
-//         },
-//         '&.Mui-focused fieldset': {
-//             borderColor: 'white !important',
-//         },
-//         '& input:valid:focus + fieldset': {
-//             borderColor: 'white !important',
-//         }
-//     },
-//     '& .MuiFilledInput-root': {
-//         '&:before': {
-//             borderBottomColor: 'white',
-//         },
-//         '&:hover:before': {
-//             borderBottomColor: 'white',
-//         },
-//         '&:after': {
-//             borderBottomColor: 'white',
-//         },
-//         '&:hover fieldset': {
-//             borderColor: 'white',
-//         },
-//         '&.Mui-focused fieldset': {
-//             borderColor: 'white',
-//         },
-//     },
-//     '& label.Mui-focused': {
-//         color: 'white',
-//     },
-//     '& label': {
-//         color: 'white',
-//         '&[aria-selected="true"]': {
-//             backgroundColor: '#423532',
-//         },
-//         '&:hover': {
-//             backgroundColor: '#332725',
-//         },
-//     },
-//     '& .MuiInputBase-root': {
-//         '&::selection': {
-//             backgroundColor: 'rgba(255, 255, 255, 0.99) !important',
-//             color: '#241b19 !important',
-//         },
-//         '& input': {
-//             caretColor: 'white'
-//         }
-//     },
-//     '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
-//         borderColor: 'white !important',
-//     },
-//     '& .MuiInputBase-input::selection': {
-//         backgroundColor: 'rgba(255, 255, 255, 0.99) !important',
-//         color: '#241b19 !important',
-//     },
-// });
-
-// const CustomDateField = styled(DateField)({
-//     '& label.Mui-focused': {
-//         color: 'white',
-//     },
-//     '& .MuiInput-underline:after': {
-//         borderBottomColor: 'white !important',
-//     },
-//     '& .MuiOutlinedInput-root': {
-//         '& fieldset': {
-//             borderColor: 'white',
-//         },
-//         '&:hover fieldset': {
-//             borderColor: 'white',
-//         },
-//         '&.Mui-focused fieldset': {
-//             borderColor: 'white !important',
-//         },
-//         '& input:valid:focus + fieldset': {
-//             borderColor: 'white !important',
-//         }
-//     },
-//     '& .MuiFilledInput-root': {
-//         '&:before': {
-//             borderBottomColor: 'white',
-//         },
-//         '&:hover:before': {
-//             borderBottomColor: 'white',
-//         },
-//         '&:after': {
-//             borderBottomColor: 'white',
-//         },
-//         '&:hover fieldset': {
-//             borderColor: 'white',
-//         },
-//         '&.Mui-focused fieldset': {
-//             borderColor: 'white',
-//         },
-//     },
-//     '& label.Mui-focused': {
-//         color: 'white',
-//     },
-//     '& label': {
-//         color: 'white',
-//         '&[aria-selected="true"]': {
-//             backgroundColor: '#423532',
-//         },
-//         '&:hover': {
-//             backgroundColor: '#332725',
-//         },
-//     },
-//     '& .MuiInputBase-root': {
-//         '&::selection': {
-//             backgroundColor: 'rgba(255, 255, 255, 0.99) !important',
-//             color: '#241b19 !important',
-//         },
-//         '& input': {
-//             caretColor: 'white'
-//         }
-//     },
-//     '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
-//         borderColor: 'white !important',
-//     },
-//     '& .MuiInputBase-input::selection': {
-//         backgroundColor: 'rgba(255, 255, 255, 0.99) !important',
-//         color: '#241b19 !important',
-//     },
-// });
 
 const CustomAutocompleteTextField = styled(TextField)({
   "& label.Mui-focused": {
@@ -325,7 +191,7 @@ function SystemAdd({
   fetchMalzemeler,
 }) {
   const [systemInfo, setSystemInfo] = useState(null);
-
+  const navigate = useNavigate();
   const [all_types, setAllTypes] = useState([]);
   const [tempType, setTempType] = useState("");
   const [tempMarka, setTempMarka] = useState("");
@@ -352,7 +218,11 @@ function SystemAdd({
     girisTarihi: "",
   });
   const formRef = useRef();
-
+  const handleGoruntuleClick = () => {
+    if (system?.id) {
+      navigate(`/system/${system.id}/bilgi`);
+    }
+  };
   const handleImageChange = (event, folderIndex) => {
     const files = Array.from(event.target.files);
     setFolders((prevFolders) => {
@@ -456,7 +326,7 @@ function SystemAdd({
   // TYPE
   const fetchAllTypes = async () => {
     try {
-      const response = await Axios.get("/api/systype/all/");
+      const response = await axios.get("/api/systype/all/");
       setAllTypes(response.data);
     } catch (error) {
       message.error(error.response?.data?.detail || error.message);
@@ -465,7 +335,9 @@ function SystemAdd({
 
   const addNewType = async (typeName) => {
     try {
-      const response = await Axios.post("/api/systype/add", { name: typeName });
+      const response = await axios.post("/api/systype/add/", {
+        name: typeName,
+      });
       // console.log("Yeni tür eklendi:", response.data);
       fetchAllTypes();
       return response.data.id;
@@ -510,7 +382,7 @@ function SystemAdd({
   // MARKA
   const fetchAllMarkalar = async () => {
     try {
-      const response = await Axios.get("/api/sys_marka/all/");
+      const response = await axios.get("/api/sys_marka/all/");
       setAllMarkalar(response.data);
     } catch (error) {
       message.error(error.response?.data?.detail || error.message);
@@ -519,7 +391,7 @@ function SystemAdd({
 
   const addNewMarka = async (markaName) => {
     try {
-      const response = await Axios.post("/api/sys_marka/add", {
+      const response = await axios.post("/api/sys_marka/add/", {
         name: markaName,
       });
       // console.log("Yeni marka eklendi:", response.data);
@@ -566,7 +438,7 @@ function SystemAdd({
   // ILISKILI UNSUR
   const fetchAllUnsurlar = async () => {
     try {
-      const response = await Axios.get("/api/unsur/all/");
+      const response = await axios.get("/api/unsur/all/");
       setUnsurlar(response.data);
     } catch (error) {
       message.error(error.response?.data?.detail || error.message);
@@ -600,7 +472,7 @@ function SystemAdd({
   // MODEL
   const fetchAllModels = async () => {
     try {
-      const response = await Axios.get("/api/sys_model/all/");
+      const response = await axios.get("/api/sys_model/all/");
       setAllModels(response.data);
     } catch (error) {
       message.error(error.response?.data?.detail || error.message);
@@ -614,7 +486,7 @@ function SystemAdd({
 
   const addNewModel = async (modelName) => {
     try {
-      const response = await Axios.post("/api/sys_model/add", {
+      const response = await axios.post("/api/sys_model/add/", {
         name: modelName,
       });
       // console.log("Yeni model eklendi:", response.data);
@@ -668,7 +540,7 @@ function SystemAdd({
 
   const addNewMevzi = async (MevziName) => {
     try {
-      const response = await Axios.post("/api/mevzi/add", { name: MevziName });
+      const response = await axios.post("/api/mevzi/add/", { name: MevziName });
       // console.log("Yeni mevzi eklendi:", response.data);
       fetchAllMevzi();
       return response.data.id;
@@ -693,7 +565,10 @@ function SystemAdd({
   };
   // UPDATE MALZEME
   const handleUpdateMalzeme = async (system_idd) => {
-    const malzemeIds = selectedMalzemeler?.map((malzeme) => malzeme.id) || [];
+    const malzemeIds = selectedMalzemeler
+      ?.map((malzeme) => (typeof malzeme === "string" ? malzeme : malzeme.id))
+      .filter((id) => id !== undefined && id !== null);
+
     const previouslySelectedMalzemeler =
       malzemeler?.filter((malzeme) => malzeme.system_id === system_idd) || [];
 
@@ -701,22 +576,27 @@ function SystemAdd({
       (malzeme) => !malzemeIds.includes(malzeme.id)
     );
 
+    console.log("malzemeIds", malzemeIds);
+
+    console.log("previouslySelectedMalzemeler", previouslySelectedMalzemeler);
+    console.log("malzemelerToBeUnset", malzemelerToBeUnset);
+    if (malzemeIds.length === 0 && malzemelerToBeUnset.length === 0) {
+      return;
+    }
+
     const requestBody = {
       malzeme_ids: malzemeIds,
       system_id: system_idd,
     };
 
     try {
-      const response = await Axios.post(
-        "/api/malzeme/reg-system/",
-        requestBody
-      );
+      const response = await axios.post("/api/malzeme/reg-system", requestBody);
       message.success("Malzemeler güncellendi!");
 
       await Promise.all(
         malzemelerToBeUnset.map(async (malzeme) => {
           try {
-            await Axios.put(`/api/malzeme/unset-system/${malzeme.id}`);
+            await axios.put(`/api/malzeme/unset-system/${malzeme.id}`);
           } catch (error) {
             console.error(`Error updating malzeme ${malzeme.id}`, error);
           }
@@ -758,6 +638,8 @@ function SystemAdd({
 
     const systemData = {
       name: systemInfo?.name || null,
+      frequency: systemInfo?.frequency || null,
+      ip: systemInfo?.ip || null,
       seri_num: systemInfo?.seri_num || null,
       description: systemInfo?.description || null,
       type_id: systemInfo?.type_id || null,
@@ -822,7 +704,7 @@ function SystemAdd({
       let response;
 
       if (system) {
-        response = await Axios.put(
+        response = await axios.put(
           `/api/system/update/${system.id}`,
           formData,
           {
@@ -837,7 +719,7 @@ function SystemAdd({
           fetchSystems();
         }
       } else {
-        response = await Axios.post("/api/system/add/", formData, {
+        response = await axios.post("/api/system/add/", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
@@ -878,15 +760,16 @@ function SystemAdd({
   useEffect(() => {
     resetForm();
     if (system) {
-      const selectedMalzemeler = malzemeler.filter(
-        (malzeme) => malzeme.system_id === system.id
-      );
-      // console.log("sysytem veirleri  : ", system);
+      const selectedMalzemeler = malzemeler
+        .filter((malzeme) => malzeme.system_id === system.id)
+        .map((malzeme) => malzeme.id);
       setSystemInfo({
         name: system.name,
         seri_num: system.seri_num,
         marka_id: system.marka_id,
         mmodel_id: system.mmodel_id,
+        ip: system.ip,
+        frequency: system.frequency,
         description: system.description,
         type_id: system.type_id,
         selectedUnsurlar: system.ilskili_unsur || [],
@@ -898,6 +781,7 @@ function SystemAdd({
       setSelectedUnsurlar(system.ilskili_unsur || []);
       // console.log("Selected Unsurlar useEffect içinde: ", system.ilskili_unsur);
       setSelectedMalzemeler(selectedMalzemeler);
+      console.log("selected", selectedMalzemeler);
       const selectedMevziFromMalzeme = mevziler.find(
         (mevzi) => mevzi.id === system.mevzi_id
       );
@@ -966,11 +850,13 @@ function SystemAdd({
                 variant="filled"
                 value={systemInfo?.name}
                 onChange={(e) => {
-                  setSystemInfo({ ...systemInfo, name: e.target.value });
+                  if (isRoleAdmin) {
+                    setSystemInfo({ ...systemInfo, name: e.target.value });
+                  }
                 }}
                 margin="normal"
+                disabled={!isRoleAdmin}
               />
-
               <CustomTextField
                 autoComplete="off"
                 label="Seri Numara"
@@ -979,11 +865,43 @@ function SystemAdd({
                 variant="filled"
                 value={systemInfo?.seri_num}
                 onChange={(e) => {
-                  setSystemInfo({ ...systemInfo, seri_num: e.target.value });
+                  if (isRoleAdmin) {
+                    setSystemInfo({ ...systemInfo, seri_num: e.target.value });
+                  }
                 }}
                 margin="normal"
+                disabled={!isRoleAdmin}
               />
-
+              <CustomTextField
+                autoComplete="off"
+                label="IP"
+                fullWidth
+                variant="filled"
+                value={systemInfo?.ip}
+                onChange={(e) => {
+                  if (isRoleAdmin) {
+                    setSystemInfo({ ...systemInfo, ip: e.target.value });
+                  }
+                }}
+                margin="normal"
+                disabled={!isRoleAdmin}
+              />
+              <CustomTextField
+                autoComplete="off"
+                label="Ping Sıklığı (Dakika)"
+                fullWidth
+                type="number"
+                inputProps={{ step: "0.01" }}
+                variant="filled"
+                value={systemInfo?.frequency}
+                onChange={(e) => {
+                  if (isRoleAdmin) {
+                    setSystemInfo({ ...systemInfo, frequency: e.target.value });
+                  }
+                }}
+                margin="normal"
+                disabled={!isRoleAdmin}
+              />
               <div
                 style={{
                   display: "flex",
@@ -992,42 +910,58 @@ function SystemAdd({
                   gap: "10px",
                 }}
               >
-                <Autocomplete
-                  freeSolo
-                  clearOnEscape //çarpı işareti çıkaramlıdır. temizlemke için
-                  fullWidth
-                  placeHolder="Tür"
-                  options={all_types}
-                  getOptionLabel={(option) => option.name}
-                  onChange={handleTypeOptionChange}
-                  onInputChange={(event, newInputValue) => {
-                    if (newInputValue) {
-                      setTempType(newInputValue);
+                {isRoleAdmin ? (
+                  <Autocomplete
+                    freeSolo
+                    clearOnEscape
+                    fullWidth
+                    placeHolder="Tür"
+                    options={all_types}
+                    getOptionLabel={(option) => option.name}
+                    onChange={handleTypeOptionChange}
+                    onInputChange={(event, newInputValue) => {
+                      if (newInputValue) {
+                        setTempType(newInputValue);
+                      }
+                    }}
+                    filterOptions={filterTypeOptions}
+                    value={
+                      all_types.find(
+                        (type) => type.id === systemInfo?.type_id
+                      ) || null
                     }
-                  }}
-                  filterOptions={filterTypeOptions}
-                  value={
-                    all_types.find((type) => type.id === systemInfo?.type_id) ||
-                    null
-                  }
-                  renderInput={(params) => (
-                    <CustomAutocompleteTextField
-                      {...params}
-                      label="Türü"
-                      variant="filled"
-                      fullWidth
-                      margin="normal"
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <React.Fragment>
-                            {params.InputProps.endAdornment}
-                          </React.Fragment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
+                    renderInput={(params) => (
+                      <CustomAutocompleteTextField
+                        {...params}
+                        label="Türü"
+                        variant="filled"
+                        fullWidth
+                        margin="normal"
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <React.Fragment>
+                              {params.InputProps.endAdornment}
+                            </React.Fragment>
+                          ),
+                        }}
+                      />
+                    )}
+                  />
+                ) : (
+                  <CustomTextField
+                    label="Türü"
+                    value={
+                      all_types.find((type) => type.id === systemInfo?.type_id)
+                        ?.name || ""
+                    }
+                    variant="filled"
+                    fullWidth
+                    margin="normal"
+                    disabled
+                  />
+                )}
+
                 <Tooltip
                   title="Yeni bir Tür ismi girebilirsiniz."
                   placement="right"
@@ -1044,40 +978,55 @@ function SystemAdd({
                   gap: "10px",
                 }}
               >
-                <Autocomplete
-                  freeSolo
-                  fullWidth
-                  placeHolder="Marka"
-                  options={markalar}
-                  getOptionLabel={(option) => option.name}
-                  onChange={handleMarkaOptionChange}
-                  onInputChange={(event, newInputValue) => {
-                    setTempMarka(newInputValue);
-                  }}
-                  filterOptions={filterMarkaOptions}
-                  value={
-                    markalar.find(
-                      (marka) => marka.id === systemInfo?.marka_id
-                    ) || null
-                  }
-                  renderInput={(params) => (
-                    <CustomAutocompleteTextField
-                      {...params}
-                      label="Marka"
-                      variant="filled"
-                      fullWidth
-                      margin="normal"
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <React.Fragment>
-                            {params.InputProps.endAdornment}
-                          </React.Fragment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
+                {isRoleAdmin ? (
+                  <Autocomplete
+                    freeSolo
+                    fullWidth
+                    placeHolder="Marka"
+                    options={markalar}
+                    getOptionLabel={(option) => option.name}
+                    onChange={handleMarkaOptionChange}
+                    onInputChange={(event, newInputValue) => {
+                      setTempMarka(newInputValue);
+                    }}
+                    filterOptions={filterMarkaOptions}
+                    value={
+                      markalar.find(
+                        (marka) => marka.id === systemInfo?.marka_id
+                      ) || null
+                    }
+                    renderInput={(params) => (
+                      <CustomAutocompleteTextField
+                        {...params}
+                        label="Marka"
+                        variant="filled"
+                        fullWidth
+                        margin="normal"
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <React.Fragment>
+                              {params.InputProps.endAdornment}
+                            </React.Fragment>
+                          ),
+                        }}
+                      />
+                    )}
+                  />
+                ) : (
+                  <CustomAutocompleteTextField
+                    label="Marka"
+                    value={
+                      markalar.find(
+                        (marka) => marka.id === systemInfo?.marka_id
+                      )?.name || ""
+                    }
+                    variant="filled"
+                    fullWidth
+                    margin="normal"
+                    disabled
+                  />
+                )}
 
                 <Tooltip
                   title="Yeni bir Marka ismi girebilirsiniz."
@@ -1095,42 +1044,54 @@ function SystemAdd({
                   gap: "10px",
                 }}
               >
-                <Autocomplete
-                  freeSolo
-                  fullWidth
-                  placeHolder="Model"
-                  options={models}
-                  getOptionLabel={(option) => option.name}
-                  onChange={handleModelOptionChange}
-                  onInputChange={(event, newInputValue) => {
-                    if (newInputValue) {
+                {isRoleAdmin ? (
+                  <Autocomplete
+                    freeSolo
+                    fullWidth
+                    placeHolder="Model"
+                    options={models}
+                    getOptionLabel={(option) => option.name}
+                    onChange={handleModelOptionChange}
+                    onInputChange={(event, newInputValue) => {
                       setTempModel(newInputValue);
+                    }}
+                    filterOptions={filterModelOptions}
+                    value={
+                      models.find(
+                        (model) => model.id === systemInfo?.mmodel_id
+                      ) || null
                     }
-                  }}
-                  value={
-                    models.find(
-                      (model) => model.id === systemInfo?.mmodel_id
-                    ) || null
-                  }
-                  filterOptions={filterModelOptions}
-                  renderInput={(params) => (
-                    <CustomAutocompleteTextField
-                      {...params}
-                      label="Model"
-                      variant="filled"
-                      fullWidth
-                      margin="normal"
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <React.Fragment>
-                            {params.InputProps.endAdornment}
-                          </React.Fragment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
+                    renderInput={(params) => (
+                      <CustomAutocompleteTextField
+                        {...params}
+                        label="Model"
+                        variant="filled"
+                        fullWidth
+                        margin="normal"
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <React.Fragment>
+                              {params.InputProps.endAdornment}
+                            </React.Fragment>
+                          ),
+                        }}
+                      />
+                    )}
+                  />
+                ) : (
+                  <CustomAutocompleteTextField
+                    label="Model"
+                    value={
+                      models.find((model) => model.id === systemInfo?.mmodel_id)
+                        ?.name || ""
+                    }
+                    variant="filled"
+                    fullWidth
+                    margin="normal"
+                    disabled
+                  />
+                )}
 
                 <Tooltip
                   title="Yeni bir Model ismi girebilirsiniz."
@@ -1150,93 +1111,137 @@ function SystemAdd({
                 dateAdapter={AdapterDayjs}
                 adapterLocale="tr"
               >
-                <DatePicker
-                  label="Envantere Giriş Tarihi"
-                  className="system-add-calender"
-                  value={girisTarihi}
-                  onChange={(newValue) => {
-                    setGirisTarihi(newValue);
-                    setErrors((prev) => ({ ...prev, girisTarihi: "" }));
-                  }}
-                  renderInput={(params) => (
-                    <CustomTextField
-                      {...params}
-                      className="system-add-calender"
-                      label="Envantere Giriş Tarihi"
-                      error={!!errors.girisTarihi}
-                      helperText={errors.girisTarihi ? "Geçersiz tarih!" : ""}
-                    />
-                  )}
-                />
+                {isRoleAdmin ? (
+                  <DatePicker
+                    label="Envantere Giriş Tarihi"
+                    className="system-add-calender"
+                    value={girisTarihi}
+                    onChange={(newValue) => {
+                      setGirisTarihi(newValue);
+                      setErrors((prev) => ({ ...prev, girisTarihi: "" }));
+                    }}
+                    renderInput={(params) => (
+                      <CustomTextField
+                        {...params}
+                        className="system-add-calender"
+                        label="Envantere Giriş Tarihi"
+                        error={!!errors.girisTarihi}
+                        helperText={errors.girisTarihi ? "Geçersiz tarih!" : ""}
+                      />
+                    )}
+                  />
+                ) : (
+                  <CustomTextField
+                    className="system-add-calender"
+                    label="Envantere Giriş Tarihi"
+                    value={girisTarihi?.toLocaleDateString() || ""}
+                    variant="filled"
+                    fullWidth
+                    disabled
+                  />
+                )}
               </LocalizationProvider>
 
               <div style={{ marginTop: "15px" }}>
-                <Autocomplete
-                  multiple
-                  id="tags-filled"
-                  options={unsurlar}
-                  getOptionLabel={(option) => option.name}
-                  value={
-                    Array.isArray(systemInfo?.selectedUnsurlar) &&
-                    unsurlar.length
-                      ? unsurlar.filter((unsur) =>
-                          systemInfo.selectedUnsurlar.includes(unsur.id)
-                        )
-                      : []
-                  }
-                  onChange={(event, newValue) => {
-                    setSelectedUnsurlar(newValue);
-                    setSystemInfo((prev) => ({
-                      ...prev,
-                      selectedUnsurlar: newValue.map((item) => item.id),
-                    }));
-                  }}
-                  renderInput={(params) => (
-                    <CustomAutocompleteTextField
-                      {...params}
-                      variant="filled"
-                      label="İlişkili Unsurlar"
-                      placeholder="Unsur Seç"
-                    />
-                  )}
-                />
+                {isRoleAdmin ? (
+                  <Autocomplete
+                    multiple
+                    id="tags-filled"
+                    options={unsurlar}
+                    getOptionLabel={(option) => option.name}
+                    value={
+                      Array.isArray(systemInfo?.selectedUnsurlar) &&
+                      unsurlar.length
+                        ? unsurlar.filter((unsur) =>
+                            systemInfo.selectedUnsurlar.includes(unsur.id)
+                          )
+                        : []
+                    }
+                    onChange={(event, newValue) => {
+                      setSelectedUnsurlar(newValue);
+                      setSystemInfo((prev) => ({
+                        ...prev,
+                        selectedUnsurlar: newValue.map((item) => item.id),
+                      }));
+                    }}
+                    renderInput={(params) => (
+                      <CustomAutocompleteTextField
+                        {...params}
+                        variant="filled"
+                        label="İlişkili Unsurlar"
+                        placeholder="Unsur Seç"
+                      />
+                    )}
+                  />
+                ) : (
+                  <CustomAutocompleteTextField
+                    label="İlişkili Unsurlar"
+                    value={unsurlar
+                      .filter((unsur) =>
+                        systemInfo?.selectedUnsurlar.includes(unsur.id)
+                      )
+                      .map((unsur) => unsur.name)
+                      .join(", ")}
+                    variant="filled"
+                    fullWidth
+                    disabled
+                  />
+                )}
               </div>
 
               <div style={{ marginTop: "15px" }}>
-                <Autocomplete
-                  multiple
-                  id="tags-filled"
-                  options={freeMalzemeler}
-                  getOptionLabel={(option) => option.name}
-                  value={
-                    Array.isArray(systemInfo?.selectedMalzemeler)
-                      ? [
-                          ...freeMalzemeler.filter((malzeme) =>
+                {isRoleAdmin ? (
+                  <Autocomplete
+                    multiple
+                    id="tags-filled"
+                    options={freeMalzemeler}
+                    getOptionLabel={(option) => option.name}
+                    value={
+                      Array.isArray(systemInfo?.selectedMalzemeler) &&
+                      malzemeler.length
+                        ? malzemeler.filter((malzeme) =>
                             systemInfo.selectedMalzemeler.includes(malzeme.id)
-                          ),
-                          ...systemInfo.selectedMalzemeler.filter(
-                            (selectedMalzeme) =>
-                              !freeMalzemeler.some(
-                                (malzeme) => malzeme.id === selectedMalzeme
-                              )
-                          ),
-                        ]
-                      : []
-                  }
-                  onChange={handleChosenMalzemelerChange}
-                  renderInput={(params) => (
-                    <CustomAutocompleteTextField
-                      {...params}
-                      variant="filled"
-                      label={
-                        system
-                          ? "Sistemdeki Malzemeler"
-                          : "Sistemi Olmayan Malzemeler"
-                      }
-                      placeholder="Malzeme Seç"
-                    />
-                  )}
-                />
+                          )
+                        : []
+                    }
+                    onChange={(event, newValue) => {
+                      setSelectedMalzemeler(newValue);
+                      setSystemInfo((prev) => ({
+                        ...prev,
+                        selectedMalzemeler: newValue.map(
+                          (malzeme) => malzeme.id
+                        ),
+                      }));
+                    }}
+                    renderInput={(params) => (
+                      <CustomAutocompleteTextField
+                        {...params}
+                        variant="filled"
+                        label={
+                          system
+                            ? "Sistemdeki Malzemeler"
+                            : "Sistemi Olmayan Malzemeler"
+                        }
+                        placeholder="Malzeme Seç"
+                      />
+                    )}
+                  />
+                ) : (
+                  <CustomTextField
+                    label="Sistemdeki Malzemeler"
+                    value={
+                      malzemeler
+                        .filter((malzeme) =>
+                          systemInfo?.selectedMalzemeler.includes(malzeme.id)
+                        )
+                        .map((malzeme) => malzeme.name)
+                        .join(", ") || ""
+                    }
+                    variant="filled"
+                    fullWidth
+                    disabled
+                  />
+                )}
               </div>
 
               <CustomTextField
@@ -1248,9 +1253,15 @@ function SystemAdd({
                 variant="filled"
                 value={systemInfo?.description}
                 onChange={(e) => {
-                  setSystemInfo({ ...systemInfo, description: e.target.value });
+                  if (isRoleAdmin) {
+                    setSystemInfo({
+                      ...systemInfo,
+                      description: e.target.value,
+                    });
+                  }
                 }}
                 margin="normal"
+                disabled={!isRoleAdmin}
               />
 
               <div style={{ display: "flex", alignItems: "center" }}>
@@ -1259,16 +1270,19 @@ function SystemAdd({
                   <FormControlLabel
                     control={<Radio {...controlProps("b")} color="default" />}
                     label="Birim Depo"
+                    disabled={!isRoleAdmin}
                   />
 
                   <FormControlLabel
                     control={<Radio {...controlProps("y")} color="default" />}
                     label="Yedek Depo"
+                    disabled={!isRoleAdmin}
                   />
 
                   <FormControlLabel
                     control={<Radio {...controlProps("m")} color="default" />}
                     label="Mevzi"
+                    disabled={!isRoleAdmin}
                   />
                 </div>
               </div>
@@ -1282,32 +1296,44 @@ function SystemAdd({
                     gap: "10px",
                   }}
                 >
-                  <Autocomplete
-                    freeSolo
-                    fullWidth
-                    options={mevziler}
-                    getOptionLabel={(option) => option.name}
-                    value={selectedMevzi}
-                    onChange={handleMevziOptionChange}
-                    filterOptions={filterTypeOptions}
-                    renderInput={(params) => (
-                      <CustomAutocompleteTextField
-                        {...params}
-                        label="Mevzi"
-                        variant="filled"
-                        fullWidth
-                        margin="normal"
-                        InputProps={{
-                          ...params.InputProps,
-                          endAdornment: (
-                            <React.Fragment>
-                              {params.InputProps.endAdornment}
-                            </React.Fragment>
-                          ),
-                        }}
-                      />
-                    )}
-                  />
+                  {isRoleAdmin ? (
+                    <Autocomplete
+                      freeSolo
+                      fullWidth
+                      options={mevziler}
+                      getOptionLabel={(option) => option.name}
+                      value={selectedMevzi}
+                      onChange={handleMevziOptionChange}
+                      filterOptions={filterTypeOptions}
+                      renderInput={(params) => (
+                        <CustomAutocompleteTextField
+                          {...params}
+                          label="Mevzi"
+                          variant="filled"
+                          fullWidth
+                          margin="normal"
+                          InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                              <React.Fragment>
+                                {params.InputProps.endAdornment}
+                              </React.Fragment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  ) : (
+                    <CustomAutocompleteTextField
+                      label="Mevzi"
+                      value={selectedMevzi?.name || ""}
+                      variant="filled"
+                      fullWidth
+                      margin="normal"
+                      disabled
+                    />
+                  )}
+
                   <Tooltip
                     title="Sadece isim belirleyerek boş bir mevzi oluşturabilirsiniz. Daha sonra Mevzi'nizin detaylarını güncelleyebilirsiniz."
                     placement="right"
@@ -1330,42 +1356,47 @@ function SystemAdd({
                       <TextField
                         label="Klasör Adı"
                         value={folder.folderName}
-                        onChange={(e) =>
-                          handleFolderNameChange(folderIndex, e.target.value)
-                        }
+                        onChange={(e) => {
+                          if (isRoleAdmin) {
+                            handleFolderNameChange(folderIndex, e.target.value);
+                          }
+                        }}
                         variant="outlined"
                         fullWidth
+                        disabled={!isRoleAdmin}
                       />
-
-                      <IconButton
-                        aria-label="delete"
-                        size="medium"
-                        onClick={() => handleDeleteFolder(folderIndex)}
-                        style={{ marginLeft: "10px" }}
-                      >
-                        <DeleteIcon fontSize="medium" />
-                      </IconButton>
+                      {isRoleAdmin && (
+                        <IconButton
+                          aria-label="delete"
+                          size="medium"
+                          onClick={() => handleDeleteFolder(folderIndex)}
+                          style={{ marginLeft: "10px" }}
+                        >
+                          <DeleteIcon fontSize="medium" />
+                        </IconButton>
+                      )}
                     </div>
 
                     {folder.folderName && (
                       <>
-                        <CustomOutlinedButton
-                          variant="outlined"
-                          component="label"
-                        >
-                          Fotoğraf Seç
-                          <input
-                            type="file"
-                            hidden
-                            multiple
-                            accept="image/*"
-                            onChange={(event) =>
-                              handleImageChange(event, folderIndex)
-                            }
-                          />
-                        </CustomOutlinedButton>
-
-                        {folder.selectedImages.length > 0 && (
+                        {isRoleAdmin && (
+                          <CustomOutlinedButton
+                            variant="outlined"
+                            component="label"
+                          >
+                            Fotoğraf Seç
+                            <input
+                              type="file"
+                              hidden
+                              multiple
+                              accept="image/*"
+                              onChange={(event) =>
+                                handleImageChange(event, folderIndex)
+                              }
+                            />
+                          </CustomOutlinedButton>
+                        )}
+                        {folder.selectedImages.length > 0 && isRoleAdmin && (
                           <Accordion style={{ marginTop: "10px" }}>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                               <Typography variant="subtitle1">
@@ -1426,19 +1457,21 @@ function SystemAdd({
                                       }}
                                     >
                                       <span>{image.name}</span>
-                                      <IconButton
-                                        aria-label="delete"
-                                        size="small"
-                                        onClick={() =>
-                                          handleDeleteImage(
-                                            folderIndex,
-                                            image.name
-                                          )
-                                        }
-                                        style={{ marginLeft: "10px" }}
-                                      >
-                                        <CloseIcon fontSize="small" />
-                                      </IconButton>
+                                      {isRoleAdmin && (
+                                        <IconButton
+                                          aria-label="delete"
+                                          size="small"
+                                          onClick={() =>
+                                            handleDeleteImage(
+                                              folderIndex,
+                                              image.name
+                                            )
+                                          }
+                                          style={{ marginLeft: "10px" }}
+                                        >
+                                          <CloseIcon fontSize="small" />
+                                        </IconButton>
+                                      )}
                                     </li>
                                   )
                                 )}
@@ -1450,22 +1483,33 @@ function SystemAdd({
                     )}
                   </div>
                 ))}
-
-                <CustomOutlinedButton
-                  onClick={handleAddFolder}
-                  variant="outlined"
-                  style={{ marginTop: "20px" }}
-                >
-                  Yeni Klasör Ekle
-                </CustomOutlinedButton>
+                {isRoleAdmin && (
+                  <CustomOutlinedButton
+                    onClick={handleAddFolder}
+                    variant="outlined"
+                    style={{ marginTop: "20px" }}
+                  >
+                    Yeni Klasör Ekle
+                  </CustomOutlinedButton>
+                )}
               </div>
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <CustomOutlinedButton variant="outlined" type="submit">
-              {system ? "Güncelle" : "Kaydet"}
-            </CustomOutlinedButton>
+          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+            {system && (
+              <CustomOutlinedButton
+                variant="outlined"
+                onClick={handleGoruntuleClick}
+              >
+                Görüntüle
+              </CustomOutlinedButton>
+            )}
+            {isRoleAdmin && (
+              <CustomOutlinedButton variant="outlined" type="submit">
+                {system ? "Güncelle" : "Kaydet"}
+              </CustomOutlinedButton>
+            )}
           </div>
         </form>
       </div>

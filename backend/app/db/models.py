@@ -19,21 +19,52 @@ from typing import Dict
 Base = declarative_base()
 
 
+class Jenerator(Base):
+    __tablename__ = "table_jenerator"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255))
+    seri_num = Column(Text)
+
+class GucK(Base):
+    __tablename__ = "table_guck"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255))
+    seri_num = Column(Text)
+
+
+class Regulator(Base):
+    __tablename__ = "table_regulator"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255))
+    seri_num = Column(Text)
+
+
 class Enerji(Base):
     __tablename__ = "enerji"
 
     id = Column(Integer, primary_key=True)
     voltaj = Column(Float)
-    jenerator = Column(Text)
-    guc_k = Column(Text)
-    regulator = Column(Text)
+    jenerator = Column(ARRAY(Integer))
+    guc_k = Column(ARRAY(Integer))
+    regulator = Column(ARRAY(Integer))
+
+
+class Klima(Base):
+    __tablename__ = "table_klima"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255))
+    seri_num = Column(Text)
 
 
 class Iklim(Base):
     __tablename__ = "iklim"
 
     id = Column(Integer, primary_key=True)
-    klima = Column(Text)
+    klima = Column(ARRAY(Integer))
 
 
 class Haber(Base):
@@ -149,7 +180,9 @@ class System(Base):
     giris_tarihi = Column(Date)
     photos = Column(ARRAY(String(255)))
     description = Column(Text)
-
+    ip = Column(Text)
+    state = Column(Integer, default=1)
+    frequency = Column(Float, default=5)
 
     type = relationship("Sys_Type")
     marka = relationship("Sys_Marka")
@@ -174,7 +207,6 @@ class Malzeme(Base):
     photos = Column(ARRAY(String(255)))
     onarimlar = Column(ARRAY(Date))
     bakimlar = Column(ARRAY(Date))
-
 
     type = relationship("Type")
     marka = relationship("Marka")
@@ -218,6 +250,9 @@ class Mevzi(Base):
     d_sistemler = Column(ARRAY(Text))
     y_sistemler = Column(ARRAY(Integer))
     photos = Column(ARRAY(String(255)))
+    ip = Column(Text)
+    state = Column(Integer, default=1)
+    frequency = Column(Float, default=5)
 
 
     alt_y_id = Column(Integer, ForeignKey("alt_y.id"))

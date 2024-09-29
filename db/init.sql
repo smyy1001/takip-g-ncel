@@ -214,6 +214,22 @@ BEGIN
     END IF;
 
 
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name = 'table_klima'
+    ) THEN
+        CREATE TABLE table_klima (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) UNIQUE,
+            seri_num TEXT
+        );
+        INSERT INTO table_klima (name, seri_num) VALUES ('Klima 1', 'Klima Açıklama 1');
+        INSERT INTO table_klima (name, seri_num) VALUES ('Klima 2', 'Klima Açıklama 2');
+        INSERT INTO table_klima (name, seri_num) VALUES ('Klima 3', 'Klima Açıklama 3');
+    END IF;
+
 
     IF NOT EXISTS (
         SELECT 1
@@ -223,11 +239,11 @@ BEGIN
     ) THEN
         CREATE TABLE iklim (
             id SERIAL PRIMARY KEY,
-            klima TEXT
+            klima INTEGER[]
         );
-        INSERT INTO iklim (klima) VALUES ('Klima 1');
-        INSERT INTO iklim (klima) VALUES ('Klima 2');
-        INSERT INTO iklim (klima) VALUES ('Klima 3');
+        INSERT INTO iklim (klima) VALUES (ARRAY[1, 3]);
+        INSERT INTO iklim (klima) VALUES (ARRAY[2, 3]);
+        INSERT INTO iklim (klima) VALUES (ARRAY[2]);
     END IF;
 
 
@@ -262,6 +278,56 @@ BEGIN
         INSERT INTO k_alan (konteyner) VALUES ('Konteyner 3');
     END IF;
 
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name = 'table_jenerator'
+    ) THEN
+        CREATE TABLE table_jenerator (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) UNIQUE,
+            seri_num TEXT
+        );
+        INSERT INTO table_jenerator (name, seri_num) VALUES ('Jeneratör 1', 'Jeneratör Açıklama 1');
+        INSERT INTO table_jenerator (name, seri_num) VALUES ('Jeneratör 2', 'Jeneratör Açıklama 2');
+        INSERT INTO table_jenerator (name, seri_num) VALUES ('Jeneratör 3', 'Jeneratör Açıklama 3');
+    END IF;
+
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name = 'table_guck'
+    ) THEN
+        CREATE TABLE table_guck (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) UNIQUE,
+            seri_num TEXT
+        );
+        INSERT INTO table_guck (name, seri_num) VALUES ('Güç Kaynağı 1', 'Güç Kaynağı Açıklama 1');
+        INSERT INTO table_guck (name, seri_num) VALUES ('Güç Kaynağı 2', 'Güç Kaynağı Açıklama 2');
+        INSERT INTO table_guck (name, seri_num) VALUES ('Güç Kaynağı 3', 'Güç Kaynağı Açıklama 3');
+    END IF;
+
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name = 'table_regulator'
+    ) THEN
+        CREATE TABLE table_regulator (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) UNIQUE,
+            seri_num TEXT
+        );
+        INSERT INTO table_regulator (name, seri_num) VALUES ('Regülatör 1', 'Regülatör Açıklama 1');
+        INSERT INTO table_regulator (name, seri_num) VALUES ('Regülatör 2', 'Regülatör Açıklama 2');
+        INSERT INTO table_regulator (name, seri_num) VALUES ('Regülatör 3', 'Regülatör Açıklama 3');
+    END IF;
+
 
     IF NOT EXISTS (
         SELECT 1
@@ -272,16 +338,16 @@ BEGIN
         CREATE TABLE enerji (
             id SERIAL PRIMARY KEY,
             voltaj FLOAT,
-            jenerator TEXT,
-            guc_k TEXT,
-            regulator TEXT
+            jenerator INTEGER[],
+            guc_k INTEGER[],
+            regulator INTEGER[]
         );
         INSERT INTO enerji (voltaj, jenerator, guc_k, regulator)
-        VALUES (39, 'Jenerator 1', 'Güç Kaynağı 1', 'Regülatör 1');
+        VALUES (39, ARRAY[1,2], ARRAY[2,3], ARRAY[2]);
         INSERT INTO enerji (voltaj, jenerator, guc_k, regulator)
-        VALUES (134, 'Jenerator 2', 'Güç Kaynağı 2', 'Regülatör 2');
+        VALUES (134, ARRAY[2], ARRAY[1], ARRAY[1,3]);
         INSERT INTO enerji (voltaj, jenerator, guc_k, regulator)
-        VALUES (7, 'Jenerator 3', 'Güç Kaynağı 3', 'Regülatör 3');
+        VALUES (7, ARRAY[1,3], ARRAY[1,2], ARRAY[1]);
     END IF;
 
     IF NOT EXISTS (
@@ -359,54 +425,57 @@ BEGIN
             d_sistemler TEXT[],  ---- DIŞ KURUM SISTEMLERI
             y_sistemler INTEGER[],
             photos TEXT[],
-            alt_y_id INTEGER REFERENCES alt_y(id)    
+            alt_y_id INTEGER REFERENCES alt_y(id),
+            ip TEXT,
+            state INTEGER DEFAULT 1,
+            frequency FLOAT DEFAULT 5      
         );
 
         INSERT INTO mevzi (
             id, name, isim, kesif_tarihi, kordinat, rakim, yurt_i, lokasyon, ulasim, 
             bakim_sorumlusu_id, sube_id, kurulum_tarihi, d_sistemler, y_sistemler, 
-            alt_y_id
+            alt_y_id, ip, state, frequency
         ) VALUES (
             'd5a9f8d0-3e6c-4e8d-9f97-6d67a9c8d1be', 'Mevzi-001', 'İlk Mevzi', '2023-01-15', '38SMB4484', 1200.5, TRUE, 
             'ANKARA', 'Karayolu', 1, 2, '2023-03-01', 
-            ARRAY['Sistem A', 'Sistem B'], ARRAY[1, 2], 1);
+            ARRAY['Sistem A', 'Sistem B'], ARRAY[1, 2], 1, '192.168.1.22', 0, 1.0);
 
         INSERT INTO mevzi (
             id, name, isim, kesif_tarihi, kordinat, rakim, yurt_i, lokasyon, ulasim, 
             bakim_sorumlusu_id, sube_id, kurulum_tarihi, d_sistemler, y_sistemler, 
-            alt_y_id
+            alt_y_id, ip, state, frequency
         ) VALUES (
             '9c1b3eaf-02ff-4b45-a458-c5f4a6f3b3ad','Mevzi-002', 'İkinci Mevzi', '2023-02-20', '39SMC9951', 850.0, FALSE, 
             'ALMANYA', 'Helikopter', 2, 3, '2023-04-10', 
-            ARRAY['Sistem X', 'Sistem Y'], ARRAY[2, 3], 2);
+            ARRAY['Sistem X', 'Sistem Y'], ARRAY[2, 3], 2, '192.168.1.30', 0, 1.0);
 
         INSERT INTO mevzi (
             id, name, isim, kesif_tarihi, kordinat, rakim, yurt_i, lokasyon, ulasim, 
             bakim_sorumlusu_id, sube_id, kurulum_tarihi, d_sistemler, y_sistemler, 
-            alt_y_id
+            alt_y_id, ip, state, frequency
         ) VALUES (
             'a16f634c-48ff-4f6b-90d4-7cbf8f9856e4', 'Mevzi-003', 'Üçüncü Mevzi', '2023-03-05', '40SMD5046', 500.0, TRUE, 
             'İZMİR', 'Destekli Ulaşım', 3, 1, '2023-06-15', 
-            ARRAY['Sistem Q'], ARRAY[3], 3);
+            ARRAY['Sistem Q'], ARRAY[3], 3, '139.179.207.145', 0, 1.0);
 
         INSERT INTO mevzi (
            id, name, isim, kesif_tarihi, kordinat, rakim, yurt_i, lokasyon, ulasim, 
             bakim_sorumlusu_id, sube_id, kurulum_tarihi, d_sistemler, y_sistemler, 
-            alt_y_id
+            alt_y_id, ip, state, frequency
         ) VALUES (
             '4bfe4971-b15f-4aa9-96e3-78737b262b7b','Mevzi-004', 'Dördüncü Mevzi', '2023-04-25', '41SME8921', 1500.3, TRUE, 
             'BURSA', 'Karayolu', 4, 3, '2023-07-20', 
-            ARRAY['Sistem Z'], ARRAY[4, 1], 4);
+            ARRAY['Sistem Z'], ARRAY[4, 1], 4, '192.168.1.42', 0, 1.0);
 
 
         INSERT INTO mevzi (
             id, name, isim, kesif_tarihi, kordinat, rakim, yurt_i, lokasyon, ulasim, 
             bakim_sorumlusu_id, sube_id, kurulum_tarihi, d_sistemler, y_sistemler, 
-            alt_y_id
+            alt_y_id, ip, state, frequency
         ) VALUES (
             'd2719f0e-6a5e-43cf-b36a-67d2f6f6176c','Mevzi-005', 'Beşinci Mevzi', '2023-05-10', '42SMF1234', 975.0, FALSE, 
             'BELÇİKA', 'Karayolu', 5, 1, '2023-09-01', 
-            ARRAY['Sistem V', 'Sistem W'], ARRAY[5], 5);
+            ARRAY['Sistem V', 'Sistem W'], ARRAY[5], 5, '192.168.1.44', 0, 1.0);
 
 
         
@@ -430,43 +499,46 @@ BEGIN
             mevzi_id UUID REFERENCES mevzi(id) DEFAULT NULL,
             giris_tarihi DATE,
             photos TEXT[],
-            description TEXT
+            description TEXT,
+            ip TEXT,
+            state INTEGER DEFAULT 1,
+            frequency FLOAT DEFAULT 5           
         );
 
         INSERT INTO system (
             id, name, type_id, marka_id, mmodel_id, seri_num, ilskili_unsur,
-            depo, mevzi_id, giris_tarihi, description
+            depo, mevzi_id, giris_tarihi, description, ip, state, frequency
         ) VALUES (
             'a0a5d8ec-b0d6-42e8-8e17-4b62b5a8f973', 'System-001', 1, 1, 1, 'SN-001-A', 
             ARRAY[1],
-            0, null, '2023-06-01', 'Birinci sistem açıklaması'
+            0, null, '2023-06-01', 'Birinci sistem açıklaması', '192.168.1.44', 0, 1.0
         );
 
         INSERT INTO system (
             id, name, type_id, marka_id, mmodel_id, seri_num, ilskili_unsur,
-            depo, mevzi_id, giris_tarihi, description
+            depo, mevzi_id, giris_tarihi, description, ip, state, frequency
         ) VALUES (
             'f5d13e7d-8a8b-4f44-9cd9-1e134a1b5a50', 'System-005', 2, 1, 3, 'SN-005-E', 
             ARRAY[3, 2],
-            1, null, '2023-10-01', 'Beşinci sistem açıklaması'
+            1, null, '2023-10-01', 'Beşinci sistem açıklaması', '139.179.207.145', 2, 1.0
         );
 
         INSERT INTO system (
             id, name, type_id, marka_id, mmodel_id, seri_num, ilskili_unsur,
-            depo, mevzi_id, giris_tarihi, description
+            depo, mevzi_id, giris_tarihi, description, ip, state, frequency
         ) VALUES (
             'c87fbb45-40aa-4c72-9e26-6d73b9d1a2c5', 'System-002', 2, 2, 2, 'SN-002-B', 
             ARRAY[2],
-            1, null, '2023-07-15', 'İkinci sistem açıklaması'
+            1, null, '2023-07-15', 'İkinci sistem açıklaması', '192.168.1.42', 0, 1.0
         );
 
         INSERT INTO system (
             id, name, type_id, marka_id, mmodel_id, seri_num, ilskili_unsur,
-            depo, mevzi_id, giris_tarihi, description
+            depo, mevzi_id, giris_tarihi, description, ip, state, frequency
         ) VALUES (
             '09dbed9d-4e3b-42a2-9355-2d9272c1fabe', 'System-003', 3, 2, 3, 'SN-003-C', 
             ARRAY[1, 2, 3],
-            2, 'd5a9f8d0-3e6c-4e8d-9f97-6d67a9c8d1be', '2023-08-10', 'Üçüncü sistem açıklaması'
+            2, 'd5a9f8d0-3e6c-4e8d-9f97-6d67a9c8d1be', '2023-08-10', 'Üçüncü sistem açıklaması', '192.168.1.43', 0, 1.0
         );
 
 

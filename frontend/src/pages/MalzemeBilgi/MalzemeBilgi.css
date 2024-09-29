@@ -1,0 +1,83 @@
+.malzeme-bilgi-main-container {
+  margin-top: 64px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0px !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  position: relative !important;
+  max-width: 100vw !important;
+  height: auto;
+}
+
+tr.MuiTableRow-root:hover {
+  background-color: rgb(79, 125, 85, 0.2);
+}
+
+.malzeme-bilgi-system-sticky-header {
+  background-color: transparent !important;
+  z-index: 10 !important;
+}
+
+.malzeme-bilgi-system-table-main-container {
+  margin-bottom: 30px !important;
+  border-radius: 8px !important;
+  width: calc(100% - 48px) !important;
+  background-color: transparent !important;
+  scrollbar-width: none !important;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+}
+
+.malzeme-bilgi-system-main-big-header {
+  font-size: 2rem !important;
+  font-weight: 600 !important;
+  color: white !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 20px 0px 20px !important;
+}
+
+.malzeme-bilgi-page-header-container {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.malzeme-bilgi-section-title {
+  margin-top: 20px;
+}
+
+.malzeme-bilgi-no-data-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px !important;
+  font-size: larger !important;
+  font-weight: 800 !important;
+}
+.MuiTableContainer-root {
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+}
+.malzeme-bilgi-icons-container {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  margin: 10px;
+}
+
+.malzeme-bilgi-edit-icon,
+.malzeme-bilgi-photo-gallery-icon,
+.malzeme-bilgi-delete-icon {
+  color: white !important;
+}
+.malzeme-bilgi-edit-icon:hover,
+.malzeme-bilgi-delete-icon:hover,
+.malzeme-bilgi-photo-gallery-icon:hover {
+  color: #cecece !important;
+}
