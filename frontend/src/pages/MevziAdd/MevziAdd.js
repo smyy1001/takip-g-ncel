@@ -1752,7 +1752,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  margiTop: "15px",
+                  marginTop: "15px",
                 }}
               >
                 <div>Lokasyon:</div>
@@ -2360,7 +2360,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                   <div
                     style={{
                       display: "flex",
-                      margiTop: "20px",
+                      marginTop: "20px",
                       flexDirection: "column",
                     }}
                   >
@@ -2406,7 +2406,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
 
                   <CustomOutlinedButton
                     variant="outlined"
-                    style={{margiTop: '16px'}}
+                    style={{marginTop: '16px'}}
                     onClick={handleSaveSistem}
                     color="primary"
                   >
@@ -2472,7 +2472,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                       <div
                         style={{
                           display: "flex",
-                          margiTop: "20px",
+                          marginTop: "20px",
                           marginRight: "5px",
                           flexDirection: "row",
                         }}
@@ -2641,7 +2641,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                       <div
                         style={{
                           display: "flex",
-                          margiTop: "20px",
+                          marginTop: "20px",
                           marginRight: "5px",
                           // flexDirection: "row",
                         }}
@@ -3060,7 +3060,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                       <div
                         style={{
                           display: "flex",
-                          margiTop: "20px",
+                          marginTop: "20px",
                           marginRight: "5px",
                           flexDirection: "row",
                         }}
@@ -3202,7 +3202,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                       <div
                         style={{
                           display: "flex",
-                          margiTop: "20px",
+                          marginTop: "20px",
                           marginRight: "5px",
                           flexDirection: "row",
                         }}
@@ -3255,7 +3255,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                       <div
                         style={{
                           display: "flex",
-                          margiTop: "20px",
+                          marginTop: "20px",
                           marginRight: "5px",
                           flexDirection: "row",
                         }}
