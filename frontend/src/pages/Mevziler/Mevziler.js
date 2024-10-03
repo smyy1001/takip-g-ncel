@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Container from "@mui/material/Container";
 import Table from "@mui/material/Table";
@@ -26,12 +26,16 @@ import CollectionsIcon from "@mui/icons-material/Collections";
 import ConstructionIcon from "@mui/icons-material/Construction";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import GetAppIcon from "@mui/icons-material/GetApp";
-import SwapVertIcon from '@mui/icons-material/SwapVert';
+import SwapVertIcon from "@mui/icons-material/SwapVert";
 import InfoIcon from "@mui/icons-material/Info";
 import KeyboardDoubleArrowUpIcon from "@mui/icons-material/KeyboardDoubleArrowUp";
 import KeyboardDoubleArrowDownIcon from "@mui/icons-material/KeyboardDoubleArrowDown";
 import RemoveIcon from "@mui/icons-material/Remove";
-
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import { FormControlLabel, Radio } from '@mui/material';
+import { Checkbox, FormGroup } from '@mui/material';
+import Modal from "@mui/material/Modal";
+import Box from "@mui/material/Box";
 
 const CustomTextField = styled(TextField)({
   "& .MuiInput-underline:after": {
@@ -100,6 +104,38 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
   const navigate = useNavigate();
   const [mevziler, setMevziler] = useState([]);
   const [searchMevzi, setSearchMevzi] = useState("");
+  const stateIntervalIds = useRef([]);
+  const [searchLocation, setSearchLocation] = useState("a");
+  const [searchRakimL, setSearchRakimL] = useState(null);
+  const [searchRakimH, setSearchRakimH] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [state, setState] = useState({
+    aktif: true,
+    inaktif: true,
+    bilinmeyen: true
+  });
+
+  const handleChange = (event) => {
+    setState({
+      ...state,
+      [event.target.name]: event.target.checked,
+    });
+  };
+
+  const handleMevziRadioBChange = (event) => {
+    setSearchLocation(event.target.value);
+  };
+
+  const controlProps = (item) => ({
+    checked: searchLocation === item,
+    onChange: handleMevziRadioBChange,
+    value: item,
+    name: "depo-mevzi-radio-button",
+    inputProps: { "aria-label": item },
+  });
+
+  const handleOpenModal = () => setModalOpen(true);
+  const handleCloseModal = () => setModalOpen(false);
 
   const updateDetails = async (mevziler) => {
     const fetchSube = async () => {
@@ -159,10 +195,6 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
     navigate(`/mevziler/${id}/altyapi`);
   };
 
-  const handleIpClick = async (id) => {
-    navigate(`/mevziler/${id}/ip`);
-  };
-
   const handleExportMevziClick = async (mevzi) => {
     try {
       const response = await axios({
@@ -175,12 +207,12 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
       const formattedTimestamp = `${date.getFullYear()}-${(date.getMonth() + 1)
         .toString()
         .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}_${date
-        .getHours()
-        .toString()
-        .padStart(2, "0")}-${date
-        .getMinutes()
-        .toString()
-        .padStart(2, "0")}-${date.getSeconds().toString().padStart(2, "0")}`;
+          .getHours()
+          .toString()
+          .padStart(2, "0")}-${date
+            .getMinutes()
+            .toString()
+            .padStart(2, "0")}-${date.getSeconds().toString().padStart(2, "0")}`;
 
       const blob = new Blob([response.data], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -256,49 +288,160 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
       : (a, b) => (a[orderBy] < b[orderBy] ? -1 : 1);
   };
 
-  const filteredMevziler = mevziler.filter((m) =>
-    m.name.toLowerCase().includes(searchMevzi.toLowerCase())
-  );
+  const normalizeString = (str) => {
+    return str
+      .toLowerCase()
+      .replace(/ç/g, "c")
+      .replace(/ğ/g, "g")
+      .replace(/ı/g, "i")
+      .replace(/i̇/g, "i")
+      .replace(/ö/g, "o")
+      .replace(/ş/g, "s")
+      .replace(/ü/g, "u")
+      .replace(/Ç/g, "c")
+      .replace(/Ğ/g, "g")
+      .replace(/İ/g, "i")
+      .replace(/Ö/g, "o")
+      .replace(/Ş/g, "s")
+      .replace(/Ü/g, "u");
+  };
+
+  const getStateName = (state) => {
+    if (state < 1) return "İnaktif";
+    if (state === 2) return "Aktif";
+    return "Bilinmiyor";
+  };
+
+  const filteredMevziler = useMemo(() => {
+    const searchTerm = normalizeString(searchMevzi);
+
+    return mevziler.filter((mevzi) => {
+      // Filter by search term
+      const mevziStateName = getStateName(mevzi.state);
+      const searchTermMatch =
+        (mevzi.name && normalizeString(mevzi.name).includes(searchTerm)) ||
+        (mevzi.isim && normalizeString(mevzi.isim).includes(searchTerm)) ||
+        (mevzi.ip && normalizeString(mevzi.ip).includes(searchTerm)) ||
+        (mevzi.kesif_tarihi &&
+          normalizeString(mevzi.kesif_tarihi).includes(searchTerm)) ||
+        (mevzi.kordinat &&
+          normalizeString(mevzi.kordinat).includes(searchTerm)) ||
+        (mevzi.rakim &&
+          normalizeString(mevzi.rakim.toString()).includes(searchTerm)) ||
+        (mevzi.lokasyon && normalizeString(mevzi.lokasyon).includes(searchTerm)) ||
+        (mevzi.ulasim && normalizeString(mevzi.ulasim).includes(searchTerm)) ||
+        (mevzi.bakim_sorumlusu_id &&
+          normalizeString(mevzi.bakim_sorumlusu_id).includes(searchTerm)) ||
+        (mevzi.sube_id && normalizeString(mevzi.sube_id).includes(searchTerm)) ||
+        (mevzi.kurulum_tarihi &&
+          normalizeString(mevzi.kurulum_tarihi).includes(searchTerm)) ||
+        (mevzi.d_sistemler &&
+          mevzi.d_sistemler.length > 0 &&
+          normalizeString(mevzi.d_sistemler.join(", ")).includes(searchTerm)) ||
+        (mevziStateName &&
+          normalizeString(mevziStateName).includes(searchTerm)) ||
+        (mevzi.y_sistemler &&
+          mevzi.y_sistemler.length > 0 &&
+          normalizeString(mevzi.y_sistemler.join(", ")).includes(searchTerm));
+
+      // Filter by location type
+      let locationMatch = true;
+      if (searchLocation === "i") {
+        locationMatch = mevzi.yurt_i === true;
+      } else if (searchLocation === "d") {
+        locationMatch = mevzi.yurt_i === false;
+      }
+
+      // Filter by state
+      const stateMapping = ["inaktif", "bilinmeyen", "aktif"];
+      const stateKey = stateMapping[mevzi.state];
+      const stateMatch = state[stateKey] === true;
+
+      // Filter by rakim range
+      const lowerBound =
+        searchRakimL !== null && searchRakimL !== 0 && searchRakimL !== ""
+          ? searchRakimL
+          : -Infinity;
+      const upperBound =
+        searchRakimH !== null && searchRakimH !== 0 && searchRakimH !== ""
+          ? searchRakimH
+          : Infinity;
+      const rakimMatch = mevzi.rakim >= lowerBound && mevzi.rakim <= upperBound;
+
+      // Return final match based on all conditions
+      return searchTermMatch && locationMatch && stateMatch && rakimMatch;
+    });
+  }, [mevziler, searchMevzi, state, searchLocation, searchRakimL, searchRakimH]);
+
+
+
+  const updateState = async (mevziId) => {
+    try {
+      const response = await axios.get(`/api/mevzi/update-state/${mevziId}`);
+      setMevziler((prevMevziler) =>
+        prevMevziler.map((mevzi) =>
+          mevzi.id === mevziId
+            ? { ...mevzi, state: response.data.state }
+            : mevzi
+        )
+      );
+    } catch (error) {
+      console.error(
+        `Durum güncellenirken hata alındı (Mevzi ID: ${mevziId}):`,
+        error
+      );
+    }
+  };
+
+  const startOrUpdateInterval = (mevzi) => {
+    const existingInterval = stateIntervalIds.current.find(
+      (item) => item.mevziId === mevzi.id
+    );
+
+    if (existingInterval) {
+      if (existingInterval.frequency !== mevzi.frequency) {
+        clearInterval(existingInterval.intervalId);
+        stateIntervalIds.current = stateIntervalIds.current.filter(
+          (item) => item.mevziId !== mevzi.id
+        );
+      } else {
+        return;
+      }
+    }
+
+    const intervalTime = mevzi.frequency * 60000;
+
+    const intervalId = setInterval(() => {
+      updateState(mevzi.id);
+    }, intervalTime);
+
+    stateIntervalIds.current.push({
+      mevziId: mevzi.id,
+      intervalId: intervalId,
+      frequency: mevzi.frequency,
+    });
+  };
 
   useEffect(() => {
-    // Store interval IDs for all systems
-    const stateIntervalIds = [];
-
-    const updateState = async (mevziId) => {
-      try {
-        const response = await axios.get(`/api/mevzi/update-state/${mevziId}`);
-        setMevziler((prevMevziler) =>
-          prevMevziler.map((mevzi) =>
-            mevzi.id === mevziId
-              ? { ...mevzi, state: response.data.state } // Update the state for the matched system
-              : mevzi
-          )
-        );
-      } catch (error) {
-        console.error(`Durum güncellenirken hata alındı (System ID: ${mevziId}):`, error);
-      }
-    };
-
-    const startStateInterval = (mevzi) => {
-      const intervalId = setInterval(() => {
-        updateState(mevzi.id);
-      }, mevzi.frequency * 60000);
-      return intervalId;
-    };
-
     if (mevziler && mevziler.length > 0) {
       mevziler.forEach((mevzi) => {
         if (mevzi && mevzi.frequency) {
-          const intervalId = startStateInterval(mevzi);
-          stateIntervalIds.push({ mevziId: mevzi.id, intervalId });
+          startOrUpdateInterval(mevzi);
         }
       });
     }
-
-    return () => {
-      stateIntervalIds.forEach(({ intervalId }) => clearInterval(intervalId));
-    };
   }, [mevziler]);
+
+  function highlightText(text, highlight) {
+    const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+    return <span> {
+      parts.map((part, i) =>
+        <span key={i} className={part.toLowerCase() === highlight.toLowerCase() ? 'highlight' : ''}>
+          {part}
+        </span>
+      )
+    } </span>;
+  }
 
   return (
     <Container className="mevziler-main-container">
@@ -322,28 +465,138 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                 </Tooltip>
               </IconButton>
             )}
+            <Tooltip title="Arama & Filtreleme">
+              <IconButton
+                size="large"
+                className="mevzi-add-button-in-header"
+                onClick={handleOpenModal}
+              >
+                <FilterAltIcon style={{ fontSize: '1.5rem' }} />
+              </IconButton>
+            </Tooltip>
           </Typography>
         </div>
         <div className="mevziler-page-search-bar">
-          <CustomTextField
-            autoComplete="off"
-            fullWidth
-            variant="outlined"
-            placeholder="Ara..."
-            value={searchMevzi}
-            onChange={(e) => setSearchMevzi(e.target.value)}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton disabled={!searchMevzi}>
-                    <SearchIcon />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+          <Modal
+            open={modalOpen}
+            onClose={handleCloseModal}
+            aria-labelledby="Ara & Filtrele"
+            aria-describedby="Ara & Filtrele"
+          >
+            <Box
+              sx={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                bgcolor: "background.paper",
+                boxShadow: "0px 4px 15px rgba(0, 0, 0, 0.4)",
+                p: 4,
+                outline: "none",
+              }}
+            >
+              <Tooltip title="Tüm alanlarda arama yapılabilir!">
+                <CustomTextField
+                  autoComplete="off"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Ara..."
+                  value={searchMevzi}
+                  onChange={(e) => { if (modalOpen) setSearchMevzi(e.target.value); }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton disabled={!searchMevzi}>
+                          <SearchIcon />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }} />
+              </Tooltip>
+
+
+              <div style={{ display: "flex", alignItems: "center", flexDirection: 'row', marginTop: '10px', gap: '5px' }}>
+                <div >Aktiflik Durumu:</div>
+                <FormGroup row>
+                  <FormControlLabel
+                    control={<Checkbox checked={state.aktif} onChange={handleChange} name="aktif" />}
+                    label="Aktif"
+                  />
+                  <FormControlLabel
+                    control={<Checkbox checked={state.inaktif} onChange={handleChange} name="inaktif" />}
+                    label="İnaktif"
+                  />
+                  <FormControlLabel
+                    control={<Checkbox checked={state.bilinmeyen} onChange={handleChange} name="bilinmeyen" />}
+                    label="Bilinmeyen"
+                  />
+                </FormGroup>
+              </div>
+
+
+              <div style={{ display: "flex", alignItems: "center", flexDirection: 'row' }}>
+                <div>Lokasyon:</div>
+                <div style={{ marginLeft: "10px" }}>
+                  <FormControlLabel
+                    control={<Radio {...controlProps("a")} color="default" />}
+                    label="Hepsi"
+                  />
+
+                  <FormControlLabel
+                    control={<Radio {...controlProps("i")} color="default" />}
+                    label="Yurt İçi"
+                  />
+
+                  <FormControlLabel
+                    control={<Radio {...controlProps("d")} color="default" />}
+                    label="Yurt Dışı"
+                  />
+                </div>
+              </div>
+
+
+              <div
+                style={{
+                  display: "flex",
+                  marginTop: "10px",
+                  flexDirection: "column",
+                }}
+              >
+                <div>Rakım (metre):</div>
+                <div style={{ display: "flex", flexDirection: "row" }}>
+                  <CustomTextField
+                    autoComplete="off"
+                    label="Alt Sınır"
+                    variant="filled"
+                    type="number"
+                    inputProps={{ step: "10" }}
+                    value={searchRakimL}
+                    onChange={(e) => setSearchRakimL(e.target.value)}
+                    margin="normal"
+                  />
+
+                  <div style={{ marginTop: "35px" }}>
+                    <RemoveIcon />
+                  </div>
+
+                  <CustomTextField
+                    autoComplete="off"
+                    label="Üst Sınır"
+                    variant="filled"
+                    type="number"
+                    inputProps={{ step: "10" }}
+                    value={searchRakimH}
+                    onChange={(e) => setSearchRakimH(e.target.value)}
+                    margin="normal"
+                  />
+                </div>
+              </div>
+
+            </Box>
+          </Modal>
         </div>
       </div>
+
       {filteredMevziler && filteredMevziler.length > 0 ? (
         <TableContainer
           className="mevziler-table-main-container"
@@ -359,11 +612,11 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       onClick={() => handleRequestSort("name")}
                     >
                       Mevzi Adı
-                      {orderBy && orderBy === 'name' && (
+                      {orderBy && orderBy === "name" && (
                         <IconButton
                           aria-label="edit"
                           size="small"
-                          style={{ margin: '0px', padding: '0px' }}
+                          style={{ margin: "0px", padding: "0px" }}
                         >
                           <SwapVertIcon />
                         </IconButton>
@@ -378,30 +631,11 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       onClick={() => handleRequestSort("isim")}
                     >
                       Karakol İsmi
-                      {orderBy && orderBy === 'isim' && (
+                      {orderBy && orderBy === "isim" && (
                         <IconButton
                           aria-label="edit"
                           size="small"
-                          style={{ margin: '0px', padding: '0px' }}
-                        >
-                          <SwapVertIcon />
-                        </IconButton>
-                      )}
-                    </Typography>
-                  </Tooltip>
-                </TableCell>
-                <TableCell style={{ textAlign: "center" }}>
-                  <Tooltip title="Sıralamak için tıklayınız">
-                    <Typography
-                      style={{ fontWeight: "bold", cursor: "pointer" }}
-                      onClick={() => handleRequestSort("ip")}
-                    >
-                      IP Adresi
-                      {orderBy && orderBy === 'ip' && (
-                        <IconButton
-                          aria-label="edit"
-                          size="small"
-                          style={{ margin: '0px', padding: '0px' }}
+                          style={{ margin: "0px", padding: "0px" }}
                         >
                           <SwapVertIcon />
                         </IconButton>
@@ -416,11 +650,11 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       onClick={() => handleRequestSort("kesif_tarihi")}
                     >
                       Keşif Tarihi
-                      {orderBy && orderBy === 'kesif_tarihi' && (
+                      {orderBy && orderBy === "kesif_tarihi" && (
                         <IconButton
                           aria-label="edit"
                           size="small"
-                          style={{ margin: '0px', padding: '0px' }}
+                          style={{ margin: "0px", padding: "0px" }}
                         >
                           <SwapVertIcon />
                         </IconButton>
@@ -428,13 +662,6 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                     </Typography>
                   </Tooltip>
                 </TableCell>
-                {/* <TableCell style={{ textAlign: 'center' }}>
-                                    <Tooltip title="Sıralamak için tıklayınız">
-                                        <Typography style={{ fontWeight: 'bold', cursor: 'pointer' }} onClick={() => handleRequestSort('desciption')}>
-                                            Açıklama
-                                        </Typography>
-                                    </Tooltip>
-                                </TableCell> */}
                 <TableCell style={{ textAlign: "center" }}>
                   <Tooltip title="Sıralamak için tıklayınız">
                     <Typography
@@ -442,11 +669,11 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       onClick={() => handleRequestSort("kordinat")}
                     >
                       Kordinat
-                      {orderBy && orderBy === 'kordinat' && (
+                      {orderBy && orderBy === "kordinat" && (
                         <IconButton
                           aria-label="edit"
                           size="small"
-                          style={{ margin: '0px', padding: '0px' }}
+                          style={{ margin: "0px", padding: "0px" }}
                         >
                           <SwapVertIcon />
                         </IconButton>
@@ -461,11 +688,11 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       onClick={() => handleRequestSort("rakim")}
                     >
                       Rakım
-                      {orderBy && orderBy === 'rakim' && (
+                      {orderBy && orderBy === "rakim" && (
                         <IconButton
                           aria-label="edit"
                           size="small"
-                          style={{ margin: '0px', padding: '0px' }}
+                          style={{ margin: "0px", padding: "0px" }}
                         >
                           <SwapVertIcon />
                         </IconButton>
@@ -480,11 +707,11 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       onClick={() => handleRequestSort("depo")}
                     >
                       Lokasyon
-                      {orderBy && orderBy === 'depo' && (
+                      {orderBy && orderBy === "depo" && (
                         <IconButton
                           aria-label="edit"
                           size="small"
-                          style={{ margin: '0px', padding: '0px' }}
+                          style={{ margin: "0px", padding: "0px" }}
                         >
                           <SwapVertIcon />
                         </IconButton>
@@ -499,11 +726,11 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       onClick={() => handleRequestSort("ulasim")}
                     >
                       Ulaşım Şekli
-                      {orderBy && orderBy === 'ulasim' && (
+                      {orderBy && orderBy === "ulasim" && (
                         <IconButton
                           aria-label="edit"
                           size="small"
-                          style={{ margin: '0px', padding: '0px' }}
+                          style={{ margin: "0px", padding: "0px" }}
                         >
                           <SwapVertIcon />
                         </IconButton>
@@ -518,11 +745,11 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       onClick={() => handleRequestSort("bakim_sorumlusu_id")}
                     >
                       Bakım Sorumlusu
-                      {orderBy && orderBy === 'bakim_sorumlusu_id' && (
+                      {orderBy && orderBy === "bakim_sorumlusu_id" && (
                         <IconButton
                           aria-label="edit"
                           size="small"
-                          style={{ margin: '0px', padding: '0px' }}
+                          style={{ margin: "0px", padding: "0px" }}
                         >
                           <SwapVertIcon />
                         </IconButton>
@@ -537,11 +764,11 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       onClick={() => handleRequestSort("sube_id")}
                     >
                       İşleten Şube
-                      {orderBy && orderBy === 'sube' && (
+                      {orderBy && orderBy === "sube" && (
                         <IconButton
                           aria-label="edit"
                           size="small"
-                          style={{ margin: '0px', padding: '0px' }}
+                          style={{ margin: "0px", padding: "0px" }}
                         >
                           <SwapVertIcon />
                         </IconButton>
@@ -556,11 +783,11 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       onClick={() => handleRequestSort("kurulum_tarihi")}
                     >
                       Kurulum Tarihi
-                      {orderBy && orderBy === 'kurulum_tarihi' && (
+                      {orderBy && orderBy === "kurulum_tarihi" && (
                         <IconButton
                           aria-label="edit"
                           size="small"
-                          style={{ margin: '0px', padding: '0px' }}
+                          style={{ margin: "0px", padding: "0px" }}
                         >
                           <SwapVertIcon />
                         </IconButton>
@@ -575,11 +802,11 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       onClick={() => handleRequestSort("d_sistemler")}
                     >
                       Dış Kurum Sistemleri
-                      {orderBy && orderBy === 'd_sistemler' && (
+                      {orderBy && orderBy === "d_sistemler" && (
                         <IconButton
                           aria-label="edit"
                           size="small"
-                          style={{ margin: '0px', padding: '0px' }}
+                          style={{ margin: "0px", padding: "0px" }}
                         >
                           <SwapVertIcon />
                         </IconButton>
@@ -594,11 +821,30 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       onClick={() => handleRequestSort("y_sistemler")}
                     >
                       Yazılıma Oluşturulan Sistemler
-                      {orderBy && orderBy === 'y_sistemler' && (
+                      {orderBy && orderBy === "y_sistemler" && (
                         <IconButton
                           aria-label="edit"
                           size="small"
-                          style={{ margin: '0px', padding: '0px' }}
+                          style={{ margin: "0px", padding: "0px" }}
+                        >
+                          <SwapVertIcon />
+                        </IconButton>
+                      )}
+                    </Typography>
+                  </Tooltip>
+                </TableCell>
+                <TableCell style={{ textAlign: "center" }}>
+                  <Tooltip title="Sıralamak için tıklayınız">
+                    <Typography
+                      style={{ fontWeight: "bold", cursor: "pointer" }}
+                      onClick={() => handleRequestSort("ip")}
+                    >
+                      IP Adresi
+                      {orderBy && orderBy === "ip" && (
+                        <IconButton
+                          aria-label="edit"
+                          size="small"
+                          style={{ margin: "0px", padding: "0px" }}
                         >
                           <SwapVertIcon />
                         </IconButton>
@@ -608,17 +854,7 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                 </TableCell>
                 <TableCell style={{ textAlign: "center" }}>
                   <Typography style={{ fontWeight: "bold", cursor: "default" }}>
-                    Alt Yapı Bilgileri
-                  </Typography>
-                </TableCell>
-                <TableCell style={{ textAlign: "center" }}>
-                  <Typography style={{ fontWeight: "bold", cursor: "default" }}>
-                    Malzeme IP Bilgileri
-                  </Typography>
-                </TableCell>
-                <TableCell style={{ textAlign: "center" }}>
-                  <Typography style={{ fontWeight: "bold", cursor: "default" }}>
-                    Fotoğraflar
+                    Alt Yapı Bilgileri & Galeri
                   </Typography>
                 </TableCell>
                 <TableCell style={{ textAlign: "center" }}>
@@ -630,15 +866,8 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                 {isRoleAdmin && (
                   <>
                     <TableCell style={{ textAlign: "center" }}>
-                      <Typography
-                        style={{ fontWeight: "bold", cursor: "default" }}
-                      >
-                        Envater Özeti Çıkar
-                      </Typography>
-                    </TableCell>
-                    <TableCell style={{ textAlign: "center" }}>
                       <Typography style={{ fontWeight: "bold" }}>
-                        Düzenle & Sil
+                        Envanter Çıkar & Düzenle & Sil
                       </Typography>
                     </TableCell>
                   </>
@@ -659,113 +888,160 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                     component="th"
                     scope="row"
                   >
-                    {mevzi.name}
+                    {highlightText(mevzi.name, searchMevzi)}
                   </TableCell>
                   <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.isim ? mevzi.isim : "-"}
+                    {mevzi.isim ? highlightText(mevzi.isim, searchMevzi) : "-"}
                   </TableCell>
                   <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.state !== null && mevzi.state !== undefined ? (
-                      <>
-                        {mevzi.state < 1 && (
-                          <>
-                            <IconButton className="noHighlight" disableRipple>
-                              <KeyboardDoubleArrowDownIcon
-                                style={{ color: "red" }}
-                              />
+                    {mevzi.kesif_tarihi
+                      ? highlightText(String(mevzi.kesif_tarihi), searchMevzi)
+                      : "-"}
+                  </TableCell>
+                  <TableCell style={{ textAlign: "center" }}>
+                    {mevzi.kordinat
+                      ? highlightText(mevzi.kordinat, searchMevzi)
+                      : "-"}
+                  </TableCell>
+                  <TableCell style={{ textAlign: "center" }}>
+                    {mevzi.rakim
+                      ? highlightText(String(mevzi.rakim), searchMevzi)
+                      : "-"}
+                  </TableCell>
+                  <TableCell style={{ textAlign: "center" }}>
+                    {mevzi.lokasyon
+                      ? highlightText(mevzi.lokasyon, searchMevzi)
+                      : "-"}
+                  </TableCell>
+                  <TableCell style={{ textAlign: "center" }}>
+                    {mevzi.ulasim
+                      ? highlightText(mevzi.ulasim, searchMevzi)
+                      : "-"}
+                  </TableCell>
+                  <TableCell style={{ textAlign: "center" }}>
+                    {mevzi.bakim_sorumlusu_id
+                      ? highlightText(mevzi.bakim_sorumlusu_id, searchMevzi)
+                      : "-"}
+                  </TableCell>
+                  <TableCell style={{ textAlign: "center" }}>
+                    {mevzi.sube_id
+                      ? highlightText(mevzi.sube_id, searchMevzi)
+                      : "-"}
+                  </TableCell>
+                  <TableCell style={{ textAlign: "center" }}>
+                    {mevzi.kurulum_tarihi
+                      ? highlightText(String(mevzi.kurulum_tarihi), searchMevzi)
+                      : "-"}
+                  </TableCell>
+                  <TableCell style={{ textAlign: "center" }}>
+                    {mevzi.d_sistemler && mevzi.d_sistemler.length !== 0
+                      ? highlightText(mevzi.d_sistemler.join(", "), searchMevzi)
+                      : "-"}
+                  </TableCell>
+                  <TableCell style={{ textAlign: "center" }}>
+                    {mevzi.y_sistemler && mevzi.y_sistemler.length !== 0
+                      ? highlightText(mevzi.y_sistemler.join(", "), searchMevzi)
+                      : "-"}
+                  </TableCell>
+                  <TableCell style={{ textAlign: "center" }}>
+                    {mevzi.ip ? (
+                      mevzi.state !== null && mevzi.state !== undefined ? (
+                        <>
+                          {mevzi.state < 1 && (
+                            <>
+                              <IconButton className="noHighlight" disableRipple>
+                                <KeyboardDoubleArrowDownIcon
+                                  style={{ color: "red" }}
+                                />
+                                <span
+                                  style={{ fontSize: "16px", color: "white" }}
+                                >
+                                  {highlightText('Inaktif', searchMevzi)}
+                                </span>
+                              </IconButton>
+                              <br />
                               <span
-                                style={{ fontSize: "16px", color: "white" }}
+                                style={{
+                                  fontSize: "14px",
+                                  color: "white",
+                                  justifyContent: "center",
+                                  display: "flex",
+                                }}
                               >
-                                Kapalı
+                                Ip: {highlightText(mevzi.ip, searchMevzi)}
                               </span>
-                            </IconButton>
-                            <br />
-                            <span
-                              style={{
-                                fontSize: "14px",
-                                color: "white",
-                                justifyContent: "center",
-                                display: "flex",
-                              }}
-                            >
-                              Ip: {mevzi.ip}
-                            </span>
-                          </>
-                        )}
-                        {mevzi.state === 2 && (
-                          <>
-                            <IconButton className="noHighlight" disableRipple>
-                              <KeyboardDoubleArrowUpIcon
-                                style={{ color: "green" }}
-                              />
+                            </>
+                          )}
+                          {mevzi.state === 2 && (
+                            <>
+                              <IconButton className="noHighlight" disableRipple>
+                                <KeyboardDoubleArrowUpIcon
+                                  style={{ color: "green" }}
+                                />
+                                <span
+                                  style={{ fontSize: "16px", color: "white" }}
+                                >
+                                  {highlightText('Aktif', searchMevzi)}
+                                </span>
+                              </IconButton>
+                              <br />
                               <span
-                                style={{ fontSize: "16px", color: "white" }}
+                                style={{
+                                  fontSize: "14px",
+                                  color: "white",
+                                  justifyContent: "center",
+                                  display: "flex",
+                                }}
                               >
-                                Açık
+                                Ip: {highlightText(mevzi.ip, searchMevzi)}
                               </span>
-                            </IconButton>
-                            <br />
-                            <span
-                              style={{
-                                fontSize: "14px",
-                                color: "white",
-                                justifyContent: "center",
-                                display: "flex",
-                              }}
-                            >
-                              Ip: {mevzi.ip}
-                            </span>
-                          </>
-                        )}
-                      </>
+                            </>
+                          )}
+                          {mevzi.state === 1 && (
+                            <>
+                              <IconButton className="noHighlight" disableRipple>
+                                <RemoveIcon style={{ color: "yellow" }} />
+                                <span
+                                  style={{ fontSize: "16px", color: "white" }}
+                                >
+                                  {highlightText('Bilinmiyor', searchMevzi)}
+                                </span>
+                              </IconButton>
+                              <br />
+                              <span
+                                style={{
+                                  fontSize: "14px",
+                                  color: "white",
+                                  justifyContent: "center",
+                                  display: "flex",
+                                }}
+                              >
+                                Ip: {highlightText(mevzi.ip, searchMevzi)}
+                              </span>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <IconButton className="noHighlight" disableRipple>
+                            <RemoveIcon style={{ color: "yellow" }} />
+                          </IconButton>
+                          <br />
+                          <span
+                            style={{
+                              fontSize: "14px",
+                              color: "white",
+                              justifyContent: "center",
+                              display: "flex",
+                            }}
+                          >
+                            {highlightText('Bilinmiyor', searchMevzi)}
+                          </span>
+                        </>
+                      )
                     ) : (
-                      <>
-                        <IconButton className="noHighlight" disableRipple>
-                          <RemoveIcon style={{ color: "yellow" }} />
-                        </IconButton>
-                        <br />
-                        <span
-                          style={{
-                            fontSize: "14px",
-                            color: "white",
-                            justifyContent: "center",
-                            display: "flex",
-                          }}
-                        >
-                          Bilinmiyor
-                        </span>
-                      </>
+                      "-"
                     )}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.kesif_tarihi ? mevzi.kesif_tarihi : "-"}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.kordinat ? mevzi.kordinat : "-"}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.rakim ? mevzi.rakim : "-"}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.lokasyon ? mevzi.lokasyon : "-"}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.ulasim ? mevzi.ulasim : "-"}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.bakim_sorumlusu_id ? mevzi.bakim_sorumlusu_id : "-"}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.sube_id ? mevzi.sube_id : "-"}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {mevzi.kurulum_tarihi ? mevzi.kurulum_tarihi : "-"}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {(mevzi.d_sistemler && mevzi.d_sistemler.length !== 0) ? mevzi.d_sistemler.join(", ") : "-"}
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {(mevzi.y_sistemler && mevzi.y_sistemler.length !== 0) ? mevzi.y_sistemler.join(", ") : "-"}
                   </TableCell>
                   <TableCell style={{ textAlign: "center" }}>
                     <IconButton
@@ -778,20 +1054,6 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                         <ConstructionIcon />
                       </Tooltip>
                     </IconButton>
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    <IconButton
-                      aria-label="edit"
-                      size="small"
-                      className="mevzi-ip-icon"
-                      onClick={() => handleIpClick(mevzi.id)}
-                    >
-                      <Tooltip title="Malzeme Ip">
-                        <LocationOnIcon />
-                      </Tooltip>
-                    </IconButton>
-                  </TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
                     <IconButton
                       aria-label="edit"
                       size="small"
@@ -803,6 +1065,20 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       </Tooltip>
                     </IconButton>
                   </TableCell>
+                  {/* </TableCell> */}
+                  {/* <TableCell style={{ textAlign: "center" }}>
+                    <IconButton
+                      aria-label="edit"
+                      size="small"
+                      className="mevzi-ip-icon"
+                      onClick={() => handleIpClick(mevzi.id)}
+                    >
+                      <Tooltip title="Malzeme Ip">
+                        <LocationOnIcon />
+                      </Tooltip>
+                    </IconButton>
+                  </TableCell> */}
+
                   <TableCell style={{ textAlign: "center" }}>
                     <IconButton
                       aria-label="edit"
@@ -810,11 +1086,12 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                       className="mevzi-export-icon"
                       onClick={() => handleViewMevziClick(mevzi)}
                     >
-                      <Tooltip title="Envanter Özeti">
+                      <Tooltip title="Detayları Görüntüle">
                         <InfoIcon />
                       </Tooltip>
                     </IconButton>
                   </TableCell>
+
                   {isRoleAdmin && (
                     <>
                       <TableCell style={{ textAlign: "center" }}>
@@ -828,8 +1105,8 @@ function Mevziler({ isRoleAdmin, initialMevziler, fetchAllMevzi }) {
                             <GetAppIcon />
                           </Tooltip>
                         </IconButton>
-                      </TableCell>
-                      <TableCell style={{ textAlign: "center" }}>
+                        {/* </TableCell>
+                      <TableCell style={{ textAlign: "center" }}> */}
                         <IconButton
                           aria-label="edit"
                           size="small"

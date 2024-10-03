@@ -26,8 +26,7 @@ import MalzemeAdd from "./pages/MalzemeAdd/MalzemeAdd";
 import MevziAdd from "./pages/MevziAdd/MevziAdd";
 import PhotoGallery from "./pages/PhotoGallery/PhotoGallery";
 import MevziAltYapi from "./pages/MevziAltYapi/MevziAltYapi";
-import MevziIp from "./pages/MevziIp/MevziIp";
-import { AuthProvider, useAuth } from "./AuthContext";
+import { useAuth } from "./AuthContext";
 import PrivateRoute from "./PrivateRoute";
 
 function App() {
@@ -40,11 +39,9 @@ function App() {
     }
   }, [theme.palette.mode]);
   return (
-    <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </AuthProvider>
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 
@@ -53,7 +50,6 @@ const AppContent = () => {
   const [systems, setSystems] = useState([]);
   const [freeMalzemeler, setFreeMalzemeler] = useState([]);
   const [malzemeler, setMalzemeler] = useState([]);
-  const [malzMatch, setMalzMatch] = useState([]);
   const { loading, isAdmin } = useAuth();
 
   if (loading) {
@@ -73,16 +69,6 @@ const AppContent = () => {
       setMevziler(response.data);
     } catch (error) {
       message.error(error.response?.data?.detail || error.message);
-    }
-  };
-
-  // FETCH ALL MALZ MATCH
-  const fetchMalzMatch = async () => {
-    try {
-      const response = await axios.get("/api/malzeme/malzmatches/get");
-      setMalzMatch(response.data);
-    } catch (error) {
-      console.error(error.response?.data?.detail || error.message);
     }
   };
 
@@ -181,7 +167,7 @@ const AppContent = () => {
             }
           />
           <Route
-            path="/system/:id/bilgi"
+            path="/sistem/:id/bilgi"
             element={<SystemBilgi isRoleAdmin={isRoleAdmin} />}
           />
           <Route
@@ -220,18 +206,7 @@ const AppContent = () => {
               />
             }
           />
-          <Route
-            path="/mevziler/:id/ip"
-            element={
-              <MevziIp
-                isRoleAdmin={isRoleAdmin}
-                mevziler={mevziler}
-                fetchAllMevzi={fetchAllMevzi}
-                malzMatch={malzMatch}
-                fetchMalzMatch={fetchMalzMatch}
-              />
-            }
-          />
+
           <Route
             path="/malzemeler"
             element={
@@ -239,8 +214,6 @@ const AppContent = () => {
                 isRoleAdmin={isRoleAdmin}
                 initialMalzemeler={malzemeler}
                 fetchMalzemeler={fetchMalzemeler}
-                malzMatch={malzMatch}
-                fetchMalzMatch={fetchMalzMatch}
               />
             }
           />
@@ -301,6 +274,8 @@ const AppContent = () => {
                 isRoleAdmin={isRoleAdmin}
                 systems={systems}
                 fetchSystems={fetchSystems}
+                fetchAllMevzi={fetchAllMevzi}
+                mevziler={mevziler}
               />
             }
           />

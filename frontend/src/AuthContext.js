@@ -3,7 +3,7 @@ import axios from "axios";
 import jwtDecode from "jwt-decode";
 
 const AuthContext = createContext();
-
+let authContext = null;
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -191,7 +191,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const intervalId = setInterval(() => {
       refreshToken();
-    }, Number(process.env.REACT_APP_REFLESH_TOKEN_TIME));
+    }, Number(process.env.REACT_APP_REFRESH_TOKEN_TIME));
 
     return () => clearInterval(intervalId);
   }, []);
@@ -223,6 +223,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  authContext = { logout };
   return (
     <AuthContext.Provider
       value={{
@@ -240,3 +241,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+export const getAuthContext = () => authContext;

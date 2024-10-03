@@ -29,6 +29,8 @@ tr.MuiTableRow-root:hover {
 .mevzi-export-icon,
 .app.dark .mevzi-ip-icon,
 .mevzi-ip-icon,
+.app.dark .mevzi-filter-icon,
+.mevzi-filter-icon,
 .app.dark .mevzi-edit-icon,
 .mevzi-edit-icon,
 .mevzi-alty-icon,
@@ -44,6 +46,8 @@ tr.MuiTableRow-root:hover {
 .mevzi-ip-icon:hover,
 .app.dark .mevzi-edit-icon:hover,
 .mevzi-edit-icon:hover,
+.mevzi-filter-icon:hover,
+.app.dark .mevzi-filter-icon:hover,
 .app.dark .mevzi-alty-icon:hover,
 .mevzi-alty-icon:hover {
   color: #cecece !important;
@@ -114,11 +118,14 @@ tr.MuiTableRow-root:hover {
 
 
 .mevziler-page-search-bar {
-  max-width: 400px;
-  width: 400px;
   right: 0;
   position: absolute;
   padding: 40px;
   margin-top: 10px;
   margin-right: 25px;
+}
+
+.highlight {
+  background-color: var(--highlight-color) !important;
+  font-weight: bold;
 }

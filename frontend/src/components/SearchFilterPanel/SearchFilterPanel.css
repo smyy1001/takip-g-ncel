@@ -6,12 +6,12 @@
     z-index: 10;
     background-color: var(--searchfilter-panel-bg);
     border-top-right-radius: 8px;
-    width: 20vw;
+    width: 25vw;
     transition: height 0.3s ease-in-out;
 }
 
 .sfp-sliding-panel.open {
-    height: 135px;
+    height: 350px;
 }
 
 .sfp-toggle-button {

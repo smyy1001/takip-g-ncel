@@ -157,16 +157,16 @@ const SystemPanel = ({ systems, fetchSystems, isOpen, togglePanel, isRoleAdmin }
     const navigate = useNavigate();
     const [searchSistem, setSearchSistem] = useState('');
 
-    const handleEditSystemClick = async (system) => {
-        navigate(`/sistemler/${system.id}`)
+    const handleViewSystemClick = async (system) => {
+        navigate(`/sistem/${system.id}/bilgi`);
     };
 
-    const handleEditMalzemeClick = async (malzeme) => {
-        navigate(`/malzemeler/${malzeme.id}`)
+    const handleViewMalzemeClick = async (malzeme) => {
+        navigate(`/malzeme/${malzeme.id}/bilgi`);
     };
 
     const toSystems = async () => {
-        navigate('/sistemler')
+        navigate('/sistemler');
     };
 
     const toggleSystemOpen = (id, event) => {
@@ -177,8 +177,31 @@ const SystemPanel = ({ systems, fetchSystems, isOpen, togglePanel, isRoleAdmin }
         }));
     };
 
+    function highlightText(text, highlight) {
+        const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+        return <span> {
+            parts.map((part, i) =>
+                <span key={i} className={part.toLowerCase() === highlight.toLowerCase() ? 'highlight' : ''}>
+                    {part}
+                </span>
+            )
+        } </span>;
+    }
+
+
     //filter systems reagrding therir names and searchSiste keyword. if the keyword is empty, return all systems
-    const filteredSystems = systems.filter(sys => sys.name.toLowerCase().includes(searchSistem.toLowerCase()));
+    // const filteredSystems = systems.filter(sys => sys.name.toLowerCase().includes(searchSistem.toLowerCase()));
+    // const filteredSystems = systems.filter(sys =>
+    //     sys.name.toLowerCase().includes(searchSistem.toLowerCase()) ||
+    //     sys.malzemeler.some(malzeme => malzeme.name.toLowerCase().includes(searchSistem.toLowerCase()))
+    // );
+    const filteredSystems = systems.filter(sys =>
+        sys.name.toLowerCase().includes(searchSistem.toLowerCase()) ||
+        sys.malzemeler.some(malzeme =>
+            malzeme.name.toLowerCase().includes(searchSistem.toLowerCase()) ||
+            malzeme.seri_num.toLowerCase().includes(searchSistem.toLowerCase())
+        )
+    );
 
     return (
         <div className={`sys-sliding-panel ${isOpen ? 'open' : ''}`}>
@@ -186,7 +209,9 @@ const SystemPanel = ({ systems, fetchSystems, isOpen, togglePanel, isRoleAdmin }
                 <IconButton className="sys-toggle-button" >
                     {isOpen ? <CloseIcon /> : <KeyboardArrowLeftIcon />}
                 </IconButton>
-                <div className="sys-panel-content">{"Sistemler & Malzemeler"}</div>
+                <Typography className="sys-panel-content">
+                    Sistemler & Malzemeleri
+                </Typography>
             </div>
 
             <div className='sys-panel-scroll'>
@@ -229,10 +254,10 @@ const SystemPanel = ({ systems, fetchSystems, isOpen, togglePanel, isRoleAdmin }
                                     <Grid item xs={12} md={6}>
                                         <List>
                                             <ListItem disablePadding>
-                                                <ListItemButton onClick={() => handleEditSystemClick(sys)}>
+                                                <ListItemButton onClick={() => handleViewSystemClick(sys)}>
                                                     <ListItemText sx={{
                                                         '.MuiListItemText-primary': { fontSize: '1.3rem', color: 'white', fontWeight: 'bold' }
-                                                    }} primary={sys.name} />
+                                                    }} primary={ highlightText(sys.name, searchSistem) } />
                                                     <Tooltip title="Sistemdeki Malzemeler">
                                                         {sys.malzemeler && sys.malzemeler.length > 0 ? (
                                                             openSystem[sys.id] ? <ExpandLess className='sys-panel-expand-more-less' onClick={(e) => toggleSystemOpen(sys.id, e)} /> : <ExpandMore className='sys-panel-expand-more-less' onClick={(e) => toggleSystemOpen(sys.id, e)} />
@@ -244,12 +269,12 @@ const SystemPanel = ({ systems, fetchSystems, isOpen, togglePanel, isRoleAdmin }
                                                 <List component="div" disablePadding>
                                                     {sys.malzemeler && sys.malzemeler.map((malzeme, index) => (
                                                         <React.Fragment key={index}>
-                                                            <ListItem className='sys-panel-sub-malz-list-class' sx={{ pl: 4 }} onClick={() => handleEditMalzemeClick(malzeme)}>
+                                                            <ListItem className='sys-panel-sub-malz-list-class' sx={{ pl: 4 }} onClick={() => handleViewMalzemeClick(malzeme)}>
                                                                 <ListItemText sx={{
                                                                     '.MuiListItemText-primary': { fontSize: '1rem', color: 'white', fontWeight: 'bold' }
                                                                 }}
-                                                                    primary={malzeme.name}
-                                                                    secondary={`Seri No: ${malzeme.seri_num}`}
+                                                                    primary={highlightText(malzeme.name, searchSistem)}
+                                                                    secondary={highlightText(`Seri No: ${malzeme.seri_num}`, searchSistem)}
                                                                 />
                                                             </ListItem>
                                                             {index < sys.malzemeler.length - 1 && (

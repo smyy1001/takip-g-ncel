@@ -11,6 +11,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+minio_host=os.getenv('MINIO_HOST')
+minio_port=os.getenv('MINIO_PORT')
+
 minio_client = Minio(
     f"{os.getenv('MINIO_CONTAINER_NAME')}:{os.getenv('MINIO_DOCKER_INTERNAL_PORT')}",
     access_key=os.getenv('MINIO_ROOT_USER'),
@@ -60,7 +63,7 @@ def upload_image_to_minio(bucket_name: str, folder_name: str, image_file: bytes,
             content_type="image/png"
         )
         
-        return f"http://localhost:9010/{bucket_name}/{object_name}"
+        return f"{minio_host}:{minio_port}/{bucket_name}/{object_name}"
     except S3Error as e:
         raise HTTPException(status_code=500, detail=f"MinIO Hatası: {str(e)}")
 

@@ -186,7 +186,10 @@ function MalzemeAdd({
     arizalar: [],
     bakimlar: [],
     onarimlar: [],
+    ip: "",
+    frequency: "",
   });
+  const [ipRequired, setIpRequired] = useState(false);
   const navigate = useNavigate();
   const [all_types, setAllTypes] = useState([]);
   const [tempType, setTempType] = useState("");
@@ -348,6 +351,7 @@ function MalzemeAdd({
     setTempMarka("");
     setTempModel("");
     setFolders([]);
+    setIpRequired(false);
     setMalzemeInfo({
       name: "",
       system_id: null,
@@ -360,6 +364,8 @@ function MalzemeAdd({
       bakimlar: [],
       arizalar: [],
       onarimlar: [],
+      ip: null,
+      frequency: null,
     });
     setSelectedRadioBValue("b");
     setGirisTarihi(new Date());
@@ -378,7 +384,7 @@ function MalzemeAdd({
   const addNewType = async (typeName) => {
     try {
       const response = await axios.post("/api/type/add/", { name: typeName });
-      // console.log("Yeni tür eklendi:", response.data);
+
       fetchAllTypes();
       return response.data.id;
     } catch (error) {
@@ -433,7 +439,7 @@ function MalzemeAdd({
   const addNewMarka = async (markaName) => {
     try {
       const response = await axios.post("/api/marka/add/", { name: markaName });
-      // console.log("Yeni marka eklendi:", response.data);
+
       fetchAllMarkalar();
       return response.data.id;
     } catch (error) {
@@ -492,7 +498,7 @@ function MalzemeAdd({
   const addNewModel = async (modelName) => {
     try {
       const response = await axios.post("/api/model/add/", { name: modelName });
-      // console.log("Yeni model eklendi:", response.data);
+
       fetchAllModels();
       return response.data.id;
     } catch (error) {
@@ -638,7 +644,7 @@ function MalzemeAdd({
   const addNewMevzi = async (MevziName) => {
     try {
       const response = await axios.post("/api/mevzi/add/", { name: MevziName });
-      // console.log("Yeni mevzi eklendi:", response.data);
+
       fetchAllMevzi();
       return response.data.id;
     } catch (error) {
@@ -710,6 +716,11 @@ function MalzemeAdd({
       bakimlar: malzemeInfo?.bakimlar || [],
       onarimlar: malzemeInfo?.onarimlar || [],
       system_id: malzemeInfo?.system_id || null,
+      frequency:
+        malzemeInfo?.system_id && malzemeInfo?.ip
+          ? malzemeInfo?.frequency || null
+          : null,
+      ip: malzemeInfo?.system_id ? malzemeInfo?.ip || null : null,
     };
 
     const formData = new FormData();
@@ -717,7 +728,7 @@ function MalzemeAdd({
 
     const folderImageCounts = [];
     const deletedImagesData = [];
-    // console.log("gönderme folders " + folders);
+
     folders.forEach((folder, folderIndex) => {
       formData.append("folderNames", folder.folderName);
       folderImageCounts.push(folder.selectedImages.length);
@@ -745,10 +756,6 @@ function MalzemeAdd({
     if (deletedImagesData.length > 0) {
       formData.append("deletedImagesData", JSON.stringify(deletedImagesData));
     }
-
-    // for (let [key, value] of formData.entries()) {
-    //   console.log(key, value);
-    // }
 
     try {
       let response;
@@ -813,8 +820,14 @@ function MalzemeAdd({
         bakimlar: malzeme.bakimlar || [],
         onarimlar: malzeme.onarimlar || [],
         system_id: malzeme.system_id || null,
+        ip: malzeme.ip,
+        frequency: malzeme.ip ? malzeme.frequency : null,
       });
-
+      if (malzeme.system_id) {
+        setIpRequired(true);
+      } else {
+        setIpRequired(false);
+      }
       const depoValue =
         malzeme.depo === 0 ? "b" : malzeme.depo === 1 ? "y" : "m";
       setSelectedRadioBValue(depoValue);
@@ -913,53 +926,115 @@ function MalzemeAdd({
               />
 
               {isRoleAdmin ? (
-                <Autocomplete
-                  fullWidth
-                  placeholder="İlişkili Sistem"
-                  options={systems}
-                  getOptionLabel={(option) => option.name}
-                  onChange={(event, value) => {
-                    setMalzemeInfo({
-                      ...malzemeInfo,
-                      system_id: value ? value.id : null,
-                    });
-                  }}
-                  value={
-                    systems.find(
-                      (system) => system.id === malzemeInfo?.system_id
-                    ) || null
-                  }
-                  renderInput={(params) => (
-                    <CustomAutocompleteTextField
-                      {...params}
-                      label="İlişkili Sistem"
-                      variant="filled"
-                      fullWidth
-                      margin="normal"
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <React.Fragment>
-                            {params.InputProps.endAdornment}
-                          </React.Fragment>
-                        ),
-                      }}
-                    />
+                <>
+                  <Autocomplete
+                    fullWidth
+                    placeholder="İlişkili Sistem"
+                    options={systems}
+                    getOptionLabel={(option) => option.name}
+                    onChange={(event, value) => {
+                      setMalzemeInfo({
+                        ...malzemeInfo,
+                        system_id: value ? value.id : null,
+                      });
+                      setIpRequired(!!value);
+                    }}
+                    value={
+                      systems.find(
+                        (system) => system.id === malzemeInfo?.system_id
+                      ) || null
+                    }
+                    renderInput={(params) => (
+                      <CustomAutocompleteTextField
+                        {...params}
+                        label="İlişkili Sistem"
+                        variant="filled"
+                        fullWidth
+                        margin="normal"
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <React.Fragment>
+                              {params.InputProps.endAdornment}
+                            </React.Fragment>
+                          ),
+                        }}
+                      />
+                    )}
+                  />
+                  {ipRequired && (
+                    <>
+                      <CustomTextField
+                        label="IP"
+                        fullWidth
+                        value={malzemeInfo?.ip || ""}
+                        onChange={(e) =>
+                          setMalzemeInfo((prev) => ({
+                            ...prev,
+                            ip: e.target.value,
+                          }))
+                        }
+                        variant="filled"
+                        margin="normal"
+                        autoComplete="off"
+                      />
+                      <CustomTextField
+                        autoComplete="off"
+                        label="Ping Sıklığı (Dakika)"
+                        fullWidth
+                        type="number"
+                        inputProps={{ step: "0.01", min: 1 }}
+                        variant="filled"
+                        value={malzemeInfo?.frequency || ""}
+                        onChange={(e) => {
+                          if (isRoleAdmin) {
+                            setMalzemeInfo({
+                              ...malzemeInfo,
+                              frequency: e.target.value,
+                            });
+                          }
+                        }}
+                        margin="normal"
+                        disabled={!isRoleAdmin}
+                      />
+                    </>
                   )}
-                />
+                </>
               ) : (
-                <CustomTextField
-                  label="İlişkili Sistem"
-                  value={
-                    systems.find(
-                      (system) => system.id === malzemeInfo?.system_id
-                    )?.name || ""
-                  }
-                  variant="filled"
-                  fullWidth
-                  margin="normal"
-                  disabled
-                />
+                <>
+                  <CustomTextField
+                    label="İlişkili Sistem"
+                    value={
+                      systems.find(
+                        (system) => system.id === malzemeInfo?.system_id
+                      )?.name || ""
+                    }
+                    variant="filled"
+                    fullWidth
+                    margin="normal"
+                    disabled
+                  />
+                  {malzemeInfo?.ip && (
+                    <>
+                      <CustomTextField
+                        label="IP"
+                        value={malzemeInfo?.ip || ""}
+                        variant="filled"
+                        fullWidth
+                        margin="normal"
+                        disabled
+                      />
+                      <CustomTextField
+                        label="Ping Sıklığı (Dakika)"
+                        value={malzemeInfo?.frequency || ""}
+                        variant="filled"
+                        fullWidth
+                        margin="normal"
+                        disabled
+                      />
+                    </>
+                  )}
+                </>
               )}
 
               <CustomTextField
@@ -1067,12 +1142,15 @@ function MalzemeAdd({
                   <InfoIcon style={{ color: "white", marginLeft: "8px" }} />
                 </Tooltip>
               </div>
-
             </div>
 
             <div
               className="malzeme-add-to-the-right"
-              style={{ width: malzeme ? "27vw" : "40vw", marginTop: "23px", marginBottom:'15px' }}
+              style={{
+                width: malzeme ? "27vw" : "40vw",
+                marginTop: "23px",
+                marginBottom: "15px",
+              }}
             >
               <div style={{ display: "flex", alignItems: "center" }}>
                 <div>Bulunduğu yer:</div>

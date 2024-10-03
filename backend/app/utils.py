@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from jose import jwt
 from passlib.context import CryptContext
 from geoalchemy2 import WKTElement
-import geopandas as gpd
+# import geopandas as gpd
 from shapely.geometry import Point
 import subprocess
 from ping3 import ping
@@ -20,7 +20,7 @@ SECRET_KEY = os.getenv("SECRET")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
-gdf = gpd.read_file("/app/turkey_administrative_data/tur_polbnda_adm1.shp")
+# gdf = gpd.read_file("/app/turkey_administrative_data/tur_polbnda_adm1.shp")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -127,20 +127,6 @@ def check_postgres_connection():
     except OperationalError as e:
         return str(e)
 
-
-def get_access_token(code: str, redirect_uri: str):
-    token_url = "http://localhost:8080/realms/takip/protocol/openid-connect/token"
-    payload = {
-        "grant_type": "authorization_code",
-        "client_id": "keycloak-takip",
-        "client_secret": "bFoHT8V7tKMY2I7708bXd6AAZQZSuw7G",
-        "code": code,
-        "redirect_uri": redirect_uri,
-    }
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    response = httpx.post(token_url, data=payload, headers=headers)
-    response.raise_for_status()
-    return response.json()
 
 
 def convert_mgrs_to_lat_long(mgrs_string):

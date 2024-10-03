@@ -59,6 +59,12 @@ async def create_system(
                 status_code=400, detail="Bu isimde bir sistem zaten mevcut."
             )
 
+        if system_create.frequency is None or system_create.frequency == "":
+            system_create.frequency = 5
+            
+        if system_create.ip in ["", "null", "None", None]:
+            system_create.ip = None 
+
         db_system = models.System(
             name=system_create.name,
             type_id=system_create.type_id,
@@ -112,7 +118,7 @@ async def create_system(
         db_system.photos = image_urls
         db.commit()
 
-        return db_system
+        return schemas.System.from_orm(db_system)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Bir hata oluştu: {str(e)}")
@@ -174,17 +180,25 @@ async def update_system(
             updated_system_data = json.loads(system) if system else {}
             system_update = schemas.SystemCreate(**updated_system_data)
 
- 
-
             if not db_system:
                 raise HTTPException(status_code=404, detail="Sistem bulunamadı")
+
+            if system_update.frequency is None or system_update.frequency == "":
+                system_update.frequency = 5
+
+            if system_update.ip in ["", "null", "None", None]:
+                system_update.ip = None 
 
             for field, value in system_update.dict().items():
                 if field == "photos" and value is None:
                     continue
-                if value is None:
-                    continue
+
                 setattr(db_system, field, value)
+
+            if system_update.ip is None or system_update.ip == "":
+                db_system.state = 1
+            else:
+                db_system.state = 2 if ping_ip(system_update.ip) else 0
 
         image_urls = db_system.photos if db_system.photos is not None else []
 
@@ -193,10 +207,10 @@ async def update_system(
         image_index = 0
         if oldFolderNames and folderNames and len(oldFolderNames) == len(folderNames):
             for index, old_folder_name in enumerate(oldFolderNames):
-             
+
                 if old_folder_name != "null" and folderNames[index]:
                     new_folder_name = folderNames[index]
-                        
+
                     image_urls = [
                     photo.replace(f"/{old_folder_name}/", f"/{new_folder_name}/")
                     for photo in image_urls
@@ -242,9 +256,9 @@ async def update_system(
 
                         image_urls = [photo for photo in image_urls if f"{bucket_name}/{file_path}" not in photo]
 
-
         db_system.photos = image_urls
         flag_modified(db_system, "photos")
+
 
         db.commit()
         db.refresh(db_system)
@@ -291,7 +305,10 @@ async def update_system_state(
     if not db_system:
         raise HTTPException(status_code=404, detail="Sistem bulunamadı")
 
-    state = 2 if ping_ip(db_system.ip) else 0
+    if db_system.ip == '':
+        db_system.state = 0
+    else:
+        state = 2 if ping_ip(db_system.ip) else 0
     db_system.state = state
     db.commit()
     db.refresh(db_system)

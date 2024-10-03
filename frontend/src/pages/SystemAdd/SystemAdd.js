@@ -204,6 +204,7 @@ function SystemAdd({
   const [selectedUnsurlar, setSelectedUnsurlar] = useState([]);
   const [selectedMalzemeler, setSelectedMalzemeler] = useState([]);
   const [girisTarihi, setGirisTarihi] = useState(new Date());
+  const [malzemeInfo, setMalzemeInfo] = useState([]);
   const [folders, setFolders] = useState([
     {
       folderName: "",
@@ -220,7 +221,7 @@ function SystemAdd({
   const formRef = useRef();
   const handleGoruntuleClick = () => {
     if (system?.id) {
-      navigate(`/system/${system.id}/bilgi`);
+      navigate(`/sistem/${system.id}/bilgi`);
     }
   };
   const handleImageChange = (event, folderIndex) => {
@@ -314,12 +315,15 @@ function SystemAdd({
     setSelectedMalzemeler([]);
     setSelectedRadioBValue("b");
     setFolders([]);
+    setMalzemeInfo([]);
     setSystemInfo({
       type_id: null,
       marka_id: null,
       mmodel_id: null,
       mevzi_id: null,
       depo: selectedRadioBValue,
+      ip: null,
+      frequency: null,
     });
   };
 
@@ -338,7 +342,6 @@ function SystemAdd({
       const response = await axios.post("/api/systype/add/", {
         name: typeName,
       });
-      // console.log("Yeni tür eklendi:", response.data);
       fetchAllTypes();
       return response.data.id;
     } catch (error) {
@@ -394,7 +397,6 @@ function SystemAdd({
       const response = await axios.post("/api/sys_marka/add/", {
         name: markaName,
       });
-      // console.log("Yeni marka eklendi:", response.data);
       fetchAllMarkalar();
       return response.data.id;
     } catch (error) {
@@ -451,10 +453,7 @@ function SystemAdd({
 
   // FREE MALZEMELER
   const handleChosenMalzemelerChange = (event, newValue) => {
-    // console.log("malzemeler add:" + malzemeler);
-    // console.log("selectedMalzemeler add:" + selectedMalzemeler);
     if (newValue.length === 0) {
-      // console.log("içerisi boş");
       setSystemInfo((prev) => ({
         ...prev,
         selectedMalzemeler: [],
@@ -465,7 +464,6 @@ function SystemAdd({
         selectedMalzemeler: newValue.map((malzeme) => malzeme.id),
       }));
     }
-    // console.log("onchange new value: " + newValue);
     setSelectedMalzemeler(newValue);
   };
 
@@ -489,7 +487,6 @@ function SystemAdd({
       const response = await axios.post("/api/sys_model/add/", {
         name: modelName,
       });
-      // console.log("Yeni model eklendi:", response.data);
       fetchAllModels();
       return response.data.id;
     } catch (error) {
@@ -541,7 +538,6 @@ function SystemAdd({
   const addNewMevzi = async (MevziName) => {
     try {
       const response = await axios.post("/api/mevzi/add/", { name: MevziName });
-      // console.log("Yeni mevzi eklendi:", response.data);
       fetchAllMevzi();
       return response.data.id;
     } catch (error) {
@@ -576,10 +572,6 @@ function SystemAdd({
       (malzeme) => !malzemeIds.includes(malzeme.id)
     );
 
-    console.log("malzemeIds", malzemeIds);
-
-    console.log("previouslySelectedMalzemeler", previouslySelectedMalzemeler);
-    console.log("malzemelerToBeUnset", malzemelerToBeUnset);
     if (malzemeIds.length === 0 && malzemelerToBeUnset.length === 0) {
       return;
     }
@@ -591,7 +583,6 @@ function SystemAdd({
 
     try {
       const response = await axios.post("/api/malzeme/reg-system", requestBody);
-      message.success("Malzemeler güncellendi!");
 
       await Promise.all(
         malzemelerToBeUnset.map(async (malzeme) => {
@@ -603,6 +594,35 @@ function SystemAdd({
         })
       );
 
+      await Promise.all(
+        malzemeInfo.map(async (malzeme) => {
+          try {
+            const formData = new FormData();
+            formData.append("ip", malzeme.ip);
+            if (malzeme.ip && malzeme.frequency) {
+              formData.append("frequency", malzeme.frequency);
+            }
+
+            await axios.put(
+              `/api/malzeme/update-ip-frequency/${malzeme.id}`,
+              formData,
+              {
+                headers: {
+                  "Content-Type": "multipart/form-data",
+                },
+              }
+            );
+          } catch (error) {
+            console.error(
+              `Malzeme IP ve frequency güncellenirken hata oluştu: ${malzeme.id}`,
+              error
+            );
+            message.error(`Malzeme ${malzeme.id} güncellenemedi.`);
+          }
+        })
+      );
+
+      message.success("Malzemeler güncellendi!");
       if (malzemelerToBeUnset.length > 0) {
         message.success("İlişkilendirilmemiş malzemeler boşa çıkarıldı.");
       }
@@ -618,7 +638,6 @@ function SystemAdd({
   // EKLE
   const handleAddSystem = async (event) => {
     event.preventDefault();
-    // console.log("Gönderilecek Unsurlar: ", selectedUnsurlar);
 
     const isFolderNameMissing = folders.some(
       (folder) => folder.selectedImages.length > 0 && !folder.folderName.trim()
@@ -638,7 +657,7 @@ function SystemAdd({
 
     const systemData = {
       name: systemInfo?.name || null,
-      frequency: systemInfo?.frequency || null,
+      frequency: systemInfo?.ip ? systemInfo?.frequency || null : null,
       ip: systemInfo?.ip || null,
       seri_num: systemInfo?.seri_num || null,
       description: systemInfo?.description || null,
@@ -655,7 +674,6 @@ function SystemAdd({
         .map((item) => (typeof item === "object" ? item.id : item))
         .filter((id) => id !== null && id !== undefined),
     };
-    // console.log("systemData.ilskili_unsur" + systemData.ilskili_unsur);
 
     const formData = new FormData();
     formData.append("system", JSON.stringify(systemData));
@@ -695,10 +713,6 @@ function SystemAdd({
     if (deletedImagesData.length > 0) {
       formData.append("deletedImagesData", JSON.stringify(deletedImagesData));
     }
-
-    // for (let [key, value] of formData.entries()) {
-    //   console.log(key, value);
-    // }
 
     try {
       let response;
@@ -769,19 +783,32 @@ function SystemAdd({
         marka_id: system.marka_id,
         mmodel_id: system.mmodel_id,
         ip: system.ip,
-        frequency: system.frequency,
+        frequency: system.ip ? system.frequency : null,
         description: system.description,
         type_id: system.type_id,
         selectedUnsurlar: system.ilskili_unsur || [],
         selectedMalzemeler: selectedMalzemeler || [],
         mevzi_id: system.mevzi_id || null,
       });
+      if (selectedMalzemeler.length > 0) {
+        const filledMalzemeInfo = malzemeler
+          .filter((malzeme) => selectedMalzemeler.includes(malzeme.id))
+          .map((malzeme) => ({
+            id: malzeme.id,
+            name: malzeme.name,
+            ip: malzeme.ip || null,
+            frequency: malzeme.ip ? malzeme.frequency || null : null,
+          }));
+
+        setMalzemeInfo(filledMalzemeInfo);
+      } else {
+        // Eğer seçili malzeme yoksa malzemeInfo'yu boş bırak
+        setMalzemeInfo([]);
+      }
       const depoValue = system.depo === 0 ? "b" : system.depo === 1 ? "y" : "m";
       setSelectedRadioBValue(depoValue);
       setSelectedUnsurlar(system.ilskili_unsur || []);
-      // console.log("Selected Unsurlar useEffect içinde: ", system.ilskili_unsur);
       setSelectedMalzemeler(selectedMalzemeler);
-      console.log("selected", selectedMalzemeler);
       const selectedMevziFromMalzeme = mevziler.find(
         (mevzi) => mevzi.id === system.mevzi_id
       );
@@ -818,7 +845,7 @@ function SystemAdd({
         setFolders(Object.values(foldersFromSystem));
       }
     }
-  }, [system, mevziler]);
+  }, [system, mevziler, malzemeler]);
   return (
     <Container className="system-add-container">
       {!system && (
@@ -891,9 +918,9 @@ function SystemAdd({
                 label="Ping Sıklığı (Dakika)"
                 fullWidth
                 type="number"
-                inputProps={{ step: "0.01" }}
+                inputProps={{ step: "0.01", min: 1 }}
                 variant="filled"
-                value={systemInfo?.frequency}
+                value={systemInfo?.frequency || ""}
                 onChange={(e) => {
                   if (isRoleAdmin) {
                     setSystemInfo({ ...systemInfo, frequency: e.target.value });
@@ -1191,56 +1218,137 @@ function SystemAdd({
 
               <div style={{ marginTop: "15px" }}>
                 {isRoleAdmin ? (
-                  <Autocomplete
-                    multiple
-                    id="tags-filled"
-                    options={freeMalzemeler}
-                    getOptionLabel={(option) => option.name}
-                    value={
-                      Array.isArray(systemInfo?.selectedMalzemeler) &&
-                      malzemeler.length
-                        ? malzemeler.filter((malzeme) =>
-                            systemInfo.selectedMalzemeler.includes(malzeme.id)
-                          )
-                        : []
-                    }
-                    onChange={(event, newValue) => {
-                      setSelectedMalzemeler(newValue);
-                      setSystemInfo((prev) => ({
-                        ...prev,
-                        selectedMalzemeler: newValue.map(
-                          (malzeme) => malzeme.id
-                        ),
-                      }));
-                    }}
-                    renderInput={(params) => (
-                      <CustomAutocompleteTextField
-                        {...params}
-                        variant="filled"
-                        label={
-                          system
-                            ? "Sistemdeki Malzemeler"
-                            : "Sistemi Olmayan Malzemeler"
-                        }
-                        placeholder="Malzeme Seç"
-                      />
-                    )}
-                  />
+                  <>
+                    <Autocomplete
+                      multiple
+                      id="tags-filled"
+                      options={freeMalzemeler}
+                      getOptionLabel={(option) => option.name}
+                      value={
+                        Array.isArray(systemInfo?.selectedMalzemeler) &&
+                        malzemeler.length > 0
+                          ? malzemeler.filter((malzeme) =>
+                              systemInfo.selectedMalzemeler.includes(malzeme.id)
+                            )
+                          : []
+                      }
+                      onChange={(event, newValue) => {
+                        setSelectedMalzemeler(newValue);
+                        setSystemInfo((prev) => ({
+                          ...prev,
+                          selectedMalzemeler: newValue.map(
+                            (malzeme) => malzeme.id
+                          ),
+                        }));
+                        setMalzemeInfo(
+                          newValue.map((malzeme) => ({
+                            id: malzeme.id,
+                            name: malzeme.name,
+                            ip: malzeme.ip || "",
+                            frequency: malzeme.frequency || "",
+                          }))
+                        );
+                      }}
+                      renderInput={(params) => (
+                        <CustomAutocompleteTextField
+                          {...params}
+                          variant="filled"
+                          label={
+                            system
+                              ? "Sistemdeki Malzemeler"
+                              : "Sistemi Olmayan Malzemeler"
+                          }
+                          placeholder="Malzeme Seç"
+                        />
+                      )}
+                    />
+                    {malzemeInfo.map((malzeme, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: "flex",
+                          gap: "10px",
+                          marginTop: "10px",
+                        }}
+                      >
+                        <CustomTextField
+                          label={`${malzeme.name} için IP`}
+                          value={malzeme.ip || ""}
+                          onChange={(e) => {
+                            const updatedMalzemeInfo = [...malzemeInfo];
+                            updatedMalzemeInfo[index].ip = e.target.value;
+                            setMalzemeInfo(updatedMalzemeInfo);
+                          }}
+                          variant="filled"
+                          fullWidth
+                          autoComplete="off"
+                        />
+
+                        <CustomTextField
+                          autoComplete="off"
+                          label={`${malzeme.name} için Ping Sıklığı (Dakika)`}
+                          fullWidth
+                          type="number"
+                          inputProps={{ step: "0.01", min: 1 }}
+                          variant="filled"
+                          value={malzeme.frequency || ""}
+                          onChange={(e) => {
+                            const updatedMalzemeInfo = [...malzemeInfo];
+                            updatedMalzemeInfo[index].frequency =
+                              e.target.value;
+                            setMalzemeInfo(updatedMalzemeInfo);
+                          }}
+                          disabled={!isRoleAdmin}
+                        />
+                      </div>
+                    ))}
+                  </>
                 ) : (
-                  <CustomTextField
-                    label="Sistemdeki Malzemeler"
-                    value={
-                      malzemeler
-                        .filter((malzeme) =>
-                          systemInfo?.selectedMalzemeler.includes(malzeme.id)
-                        )
-                        .map((malzeme) => malzeme.name)
-                        .join(", ") || ""
-                    }
-                    variant="filled"
-                    fullWidth
-                    disabled
-                  />
+                  <>
+                    <CustomTextField
+                      label="Sistemdeki Malzemeler"
+                      value={
+                        malzemeler
+                          .filter((malzeme) =>
+                            systemInfo?.selectedMalzemeler.includes(malzeme.id)
+                          )
+                          .map((malzeme) => malzeme.name)
+                          .join(", ") || ""
+                      }
+                      variant="filled"
+                      fullWidth
+                      disabled
+                    />
+                    {malzemeInfo.map((malzeme, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: "flex",
+                          gap: "10px",
+                          marginTop: "10px",
+                        }}
+                      >
+                        {malzeme.ip && (
+                          <>
+                            <CustomTextField
+                              label={`${malzeme.name} için IP`}
+                              value={malzeme.ip || ""}
+                              variant="filled"
+                              fullWidth
+                              disabled
+                            />
+                            <CustomTextField
+                              label={`${malzeme.name} için Ping Sıklığı (Dakika)`}
+                              value={malzeme.frequency || ""}
+                              variant="filled"
+                              fullWidth
+                              disabled
+                            />
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </>
                 )}
               </div>
 

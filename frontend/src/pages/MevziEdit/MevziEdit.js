@@ -234,6 +234,7 @@ function MevziEdit({
               systems={systems}
               fetchSystems={fetchSystems}
               mevzi={selectedMevzi}
+              fetchAllMevzi={fetchAllMevzi}
             />
           )}
         </div>

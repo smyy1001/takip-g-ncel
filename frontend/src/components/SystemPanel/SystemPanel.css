@@ -36,11 +36,12 @@
     padding-left: 7px;
     display: flex;
     justify-content: start;
-    height: calc((100% - 64px) / 2);
+    /* height: calc((100% - 64px) / 2); */
     color: rgb(255, 255, 255);
-    font-weight: 800;
-    font-size: 20px;
-    margin-top: 40px;
+    font-weight: 800!important;
+    font-size: 20px!important;
+    margin-top: 40px !important;
+    height: fit-content;
 }
 
 .app-dark .sys-panel-scroll,
@@ -123,4 +124,9 @@
 .sys-sliding-panel-header.open {
     background-color: #4f7d55;
     cursor: pointer;
+}
+
+.highlight {
+    background-color: var(--highlight-color) !important;
+    font-weight: bold;
 }

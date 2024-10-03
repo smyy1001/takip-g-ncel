@@ -188,7 +188,13 @@ const CustomOutlinedButton = styled(Button)({
   },
 });
 
-function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
+function MevziAdd({
+  isRoleAdmin,
+  systems,
+  fetchSystems,
+  mevzi,
+  fetchAllMevzi,
+}) {
   const options =
     mevzi && systems && systems.length > 0
       ? systems.flatMap((system) =>
@@ -202,9 +208,6 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
         )
       : [];
 
-  const [ips, setIps] = useState([]);
-  const [selectedIp, setSelectedIp] = useState("");
-  const [malzeme, setMalzeme] = useState(null);
   const [mevziInfo, setMevziInfo] = useState({
     d_sistemler: [],
     y_sistemler: [],
@@ -217,6 +220,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
   const [selectedSistemler, setSelectedSistemler] = useState([]);
   const [sistemler, setSistemler] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [shouldUpdateMevzi, setShouldUpdateMevzi] = useState(false);
 
   const [iklimIds, setIklimIds] = useState([]);
   const [jeneratorIds, setJeneratorIds] = useState([]);
@@ -247,6 +251,10 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
   const [modalGucKOpen, setModalGucKOpen] = useState(false);
   const [gucKInfo, setGucKInfo] = useState(null);
 
+  const [hasJeneratorError, setHasJeneratorError] = useState(false);
+  const [hasRegulatorError, setHasRegulatorError] = useState(false);
+  const [hasGucKError, setHasGucKError] = useState(false);
+
   const [kesifTarihi, setKesifTarihi] = useState(new Date());
   const [kurulumTraihi, setKurulumTarihi] = useState(new Date());
   const [kurulumTraihi2, setKurulumTraihi2] = useState(new Date());
@@ -273,7 +281,6 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
     { t: "", r_l: "", uydu: "", telekom: "", g_modem: "" },
     { voltaj: 0 },
   ]);
-  const [altYMessage, setAltYMessage] = useState("");
   const handleKlimaChange = (event) => {
     const updatedAltY = [...altY];
     updatedAltY[0].klima = event.target.value;
@@ -390,12 +397,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
     updatedAltY[2].g_modem = event.target.value;
     setAltY(updatedAltY);
   };
-  const isAltYEmpty = () => {
-    return altY.every((item) => {
-      return Object.values(item).every((value) => value === "" || value === 0);
-    });
-  };
-  const [deletedIps, setDeletedIps] = useState([]);
+
   const turkey_cities = [
     "ADANA",
     "ADIYAMAN",
@@ -825,7 +827,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
   const fetchKlimalar = async () => {
     try {
       const response = await axios.get("/api/alt_y/iklim/klima/all/");
-      console.log("reposne.data", response.data);
+
       setKlimalar(response.data);
     } catch (error) {
       message.error(error.response?.data?.detail || error.message);
@@ -835,7 +837,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
   useEffect(() => {
     if (iklimIds.length > 0 && klimalar.length > 0) {
       const selectedKlimalar = klimalar.filter((i) => iklimIds.includes(i.id));
-      console.log("Selected Klimalar:", selectedKlimalar);
+
       setSelectedKlimalar(selectedKlimalar);
     }
   }, [iklimIds, klimalar]);
@@ -845,7 +847,6 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
       const selectedJeneratorler = jeneratorler.filter((j) =>
         jeneratorIds.includes(j.id)
       );
-      console.log("Selected Jeneratorler:", selectedJeneratorler);
       setSelectedJeneratorler(selectedJeneratorler);
     }
   }, [jeneratorIds, jeneratorler]);
@@ -853,7 +854,6 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
   useEffect(() => {
     if (gucKIds.length > 0 && gucKlar.length > 0) {
       const selectedGucKlar = gucKlar.filter((gk) => gucKIds.includes(gk.id));
-      console.log("Selected GucKlar:", selectedGucKlar);
       setSelectedGucKlar(selectedGucKlar);
     }
   }, [gucKIds, gucKlar]);
@@ -863,7 +863,6 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
       const selectedRegulatorlar = regulatorlar.filter((r) =>
         regulatorIds.includes(r.id)
       );
-      console.log("Selected Regulatorlar:", selectedRegulatorlar);
       setSelectedRegulatorlar(selectedRegulatorlar);
     }
   }, [regulatorIds, regulatorlar]);
@@ -928,6 +927,11 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
 
   const handleChosenJeneratorChange = (event, newValue) => {
     setSelectedJeneratorler(newValue);
+    if (newValue.length >= 2) {
+      setHasJeneratorError(false);
+    } else {
+      setHasJeneratorError(true);
+    }
   };
 
   const handleDeleteJenerator = async (id, event) => {
@@ -988,6 +992,11 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
 
   const handleChosenRegulatorChange = (event, newValue) => {
     setSelectedRegulatorlar(newValue);
+    if (newValue.length >= 2) {
+      setHasRegulatorError(false);
+    } else {
+      setHasRegulatorError(true);
+    }
   };
 
   const handleDeleteRegulator = async (id, event) => {
@@ -1048,6 +1057,11 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
 
   const handleChosenGkChange = (event, newValue) => {
     setSelectedGucKlar(newValue);
+    if (newValue.length >= 4) {
+      setHasGucKError(false);
+    } else {
+      setHasGucKError(true);
+    }
   };
 
   const handleDeleteGK = async (id, event) => {
@@ -1180,23 +1194,6 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
     }
   };
 
-  // IP BILGILERI
-  const handleIpChange = () => {
-    if (malzeme && selectedIp) {
-      const newEntry = [malzeme, mevzi.id, selectedIp];
-      setIps([...ips, newEntry]);
-      setSelectedIp("");
-    } else {
-      console.error("Malzeme name or IP is missing");
-    }
-  };
-
-  const handleDeleteIp = (malzemeName) => {
-    setDeletedIps((prev) => [...prev, malzemeName]);
-    const updatedIps = ips.filter((item) => item[0] !== malzemeName);
-    setIps(updatedIps);
-  };
-
   // FETCH
   useEffect(() => {
     const fetchBS = async () => {
@@ -1262,8 +1259,8 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
         ulasim: mevzi.ulasim || "",
         lokasyon: mevzi.lokasyon || "",
         yurt_i: mevzi.yurt_i,
-        ip: mevzi.ip || "",
-        frequency: mevzi.frequency || 0,
+        ip: mevzi.ip || null,
+        frequency: mevzi.ip ? mevzi.frequency || null : null,
         kesif_tarihi: mevzi.kesif_tarihi
           ? dayjs(mevzi.kesif_tarihi)
           : new Date(),
@@ -1273,6 +1270,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
         bakim_sorumlusu_id: mevzi.bakim_sorumlusu_id || null,
         d_sistemler: mevzi.d_sistemler || [],
         sube_id: mevzi.sube_id || null,
+        alt_y_id: mevzi.alt_y_id || null,
       });
 
       if (mevzi.yurt_i) {
@@ -1310,25 +1308,12 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
       if (mevzi?.alt_y_id) {
         fetchAltY();
       }
-      fetchIps();
+
+      setHasJeneratorError(false);
+      setHasRegulatorError(false);
+      setHasGucKError(false);
     }
   }, [mevzi]);
-
-  const fetchIps = async () => {
-    try {
-      const response = await axios.get(
-        `/api/malzeme/malzmatches/get?mevzi_id=${mevzi.id}`
-      );
-      if (response.status === 200 && Array.isArray(response.data)) {
-        const fetchedIps = response.data.map(
-          ({ malzeme_name, mevzi_id, ip }) => [malzeme_name, mevzi_id, ip]
-        );
-        setIps(fetchedIps);
-      }
-    } catch (error) {
-      console.error("Error fetching IPs:", error);
-    }
-  };
 
   const fetchAltY = async () => {
     if (mevzi?.alt_y_id) {
@@ -1392,12 +1377,12 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
       d_sistemler: [],
       sube_id: null,
       lokasyon: "",
+      ip: null,
+      frequency: null,
     });
 
     setSelectedSistemler([]);
     setSelectedRadioBValue("i");
-    setIps([]);
-    setSelectedIp("");
     setKesifTarihi(new Date());
     setKurulumTarihi(new Date());
     setFolders([]);
@@ -1407,6 +1392,10 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
       { t: "", r_l: "", uydu: "", telekom: "", g_modem: "" },
       { voltaj: 0 },
     ]);
+    setSelectedGucKlar([]);
+    setSelectedJeneratorler([]);
+    setSelectedRegulatorlar([]);
+    setSelectedKlimalar([]);
     setIklimKlima(false);
     setKabinRack(false);
     setKonteyner(false);
@@ -1423,6 +1412,35 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
 
   // ALT YAPI BILGISI EKLE
   const handleSaveAltY = async () => {
+    let isError = false;
+    if (selectedJeneratorler.length < 2) {
+      setHasJeneratorError(true);
+      message.error("En az 2 jeneratör seçmelisiniz.");
+      isError = true;
+    } else {
+      setHasJeneratorError(false);
+    }
+
+    if (selectedRegulatorlar.length < 2) {
+      setHasRegulatorError(true);
+      message.error("En az 2 regülatör seçmelisiniz.");
+      isError = true;
+    } else {
+      setHasRegulatorError(false);
+    }
+
+    if (selectedGucKlar.length < 4) {
+      setHasGucKError(true);
+      message.error("En az 4 güç kaynağı seçmelisiniz.");
+      isError = true;
+    } else {
+      setHasGucKError(false);
+    }
+
+    if (isError) {
+      return;
+    }
+
     try {
       // Add Iklim (index 0)
       let haberID;
@@ -1496,18 +1514,33 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
 
       const addedAltY = await axios.post("/api/alt_y/add/", altYData);
       setMevziInfo({ ...mevziInfo, alt_y_id: addedAltY.data.id });
-      setAltYMessage("Alt Yapı bilgileri eklendi!");
+      setShouldUpdateMevzi(true);
+      if (mevzi?.alt_y_id) {
+        message.success("Alt Yapı bilgileri güncellendi!");
+      } else {
+        message.success("Alt Yapı bilgileri eklendi!");
+      }
     } catch (error) {
       console.error("Error adding items:", error);
       message.error("Hata alındı!");
     }
     handleCloseModal3();
+    setHasJeneratorError(false);
+    setHasRegulatorError(false);
+    setHasGucKError(false);
   };
+  useEffect(() => {
+    if (mevziInfo?.alt_y_id && shouldUpdateMevzi && mevzi) {
+      handleAddMevzi();
+      setShouldUpdateMevzi(false);
+    }
+  }, [mevziInfo?.alt_y_id, shouldUpdateMevzi]);
 
   // EKLE
   const handleAddMevzi = async (event) => {
-    event.preventDefault();
-
+    if (event) {
+      event.preventDefault();
+    }
     const isFolderNameMissing = folders.some(
       (folder) => folder.selectedImages.length > 0 && !folder.folderName.trim()
     );
@@ -1524,7 +1557,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
       kordinat: mevziInfo?.kordinat || null,
       rakim: mevziInfo?.rakim || null,
       ulasim: mevziInfo?.ulasim || null,
-      frequency: mevziInfo?.frequency || null,
+      frequency: mevziInfo?.ip ? mevziInfo?.frequency || null : null,
       ip: mevziInfo?.ip || null,
       lokasyon: mevziInfo?.lokasyon || null,
       kesif_tarihi: kesifTarihi
@@ -1542,6 +1575,12 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
     };
 
     const formData = new FormData();
+
+    Object.keys(mevziData).forEach((key) => {
+      if (mevziData[key] !== null && mevziData[key] !== undefined) {
+        formData.append(key, mevziData[key]);
+      }
+    });
     formData.append("mevzi", JSON.stringify(mevziData));
 
     const folderImageCounts = [];
@@ -1578,25 +1617,6 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
 
     try {
       if (mevzi) {
-        const formattedIps = ips.map(([malzemeName, mevziId, ip]) => ({
-          malzeme_name: malzemeName,
-          mevzi_id: mevziId,
-          ip: ip,
-        }));
-
-        if (formattedIps.length > 0) {
-          await axios.put("/api/malzeme/malzmatches/add/", formattedIps);
-        }
-
-        if (deletedIps.length > 0) {
-          await Promise.all(
-            deletedIps.map((malzemeName) =>
-              axios.delete(`/api/malzeme/malzmatches/delete/${malzemeName}`)
-            )
-          );
-          setDeletedIps([]);
-        }
-
         const response = await axios.put(
           `/api/mevzi/update/${mevzi.id}`,
           formData,
@@ -1608,7 +1628,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
         );
         if (response.status === 200) {
           message.success("Mevzi güncellendi!");
-          // resetForm();
+          fetchAllMevzi();
         }
       } else {
         // Yeni mevzi ekleme isteği
@@ -1619,11 +1639,11 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
         });
         if (response.status === 200 || response.status === 201) {
           message.success("Mevzi eklendi!");
-          resetForm();
         }
       }
-
+      setMevziInfo(null);
       fetchSystems();
+      resetForm();
     } catch (error) {
       console.error("Error during form submission:", error);
       message.error(error.response?.data?.detail || "Bir hata oluştu.");
@@ -1690,7 +1710,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                 label="IP"
                 fullWidth
                 variant="filled"
-                value={mevziInfo?.ip}
+                value={mevziInfo?.ip || ""}
                 onChange={(e) => {
                   if (isRoleAdmin) {
                     setMevziInfo({ ...mevziInfo, ip: e.target.value });
@@ -1704,9 +1724,9 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                 label="Ping Sıklığı (Dakika)"
                 fullWidth
                 type="number"
-                inputProps={{ step: "0.01" }}
+                inputProps={{ step: "0.01", min: 1 }}
                 variant="filled"
-                value={mevziInfo?.frequency}
+                value={mevziInfo?.frequency || ""}
                 onChange={(e) => {
                   if (isRoleAdmin) {
                     setMevziInfo({ ...mevziInfo, frequency: e.target.value });
@@ -1737,7 +1757,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                 fullWidth
                 variant="filled"
                 type="number"
-                inputProps={{ step: "0.01" }}
+                inputProps={{ step: "0.01", min: 0 }}
                 value={mevziInfo?.rakim}
                 onChange={(e) => {
                   if (isRoleAdmin) {
@@ -1803,7 +1823,11 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                         ) || null
                       }
                       onChange={(event, value) =>
-                        setMevziInfo({ ...mevziInfo, lokasyon: value, yurt_i: true })
+                        setMevziInfo({
+                          ...mevziInfo,
+                          lokasyon: value,
+                          yurt_i: true,
+                        })
                       }
                       clearOnEscape
                       renderInput={(params) => (
@@ -1859,7 +1883,11 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                         ) || null
                       }
                       onChange={(event, value) =>
-                        setMevziInfo({ ...mevziInfo, lokasyon: value, yurt_i: false })
+                        setMevziInfo({
+                          ...mevziInfo,
+                          lokasyon: value,
+                          yurt_i: false,
+                        })
                       }
                       clearOnEscape
                       renderInput={(params) => (
@@ -2161,8 +2189,11 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                 />
                 {isRoleAdmin && (
                   <Tooltip title="Dış Sistem Ekle" placement="right">
-                    <IconButton onClick={() => handleDSistemlerChange(d_sis)} style={{ color: "white", marginLeft: "8px" }}>
-                      <AddCircleIcon/>
+                    <IconButton
+                      onClick={() => handleDSistemlerChange(d_sis)}
+                      style={{ color: "white", marginLeft: "8px" }}
+                    >
+                      <AddCircleIcon />
                     </IconButton>
                   </Tooltip>
                 )}
@@ -2266,8 +2297,11 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                 )}
                 {isRoleAdmin && (
                   <Tooltip title="Sistem Ekle" placement="right">
-                    <IconButton onClick={handleOpenModal} style={{ color: "white", marginLeft: "8px" }}>
-                      <AddCircleIcon/>
+                    <IconButton
+                      onClick={handleOpenModal}
+                      style={{ color: "white", marginLeft: "8px" }}
+                    >
+                      <AddCircleIcon />
                     </IconButton>
                   </Tooltip>
                 )}
@@ -2371,7 +2405,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                         label="Alt Sınır"
                         variant="filled"
                         type="number"
-                        inputProps={{ step: "0.01" }}
+                        inputProps={{ step: "0.01", min: 0 }}
                         value={sistemInfo?.frekans_k}
                         onChange={(e) => {
                           setSistemInfo({
@@ -2391,7 +2425,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                         label="Üst sınır"
                         variant="filled"
                         type="number"
-                        inputProps={{ step: "0.01" }}
+                        inputProps={{ step: "0.01", min: 0 }}
                         value={sistemInfo?.frekans_b}
                         onChange={(e) => {
                           setSistemInfo({
@@ -2406,7 +2440,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
 
                   <CustomOutlinedButton
                     variant="outlined"
-                    style={{marginTop: '16px'}}
+                    style={{ marginTop: "16px" }}
                     onClick={handleSaveSistem}
                     color="primary"
                   >
@@ -2427,9 +2461,6 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                         <ConstructionIcon />
                       </Tooltip>
                     </div>
-                  )}
-                  {altYMessage && altYMessage !== "" && (
-                    <div>{altYMessage}</div>
                   )}
                 </>
               </div>
@@ -2677,7 +2708,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                               label="Ölçülen Şebeke Elektriği Voltajı"
                               variant="filled"
                               type="number"
-                              inputProps={{ step: "0.01" }}
+                              inputProps={{ step: "0.01", min: 0 }}
                               value={altY[3]?.voltaj || ""}
                               onChange={(event, value) => {
                                 if (isRoleAdmin) {
@@ -2696,54 +2727,81 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                               display: "flex",
                               flexDirection: "row",
                               width: "15vw",
-                              marginTop: '20px'
+                              marginTop: "20px",
                             }}
                           >
-                            <Autocomplete
-                              multiple
-                              fullWidth
-                              id="tags-filled"
-                              options={jeneratorler}
-                              getOptionLabel={(option) => option.name}
-                              value={selectedJeneratorler}
-                              onChange={handleChosenJeneratorChange}
-                              renderOption={(props, option) => (
-                                <li {...props}>
-                                  {isRoleAdmin && (
-                                    <ListItemIcon>
-                                      <Tooltip title="Jeneratörü kalıcı olarak siler!">
-                                        <DeleteIcon
-                                          onClick={() =>
-                                            handleDeleteJenerator(option.id)
-                                          }
-                                        />
-                                      </Tooltip>
-                                    </ListItemIcon>
-                                  )}
-                                  <ListItemText
-                                    primary={option.name}
-                                    secondary={
-                                      <React.Fragment>
-                                        {`Açıklama: ${option.seri_num}`}
-                                      </React.Fragment>
-                                    }
+                            {isRoleAdmin ? (
+                              <Autocomplete
+                                multiple
+                                fullWidth
+                                id="tags-filled"
+                                options={jeneratorler}
+                                getOptionLabel={(option) => option.name}
+                                value={selectedJeneratorler}
+                                onChange={handleChosenJeneratorChange}
+                                renderOption={(props, option) => (
+                                  <li {...props}>
+                                    {isRoleAdmin && (
+                                      <ListItemIcon>
+                                        <Tooltip title="Jeneratörü kalıcı olarak siler!">
+                                          <DeleteIcon
+                                            onClick={() =>
+                                              handleDeleteJenerator(option.id)
+                                            }
+                                          />
+                                        </Tooltip>
+                                      </ListItemIcon>
+                                    )}
+                                    <ListItemText
+                                      primary={option.name}
+                                      secondary={
+                                        <React.Fragment>
+                                          {`Açıklama: ${option.seri_num}`}
+                                        </React.Fragment>
+                                      }
+                                    />
+                                  </li>
+                                )}
+                                renderInput={(params) => (
+                                  <CustomAutocompleteTextField
+                                    {...params}
+                                    variant="filled"
+                                    label="Jeneratörler"
+                                    placeholder="Jeneratör Seç"
+                                    error={hasJeneratorError}
+                                    InputProps={{
+                                      ...params.InputProps,
+                                      style: hasJeneratorError
+                                        ? { borderColor: "red" }
+                                        : {},
+                                    }}
                                   />
-                                </li>
-                              )}
-                              renderInput={(params) => (
-                                <CustomAutocompleteTextField
-                                  {...params}
-                                  variant="filled"
-                                  label="Jeneratörler"
-                                  placeholder="Jeneratör Seç"
-                                />
-                              )}
-                            />
-                            <Tooltip title="Jeneratör Ekle" placement="right">
-                              <IconButton onClick={handleOpenJeneratorModal} style={{ color: "white", marginLeft: "8px" }}>
-                                <AddCircleIcon />
-                              </IconButton>
-                            </Tooltip>
+                                )}
+                              />
+                            ) : (
+                              <CustomTextField
+                                label="Jeneratörler"
+                                value={
+                                  selectedJeneratorler
+                                    .map((jenerator) => jenerator.name)
+                                    .join(", ") || ""
+                                }
+                                variant="filled"
+                                fullWidth
+                                margin="normal"
+                                disabled
+                              />
+                            )}
+                            {isRoleAdmin && (
+                              <Tooltip title="Jeneratör Ekle" placement="right">
+                                <IconButton
+                                  onClick={handleOpenJeneratorModal}
+                                  style={{ color: "white", marginLeft: "8px" }}
+                                >
+                                  <AddCircleIcon />
+                                </IconButton>
+                              </Tooltip>
+                            )}
                           </div>
 
                           <Modal
@@ -2757,7 +2815,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                                 position: "absolute",
                                 top: "50%",
                                 left: "50%",
-                                padding: '20px',
+                                padding: "20px",
                                 transform: "translate(-50%, -50%)",
                                 width: 400,
                                 bgcolor: "background.paper",
@@ -2800,7 +2858,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
 
                               <CustomOutlinedButton
                                 variant="outlined"
-                                style={{ marginTop: '16px' }}
+                                style={{ marginTop: "16px" }}
                                 onClick={handleSaveJenerator}
                                 color="primary"
                               >
@@ -2815,54 +2873,79 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                               display: "flex",
                               flexDirection: "row",
                               width: "15vw",
-                              marginTop: '20px'
+                              marginTop: "20px",
                             }}
                           >
-                            <Autocomplete
-                              multiple
-                              fullWidth
-                              id="tags-filled"
-                              options={regulatorlar}
-                              getOptionLabel={(option) => option.name}
-                              value={selectedRegulatorlar}
-                              onChange={handleChosenRegulatorChange}
-                              renderOption={(props, option) => (
-                                <li {...props}>
-                                  {isRoleAdmin && (
-                                    <ListItemIcon>
-                                      <Tooltip title="Regülatörü kalıcı olarak siler!">
-                                        <DeleteIcon
-                                          onClick={() =>
-                                            handleDeleteRegulator(option.id)
-                                          }
-                                        />
-                                      </Tooltip>
-                                    </ListItemIcon>
-                                  )}
-                                  <ListItemText
-                                    primary={option.name}
-                                    secondary={
-                                      <React.Fragment>
-                                        {`Açıklama: ${option.seri_num}`}
-                                      </React.Fragment>
-                                    }
+                            {isRoleAdmin ? (
+                              <Autocomplete
+                                multiple
+                                fullWidth
+                                id="tags-filled"
+                                options={regulatorlar}
+                                getOptionLabel={(option) => option.name}
+                                value={selectedRegulatorlar}
+                                onChange={handleChosenRegulatorChange}
+                                renderOption={(props, option) => (
+                                  <li {...props}>
+                                    {isRoleAdmin && (
+                                      <ListItemIcon>
+                                        <Tooltip title="Regülatörü kalıcı olarak siler!">
+                                          <DeleteIcon
+                                            onClick={() =>
+                                              handleDeleteRegulator(option.id)
+                                            }
+                                          />
+                                        </Tooltip>
+                                      </ListItemIcon>
+                                    )}
+                                    <ListItemText
+                                      primary={option.name}
+                                      secondary={
+                                        <React.Fragment>{`Açıklama: ${option.seri_num}`}</React.Fragment>
+                                      }
+                                    />
+                                  </li>
+                                )}
+                                renderInput={(params) => (
+                                  <CustomAutocompleteTextField
+                                    {...params}
+                                    variant="filled"
+                                    label="Regülatörler"
+                                    placeholder="Regülatör Seç"
+                                    error={hasRegulatorError}
+                                    InputProps={{
+                                      ...params.InputProps,
+                                      style: hasRegulatorError
+                                        ? { borderColor: "red" }
+                                        : {},
+                                    }}
                                   />
-                                </li>
-                              )}
-                              renderInput={(params) => (
-                                <CustomAutocompleteTextField
-                                  {...params}
-                                  variant="filled"
-                                  label="Regülatörler"
-                                  placeholder="Regülatör Seç"
-                                />
-                              )}
-                            />
-                            <Tooltip title="Regülatör Ekle" placement="right">
-                              <IconButton onClick={handleOpenRegModal} style={{ color: "white", marginLeft: "8px" }}>
-                                <AddCircleIcon/>
-                              </IconButton>
-                            </Tooltip>
+                                )}
+                              />
+                            ) : (
+                              <CustomTextField
+                                label="Regülatörler"
+                                value={
+                                  selectedRegulatorlar
+                                    .map((regulator) => regulator.name)
+                                    .join(", ") || ""
+                                }
+                                variant="filled"
+                                fullWidth
+                                margin="normal"
+                                disabled
+                              />
+                            )}
+                            {isRoleAdmin && (
+                              <Tooltip title="Regülatör Ekle" placement="right">
+                                <IconButton
+                                  onClick={handleOpenRegModal}
+                                  style={{ color: "white", marginLeft: "8px" }}
+                                >
+                                  <AddCircleIcon />
+                                </IconButton>
+                              </Tooltip>
+                            )}
                           </div>
 
                           <Modal
@@ -2878,7 +2961,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                                 left: "50%",
                                 transform: "translate(-50%, -50%)",
                                 width: 400,
-                                padding: '20px',
+                                padding: "20px",
                                 bgcolor: "background.paper",
                                 boxShadow: 24,
                                 p: 4,
@@ -2919,7 +3002,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
 
                               <CustomOutlinedButton
                                 variant="outlined"
-                                style={{ marginTop: '16px' }}
+                                style={{ marginTop: "16px" }}
                                 onClick={handleSaveRegulator}
                                 color="primary"
                               >
@@ -2934,57 +3017,82 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                               display: "flex",
                               flexDirection: "row",
                               width: "15vw",
-                              marginTop: '20px'
+                              marginTop: "20px",
                             }}
                           >
-                            <Autocomplete
-                              multiple
-                              fullWidth
-                              id="tags-filled"
-                              options={gucKlar}
-                              getOptionLabel={(option) => option.name}
-                              value={selectedGucKlar}
-                              onChange={handleChosenGkChange}
-                              renderOption={(props, option) => (
-                                <li {...props}>
-                                  {isRoleAdmin && (
-                                    <ListItemIcon>
-                                      <Tooltip title="Kesintisiz Güç Kaynağını kalıcı olarak siler!">
-                                        <DeleteIcon
-                                          onClick={() =>
-                                            handleDeleteGK(option.id)
-                                          }
-                                        />
-                                      </Tooltip>
-                                    </ListItemIcon>
-                                  )}
-                                  <ListItemText
-                                    primary={option.name}
-                                    secondary={
-                                      <React.Fragment>
-                                        {`Açıklama: ${option.seri_num}`}
-                                      </React.Fragment>
-                                    }
+                            {isRoleAdmin ? (
+                              <Autocomplete
+                                multiple
+                                fullWidth
+                                id="tags-filled"
+                                options={gucKlar}
+                                getOptionLabel={(option) => option.name}
+                                value={selectedGucKlar}
+                                onChange={handleChosenGkChange}
+                                renderOption={(props, option) => (
+                                  <li {...props}>
+                                    {isRoleAdmin && (
+                                      <ListItemIcon>
+                                        <Tooltip title="Kesintisiz Güç Kaynağını kalıcı olarak siler!">
+                                          <DeleteIcon
+                                            onClick={() =>
+                                              handleDeleteGK(option.id)
+                                            }
+                                          />
+                                        </Tooltip>
+                                      </ListItemIcon>
+                                    )}
+                                    <ListItemText
+                                      primary={option.name}
+                                      secondary={
+                                        <React.Fragment>{`Açıklama: ${option.seri_num}`}</React.Fragment>
+                                      }
+                                    />
+                                  </li>
+                                )}
+                                renderInput={(params) => (
+                                  <CustomAutocompleteTextField
+                                    {...params}
+                                    variant="filled"
+                                    label="Kesintisiz Güç Kaynakları"
+                                    placeholder="Kesintisiz Güç Kaynağı Seç"
+                                    error={hasGucKError}
+                                    InputProps={{
+                                      ...params.InputProps,
+                                      style: hasGucKError
+                                        ? { borderColor: "red" }
+                                        : {},
+                                    }}
                                   />
-                                </li>
-                              )}
-                              renderInput={(params) => (
-                                <CustomAutocompleteTextField
-                                  {...params}
-                                  variant="filled"
-                                  label="Kesintisiz Güç Kaynakalrı"
-                                  placeholder="Kesintisiz Güç Kaynağı Seç"
-                                />
-                              )}
-                            />
-                            <Tooltip
-                              title="Kesintisiz Güç Kaynağı Ekle"
-                              placement="right"
-                            >
-                              <IconButton onClick={handleOpengkModal} style={{ color: "white", marginLeft: "8px" }}>
-                                <AddCircleIcon/>
-                              </IconButton>
-                            </Tooltip>
+                                )}
+                              />
+                            ) : (
+                              <CustomTextField
+                                label="Kesintisiz Güç Kaynakları"
+                                value={
+                                  selectedGucKlar
+                                    .map((gucK) => gucK.name)
+                                    .join(", ") || ""
+                                }
+                                variant="filled"
+                                fullWidth
+                                margin="normal"
+                                disabled
+                              />
+                            )}
+                            {isRoleAdmin && (
+                              <Tooltip
+                                title="Kesintisiz Güç Kaynağı Ekle"
+                                placement="right"
+                              >
+                                <IconButton
+                                  onClick={handleOpengkModal}
+                                  style={{ color: "white", marginLeft: "8px" }}
+                                >
+                                  <AddCircleIcon />
+                                </IconButton>
+                              </Tooltip>
+                            )}
                           </div>
 
                           <Modal
@@ -3000,7 +3108,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                                 left: "50%",
                                 transform: "translate(-50%, -50%)",
                                 width: 400,
-                                padding: '20px',
+                                padding: "20px",
                                 bgcolor: "background.paper",
                                 boxShadow: 24,
                                 p: 4,
@@ -3041,7 +3149,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
 
                               <CustomOutlinedButton
                                 variant="outlined"
-                                style={{ marginTop: '16px' }}
+                                style={{ marginTop: "16px" }}
                                 onClick={handleSaveGK}
                                 color="primary"
                               >
@@ -3087,51 +3195,69 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                               width: "15vw",
                             }}
                           >
-                            <Autocomplete
-                              multiple
-                              fullWidth
-                              id="tags-filled"
-                              options={klimalar}
-                              getOptionLabel={(option) => option.name}
-                              value={selectedKlimalar}
-                              onChange={handleChosenKlimalarChange}
-                              renderOption={(props, option) => (
-                                <li {...props}>
-                                  {isRoleAdmin && (
-                                    <ListItemIcon>
-                                      <Tooltip title="Klimayı kalıcı olarak siler!">
-                                        <DeleteIcon
-                                          onClick={() =>
-                                            handleDeleteKlima(option.id)
-                                          }
-                                        />
-                                      </Tooltip>
-                                    </ListItemIcon>
-                                  )}
-                                  <ListItemText
-                                    primary={option.name}
-                                    secondary={
-                                      <React.Fragment>
-                                        {`Açıklama: ${option.seri_num}`}
-                                      </React.Fragment>
-                                    }
+                            {isRoleAdmin ? (
+                              <Autocomplete
+                                multiple
+                                fullWidth
+                                id="tags-filled"
+                                options={klimalar}
+                                getOptionLabel={(option) => option.name}
+                                value={selectedKlimalar}
+                                onChange={handleChosenKlimalarChange}
+                                renderOption={(props, option) => (
+                                  <li {...props}>
+                                    {isRoleAdmin && (
+                                      <ListItemIcon>
+                                        <Tooltip title="Klimayı kalıcı olarak siler!">
+                                          <DeleteIcon
+                                            onClick={() =>
+                                              handleDeleteKlima(option.id)
+                                            }
+                                          />
+                                        </Tooltip>
+                                      </ListItemIcon>
+                                    )}
+                                    <ListItemText
+                                      primary={option.name}
+                                      secondary={
+                                        <React.Fragment>{`Açıklama: ${option.seri_num}`}</React.Fragment>
+                                      }
+                                    />
+                                  </li>
+                                )}
+                                renderInput={(params) => (
+                                  <CustomAutocompleteTextField
+                                    {...params}
+                                    variant="filled"
+                                    label="Klimalar"
+                                    placeholder="Klima Seç"
                                   />
-                                </li>
-                              )}
-                              renderInput={(params) => (
-                                <CustomAutocompleteTextField
-                                  {...params}
-                                  variant="filled"
-                                  label="Klimalar"
-                                  placeholder="Klima Seç"
-                                />
-                              )}
-                            />
-                            <Tooltip title="Klima Ekle" placement="right">
-                              <IconButton onClick={handleOpenKlimaModal} style={{ color: "white", marginLeft: "8px" }}>
-                                <AddCircleIcon/>
-                              </IconButton>
-                            </Tooltip>
+                                )}
+                              />
+                            ) : (
+                              <CustomTextField
+                                label="Klimalar"
+                                value={
+                                  selectedKlimalar
+                                    .map((klima) => klima.name)
+                                    .join(", ") || ""
+                                }
+                                variant="filled"
+                                fullWidth
+                                margin="normal"
+                                disabled
+                              />
+                            )}
+                            {isRoleAdmin && (
+                              <Tooltip title="Klima Ekle" placement="right">
+                                <IconButton
+                                  onClick={handleOpenKlimaModal}
+                                  style={{ color: "white", marginLeft: "8px" }}
+                                >
+                                  <AddCircleIcon />
+                                </IconButton>
+                              </Tooltip>
+                            )}
                           </div>
 
                           <Modal
@@ -3187,7 +3313,7 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
 
                               <CustomOutlinedButton
                                 variant="outlined"
-                                style={{ marginTop: '16px' }}
+                                style={{ marginTop: "16px" }}
                                 onClick={handleSaveKlima}
                                 color="primary"
                               >
@@ -3310,117 +3436,11 @@ function MevziAdd({ isRoleAdmin, systems, fetchSystems, mevzi }) {
                       onClick={handleSaveAltY}
                       color="primary"
                     >
-                      {isAltYEmpty() ? "Ekle" : "Güncelle"}
+                      {mevzi?.alt_y_id ? "Güncelle" : "Ekle"}
                     </CustomOutlinedButton>
                   )}
                 </Box>
               </Modal>
-
-              {mevzi && (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginTop: "5px",
-                  }}
-                >
-                  {isRoleAdmin ? (
-                    <Autocomplete
-                      options={options}
-                      fullWidth
-                      autoComplete="off"
-                      groupBy={(option) => option.firstLetter}
-                      getOptionLabel={(option) => option.malzName}
-                      value={
-                        options.find(
-                          (option) =>
-                            option.malzName && option.malzName === malzeme
-                        ) || null
-                      }
-                      onChange={(event, value) => {
-                        setMalzeme(value ? value.malzName : "");
-                      }}
-                      renderInput={(params) => (
-                        <CustomTextField
-                          {...params}
-                          label="Mevzideki Sistem Malzemeleri"
-                        />
-                      )}
-                    />
-                  ) : (
-                    <CustomTextField
-                      label="Mevzideki Sistem Malzemeleri"
-                      value={
-                        options.find((option) => option.malzName === malzeme)
-                          ?.malzName || ""
-                      }
-                      variant="filled"
-                      fullWidth
-                      margin="normal"
-                      disabled
-                    />
-                  )}
-
-                  <div style={{ marginTop: "10px" }}>
-                    <RemoveIcon />
-                  </div>
-
-                  <CustomTextField
-                    style={{ marginBottom: "20px" }}
-                    autoComplete="off"
-                    fullWidth
-                    label="IP"
-                    variant="filled"
-                    value={selectedIp}
-                    onChange={(event) => {
-                      if (isRoleAdmin) {
-                        setSelectedIp(event.target.value);
-                      }
-                    }}
-                    margin="normal"
-                    disabled={!isRoleAdmin}
-                  />
-                  {isRoleAdmin && (
-                    <Tooltip title="IP" placement="right">
-                      <IconButton onClick={() => handleIpChange()} style={{ color: "white", marginLeft: "8px" }}>
-                        <AddCircleIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                </div>
-              )}
-
-              <div>
-                {ips.length > 0 && (
-                  <ul>
-                    {ips.map(([malzemeName, mevziId, ip], index) => (
-                      <li key={index}>
-                        {/* Display the malzemeName and IP, excluding mevzi_id */}
-                        <span>
-                          <strong>{malzemeName}:</strong> {ip}
-                        </span>
-                        {isRoleAdmin && (
-                          <Tooltip title="Kaldır">
-                            <IconButton
-                              style={{
-                                paddingTop: "0px",
-                                paddingRight: "0px",
-                                paddingLeft: "0px",
-                                paddingBottom: "0px",
-                              }}
-                              onClick={() => handleDeleteIp(malzemeName)} // Use the malzemeName for deletion
-                              aria-label="delete"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
 
               <div style={{ marginTop: "20px" }}>
                 {folders.map((folder, folderIndex) => (

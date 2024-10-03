@@ -7,7 +7,7 @@ import './AppBarComponent.css';
 import { Link, Typography } from '@mui/material';
 import { Tooltip } from '@mui/material';
 
-const AppBarComponent = ({isRoleAdmin}) => {
+const AppBarComponent = ({ isRoleAdmin }) => {
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -15,9 +15,11 @@ const AppBarComponent = ({isRoleAdmin}) => {
         <AppBar position="fixed" className="app-bar">
             <Toolbar className="styled-toolbar">
                 {(location.pathname === '/home') ? (
-                    <Link color="inherit" underline="none">
-                        <Typography variant="p" className="search-bar-search-logo">takip</Typography>
-                    </Link>
+                    <Tooltip title="Anasayfa">
+                        <Link color="inherit" underline="none">
+                            <Typography variant="p" className="search-bar-search-logo">takip</Typography>
+                        </Link>
+                    </Tooltip>
                 ) : (
                     <Tooltip title="Anasayfa">
                         <Link color="inherit" underline="none" onClick={() => navigate('/home')}>

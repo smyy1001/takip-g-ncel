@@ -136,3 +136,8 @@ tr.MuiTableRow-root:hover {
   margin-top: 10px;
   margin-right: 25px;
 }
+
+.highlight {
+  background-color: var(--highlight-color) !important;
+  font-weight: bold;
+}

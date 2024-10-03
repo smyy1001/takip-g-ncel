@@ -14,7 +14,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server /data --address ":9000" --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://${MINIO_HOST}:${MINIO_DOCKER_INTERNAL_PORT}/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -39,20 +39,20 @@ services:
     command:
       [
         "/wait.sh",
-        "db",
+        "${POSTGRES_HOST}",
         "uvicorn",
         "app.main:app",
         "--host",
         "0.0.0.0",
         "--port",
-        "8000",
+        "${DOCKER_BACKEND_PORT}",
       ]
     volumes:
       - ./backend/app:/app/app
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT}:${DOCKER_BACKEND_PORT}"
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${DOCKER_POSTGRES_PORT}/${POSTGRES_DATABASE}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${DOCKER_POSTGRES_PORT}/${POSTGRES_DATABASE}
     depends_on:
       - db
 
@@ -70,7 +70,6 @@ services:
       KEYCLOAK_REALM: ${KEYCLOAK_REALM}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
-      KEYCLOAK_PORT: ${KEYCLOAK_PORT}
       TZ: ${TZ}
     ports:
       - "${KEYCLOAK_PORT}:8080"
@@ -80,13 +79,15 @@ services:
 
   frontend:
     build: ./frontend
+    env_file:
+      - ./frontend/.env
     container_name: takip_frontend
     stdin_open: true
     tty: true
     volumes:
       - ./frontend/src:/usr/src/app/src
     ports:
-      - "${FRONTEND_PORT}:${BACKEND_PORT}"
+      - "${FRONTEND_PORT}:${DOCKER_FRONTEND_PORT}"
     depends_on:
       - backend
 

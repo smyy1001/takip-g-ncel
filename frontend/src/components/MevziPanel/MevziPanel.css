@@ -40,10 +40,11 @@
     padding-left: 7px;
     display: flex;
     justify-content: start;
-    height: calc((100% - 64px) / 2);
+    /* height: calc((100% - 64px) / 2); */
     color: rgb(255, 255, 255);
-    font-weight: 800;
-    font-size: 20px;
+    font-weight: 800 !important;
+    font-size: 20px !important;
+    height: fit-content;
 }
 
 
@@ -111,4 +112,9 @@
 
 .mevzi-sliding-panel-header.open {
     background-color: #4f7d55;
+}
+
+.highlight {
+    background-color: var(--highlight-color) !important;
+    font-weight: bold;
 }

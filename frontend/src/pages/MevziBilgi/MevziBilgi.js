@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import {
   Container,
@@ -29,7 +29,7 @@ function MevziBilgi({ isRoleAdmin }) {
   const { id } = useParams();
   const [mevziInfo, setMevziInfo] = useState(null);
   const navigate = useNavigate();
-
+  const stateIntervalIds = useRef([]);
   useEffect(() => {
     const fetchSistemler = async () => {
       try {
@@ -71,15 +71,15 @@ function MevziBilgi({ isRoleAdmin }) {
           y_sistemler: mevziResponse.data.y_sistemler.map(
             (systemId) =>
               sistemlerData.find((sistem) => sistem.id === systemId)?.name ||
-              systemId
+              null
           ),
           sube:
-            suberesponse.find((sube) => sube.id === mevziResponse.data.sube)
-              ?.name || mevziResponse.data.sube,
+            suberesponse.find((sube) => sube.id === mevziResponse.data.sube_id)
+              ?.name || null,
           bakim_sorumlusu:
             bsorumlulari.find(
-              (bsorum) => bsorum.id === mevziResponse.data.bakim_sorumlusu
-            )?.name || mevziResponse.data.bakim_sorumlusu
+              (bsorum) => bsorum.id === mevziResponse.data.bakim_sorumlusu_id
+            )?.name || null,
         };
 
         setMevziInfo(updatedMevzi);
@@ -91,37 +91,56 @@ function MevziBilgi({ isRoleAdmin }) {
     fetchMevziInfo();
   }, [id]);
 
+  const updateState = async (mevziId) => {
+    try {
+      const response = await axios.get(`/api/mevzi/update-state/${mevziId}`);
+      if (mevziInfo && mevziInfo.id === mevziId) {
+        setMevziInfo({
+          ...mevziInfo,
+          state: response.data.state,
+        });
+      }
+    } catch (error) {
+      console.error(
+        `Durum güncellenirken hata alındı (Mevzi ID: ${mevziId}):`,
+        error
+      );
+    }
+  };
+
+  const startOrUpdateInterval = (mevzi) => {
+    const existingInterval = stateIntervalIds.current.find(
+      (item) => item.mevziId === mevzi.id
+    );
+
+    if (existingInterval) {
+      if (existingInterval.frequency !== mevzi.frequency) {
+        clearInterval(existingInterval.intervalId);
+        stateIntervalIds.current = stateIntervalIds.current.filter(
+          (item) => item.mevziId !== mevzi.id
+        );
+      } else {
+        return;
+      }
+    }
+
+    const intervalTime = mevzi.frequency * 60000;
+
+    const intervalId = setInterval(() => {
+      updateState(mevzi.id);
+    }, intervalTime);
+
+    stateIntervalIds.current.push({
+      mevziId: mevzi.id,
+      intervalId: intervalId,
+      frequency: mevzi.frequency,
+    });
+  };
+
   useEffect(() => {
-    let stateIntervalId;
-    const updateMevziState = async (id) => {
-      try {
-        const response = await axios.get(`/api/mevzi/update-state/${id}`);
-
-        if (response.data && response.data.state) {
-          setMevziInfo((prevMevziInfo) => ({
-            ...prevMevziInfo,
-            state: response.data.state,
-          }));
-        }
-      } catch (error) {
-        console.error("Mevzi durumu güncellenirken hata oluştu: ", error);
-      }
-    }
-    const startStateInterval = (id) => {
-      const intervalId = setInterval(() => {
-        updateMevziState(id);
-      }, mevziInfo.frequency * 60000);
-      return intervalId;
-    };
-
     if (mevziInfo && mevziInfo.frequency) {
-      stateIntervalId = startStateInterval(id);
+      startOrUpdateInterval(mevziInfo);
     }
-    return () => {
-      if (stateIntervalId) {
-        clearInterval(stateIntervalId);
-      }
-    };
   }, [mevziInfo, id]);
 
   const handleMevziPhotoClick = async (name) => {
@@ -230,52 +249,65 @@ function MevziBilgi({ isRoleAdmin }) {
                 </TableRow>
                 <TableRow>
                   <TableCell>Karakol İsmi</TableCell>
-                  <TableCell>
-                    {mevziInfo.state !== null && mevziInfo.state !== undefined ? (
-                    <>
-                      {mevziInfo.state < 1 && (
-                        <>
-                          <IconButton className="noHighlight" disableRipple>
-                            <KeyboardDoubleArrowDownIcon
-                              style={{ color: "red" }}
-                            />
-                            <span
-                              style={{ fontSize: '1rem' }}>
-                              Kapalı  /  Ip: {mevziInfo.ip}
-                            </span>
-                          </IconButton>
-                        </>
-                      )}
-                      {mevziInfo.state === 2 && (
-                        <>
-                          <IconButton className="noHighlight" disableRipple>
-                            <KeyboardDoubleArrowUpIcon
-                              style={{ color: "green" }}
-                            />
-                            <span
-                              style={{ fontSize: '1rem' }}>
-                              Açık  /  Ip: {mevziInfo.ip}
-                            </span>
-                          </IconButton>
-                        </>
-                      )}
-                    </>
-                    ) : (
-                    <>
-                      <IconButton className="noHighlight" disableRipple>
-                        <RemoveIcon style={{ color: "yellow" }} />
-                        <span
-                          style={{ fontSize: '0.875rem' }}>
-                          Bilinmiyor
-                        </span>
-                      </IconButton>
-                    </>
-                    )}
-                  </TableCell>
+                  <TableCell>{mevziInfo.isim || "-"}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>IP Adresi</TableCell>
-                  <TableCell>{mevziInfo.isim || "-"}</TableCell>
+                  <TableCell>
+                    {" "}
+                    {mevziInfo.ip ? (
+                      mevziInfo.state !== null &&
+                      mevziInfo.state !== undefined ? (
+                        <>
+                          {mevziInfo.state < 1 && (
+                            <>
+                              <IconButton className="noHighlight" disableRipple>
+                                <KeyboardDoubleArrowDownIcon
+                                  style={{ color: "red" }}
+                                />
+                                <span style={{ fontSize: "1rem" }}>
+                                  İnaktif / Ip: {mevziInfo.ip}
+                                </span>
+                              </IconButton>
+                            </>
+                          )}
+                          {mevziInfo.state === 2 && (
+                            <>
+                              <IconButton className="noHighlight" disableRipple>
+                                <KeyboardDoubleArrowUpIcon
+                                  style={{ color: "green" }}
+                                />
+                                <span style={{ fontSize: "1rem" }}>
+                                  Aktif / Ip: {mevziInfo.ip}
+                                </span>
+                              </IconButton>
+                            </>
+                          )}
+                          {mevziInfo.state === 1 && (
+                            <>
+                              <IconButton className="noHighlight" disableRipple>
+                                <RemoveIcon style={{ color: "yellow" }} />
+                                <span style={{ fontSize: "1rem" }}>
+                                  Bilinmiyor / Ip: {mevziInfo.ip}
+                                </span>
+                              </IconButton>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <IconButton className="noHighlight" disableRipple>
+                            <RemoveIcon style={{ color: "yellow" }} />
+                            <span style={{ fontSize: "0.875rem" }}>
+                              Bilinmiyor
+                            </span>
+                          </IconButton>
+                        </>
+                      )
+                    ) : (
+                      "-"
+                    )}
+                  </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>Keşif Tarihi</TableCell>

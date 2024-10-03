@@ -20,75 +20,6 @@ import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import styled from '@mui/material/styles/styled';
 
-
-const CustomAutocompleteTextField = styled(TextField)({
-    "& label.Mui-focused": {
-        color: "white",
-    },
-    "& .MuiInput-underline:after": {
-        borderBottomColor: "white !important",
-    },
-    "& .MuiOutlinedInput-root": {
-        "& fieldset": {
-            borderColor: "white",
-        },
-        "&:hover fieldset": {
-            borderColor: "white",
-        },
-        "&.Mui-focused fieldset": {
-            borderColor: "white !important",
-        },
-        "& input:valid:focus + fieldset": {
-            borderColor: "white !important",
-        },
-    },
-    "& .MuiFilledInput-root": {
-        "&:before": {
-            borderBottomColor: "white",
-        },
-        "&:hover:before": {
-            borderBottomColor: "white",
-        },
-        "&:after": {
-            borderBottomColor: "white",
-        },
-        "&:hover fieldset": {
-            borderColor: "white",
-        },
-        "&.Mui-focused fieldset": {
-            borderColor: "white",
-        },
-    },
-    "& label.Mui-focused": {
-        color: "white",
-    },
-    "& label": {
-        color: "white",
-        '&[aria-selected="true"]': {
-            backgroundColor: "#423532",
-        },
-        "&:hover": {
-            backgroundColor: "#332725",
-        },
-    },
-    "& .MuiInputBase-root": {
-        "&::selection": {
-            backgroundColor: "rgba(255, 255, 255, 0.99)",
-            color: "#241b19",
-        },
-        "& input": {
-            caretColor: "white",
-        },
-    },
-    "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
-        borderColor: "white !important",
-    },
-    "& .MuiInputBase-input::selection": {
-        backgroundColor: "rgba(255, 255, 255, 0.99)",
-        color: "#241b19",
-    },
-});
-
 const CustomTextField = styled(TextField)({
     "& .MuiInput-underline:after": {
         borderBottomColor: "white",
@@ -160,9 +91,20 @@ const MevziPanel = ({ mevziler, fetchAllMevzi, isOpen, togglePanel, isRoleAdmin 
     };
 
 
-    const handleEditMevziClick = async (mevzi) => {
-        navigate(`/mevziler/${mevzi.id}`)
+    const handleViewMevziClick = async (mevzi) => {
+        navigate(`/mevzi/${mevzi.id}/bilgi`)
     };
+
+    function highlightText(text, highlight) {
+        const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+        return <span> {
+            parts.map((part, i) =>
+                <span key={i} className={part.toLowerCase() === highlight.toLowerCase() ? 'highlight' : ''}>
+                    {part}
+                </span>
+            )
+        } </span>;
+    }
 
     // filer mevziler regarding their names and searchMevzi keyword. if the keyword is empty, return all mevziler
     const filteredMevziler = mevziler.filter(mvz => mvz.name.toLowerCase().includes(searchMevzi.toLowerCase()));
@@ -177,9 +119,9 @@ const MevziPanel = ({ mevziler, fetchAllMevzi, isOpen, togglePanel, isRoleAdmin 
                         <KeyboardArrowLeftIcon />
                     )}
                 </IconButton>
-                <div className="mevzi-panel-content">
+                <Typography className="mevzi-panel-content">
                     Mevziler
-                </div>
+                </Typography>              
             </div>
 
             <div className='mevzi-panel-scroll'>
@@ -222,10 +164,10 @@ const MevziPanel = ({ mevziler, fetchAllMevzi, isOpen, togglePanel, isRoleAdmin 
                                     <Grid item xs={12} md={6}>
                                         <List>
                                             <ListItem disablePadding >
-                                                <ListItemButton onClick={() => handleEditMevziClick(mvz)}>
+                                                <ListItemButton onClick={() => handleViewMevziClick(mvz)}>
                                                     <ListItemText sx={{
                                                         '.MuiListItemText-primary': { fontSize: '1.3rem', color: 'white', fontWeight: 'bold' }
-                                                    }} primary={mvz.name} />
+                                                    }} primary={highlightText(mvz.name, searchMevzi)} />
                                                 </ListItemButton>
                                             </ListItem>
                                             <Divider variant="inset" component="li" />

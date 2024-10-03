@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import {
   Container,
@@ -27,56 +27,99 @@ import { message } from "antd";
 function MalzemeBilgi({ isRoleAdmin }) {
   const { id } = useParams();
   const [malzemeInfo, setMalzemeInfo] = useState(null);
-  const [ips, setIps] = useState([]);
   const navigate = useNavigate();
-
+  const stateIntervalIds = useRef([]);
   useEffect(() => {
     const fetchMalzemeInfo = async () => {
       try {
         const response = await axios.get(`/api/malzeme/malzeme/get/${id}`);
-        setMalzemeInfo(response.data);
+        const [types, markalar, modeller, sistemler, mevziler] =
+          await Promise.all([
+            axios.get("/api/type/all/"),
+            axios.get("/api/marka/all/"),
+            axios.get("/api/model/all/"),
+            axios.get("/api/system/all/"),
+            axios.get("/api/mevzi/all/"),
+          ]);
 
-        if (response.data.name) {
-          await fetchIps(response.data.name);
-          startInterval(response.data.name);
-        }
+        const malzeme = response.data;
+
+        const updatedMalzeme = {
+          ...malzeme,
+          type_name:
+            types.data.find((t) => t.id === malzeme.type_id)?.name || null,
+          marka_name:
+            markalar.data.find((m) => m.id === malzeme.marka_id)?.name || null,
+          model_name:
+            modeller.data.find((m) => m.id === malzeme.mmodel_id)?.name || null,
+          system_name:
+            sistemler.data.find((s) => s.id === malzeme.system_id)?.name ||
+            null,
+          mevzi_name:
+            mevziler.data.find((m) => m.id === malzeme.mevzi_id)?.name || null,
+        };
+
+        setMalzemeInfo(updatedMalzeme);
       } catch (error) {
         console.error("Malzeme bilgisi alınırken hata oluştu: ", error);
       }
     };
 
-    const fetchIps = async (malz_name) => {
-      try {
-        const response = await axios.get(
-          `/api/malzeme/malzmatches/update-state/${malz_name}`
-        );
-        const fetchedIps = response.data.map(
-          ({ malzeme_name, mevzi_id, ip, state }) => ({
-            malzeme_name,
-            mevzi_id,
-            ip,
-            state,
-          })
-        );
-        setIps(fetchedIps);
-      } catch (error) {
-        console.error("IP'ler çekilirken hata oluştu:", error);
-      }
-    };
-
-    const startInterval = (malzemeName) => {
-      const intervalId = setInterval(() => {
-        fetchIps(malzemeName);
-      }, 60000);
-      return () => clearInterval(intervalId);
-    };
-
     fetchMalzemeInfo();
-
-    return () => {
-      clearInterval(startInterval);
-    };
   }, [id]);
+
+  const updateState = async (malzemeId) => {
+    try {
+      const response = await axios.get(
+        `/api/malzeme/update-state/${malzemeId}`
+      );
+      if (malzemeInfo && malzemeInfo.id === malzemeId) {
+        setMalzemeInfo({
+          ...malzemeInfo,
+          state: response.data.state,
+        });
+      }
+    } catch (error) {
+      console.error(
+        `Durum güncellenirken hata alındı (Malzeme ID: ${malzemeId}):`,
+        error
+      );
+    }
+  };
+
+  const startOrUpdateInterval = (malzeme) => {
+    const existingInterval = stateIntervalIds.current.find(
+      (item) => item.malzemeId === malzeme.id
+    );
+
+    if (existingInterval) {
+      if (existingInterval.frequency !== malzeme.frequency) {
+        clearInterval(existingInterval.intervalId);
+        stateIntervalIds.current = stateIntervalIds.current.filter(
+          (item) => item.malzemeId !== malzeme.id
+        );
+      } else {
+        return;
+      }
+    }
+
+    const intervalTime = malzeme.frequency * 60000;
+    const intervalId = setInterval(() => {
+      updateState(malzeme.id);
+    }, intervalTime);
+
+    stateIntervalIds.current.push({
+      malzemeId: malzeme.id,
+      intervalId: intervalId,
+      frequency: malzeme.frequency,
+    });
+  };
+
+  useEffect(() => {
+    if (malzemeInfo && malzemeInfo.frequency) {
+      startOrUpdateInterval(malzemeInfo);
+    }
+  }, [malzemeInfo, id]);
 
   const handleMalzemePhotoClick = async (name) => {
     navigate(`/malzeme/gallery/${name}`);
@@ -177,6 +220,74 @@ function MalzemeBilgi({ isRoleAdmin }) {
                   <TableCell>İlişkili Sistem</TableCell>
                   <TableCell>{malzemeInfo.system_name || "-"}</TableCell>
                 </TableRow>
+                {malzemeInfo.system_name && (
+                  <TableRow>
+                    <TableCell>IP Adresi</TableCell>
+                    <TableCell>
+                      {malzemeInfo.ip ? (
+                        malzemeInfo.state !== null &&
+                        malzemeInfo.state !== undefined ? (
+                          <>
+                            {malzemeInfo.state < 1 && (
+                              <>
+                                <IconButton
+                                  className="noHighlight"
+                                  disableRipple
+                                >
+                                  <KeyboardDoubleArrowDownIcon
+                                    style={{ color: "red" }}
+                                  />
+                                  <span style={{ fontSize: "1rem" }}>
+                                    İnaktif / Ip: {malzemeInfo.ip}
+                                  </span>
+                                </IconButton>
+                              </>
+                            )}
+                            {malzemeInfo.state === 2 && (
+                              <>
+                                <IconButton
+                                  className="noHighlight"
+                                  disableRipple
+                                >
+                                  <KeyboardDoubleArrowUpIcon
+                                    style={{ color: "green" }}
+                                  />
+                                  <span style={{ fontSize: "1rem" }}>
+                                    Aktif / Ip: {malzemeInfo.ip}
+                                  </span>
+                                </IconButton>
+                              </>
+                            )}
+                            {malzemeInfo.state === 1 && (
+                              <>
+                                <IconButton
+                                  className="noHighlight"
+                                  disableRipple
+                                >
+                                  <RemoveIcon style={{ color: "yellow" }} />
+                                  <span style={{ fontSize: "1rem" }}>
+                                    Bilinmiyor / Ip: {malzemeInfo.ip}
+                                  </span>
+                                </IconButton>
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <IconButton className="noHighlight" disableRipple>
+                              <RemoveIcon style={{ color: "yellow" }} />
+                              <span style={{ fontSize: "0.875rem" }}>
+                                Bilinmiyor
+                              </span>
+                            </IconButton>
+                          </>
+                        )
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )}
                 <TableRow>
                   <TableCell>Tür</TableCell>
                   <TableCell>{malzemeInfo.type_name || "-"}</TableCell>
@@ -187,7 +298,7 @@ function MalzemeBilgi({ isRoleAdmin }) {
                 </TableRow>
                 <TableRow>
                   <TableCell>Model</TableCell>
-                  <TableCell>{malzemeInfo.mmodel_name || "-"}</TableCell>
+                  <TableCell>{malzemeInfo.model_name || "-"}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>Lokasyon</TableCell>
@@ -196,7 +307,7 @@ function MalzemeBilgi({ isRoleAdmin }) {
                       ? "Birim Depo"
                       : malzemeInfo.depo === 1
                       ? "Yedek Depo"
-                      : malzemeInfo.mevzi_name || "Bilinmiyor"}
+                      : malzemeInfo.mevzi_name || "-"}
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -262,85 +373,6 @@ function MalzemeBilgi({ isRoleAdmin }) {
                       : "-"}
                   </TableCell>
                 </TableRow>
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          <Typography
-            variant="h5"
-            gutterBottom
-            className="malzeme-bilgi-section-title"
-          >
-            Malzeme IP Listeleri
-          </Typography>
-
-          <TableContainer
-            component={Paper}
-            className="malzeme-bilgi-table-container"
-          >
-            <Table stickyHeader aria-label="ip table">
-              <TableHead>
-                <TableRow>
-                  <TableCell style={{ fontWeight: "bold" }}>
-                    IP Adresi
-                  </TableCell>
-                  <TableCell style={{ fontWeight: "bold" }}>Durum</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {ips.length > 0 ? (
-                  ips.map((ip, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{ip.ip || "-"}</TableCell>
-                      <TableCell>
-                        {ip.state !== null && ip.state !== undefined && (
-                          <>
-                            {ip.state < 1 && (
-                              <IconButton className="noHighlight" disableRipple>
-                                <KeyboardDoubleArrowDownIcon
-                                  style={{ color: "red" }}
-                                />
-                                <span
-                                  style={{ fontSize: "16px", color: "white" }}
-                                >
-                                  Kapalı
-                                </span>
-                              </IconButton>
-                            )}
-                            {ip.state === 2 && (
-                              <IconButton className="noHighlight" disableRipple>
-                                <KeyboardDoubleArrowUpIcon
-                                  style={{ color: "green" }}
-                                />
-                                <span
-                                  style={{ fontSize: "16px", color: "white" }}
-                                >
-                                  Açık
-                                </span>
-                              </IconButton>
-                            )}
-                            {ip.state === 1 && (
-                              <IconButton className="noHighlight" disableRipple>
-                                <RemoveIcon style={{ color: "yellow" }} />
-                                <span
-                                  style={{ fontSize: "16px", color: "white" }}
-                                >
-                                  Bilinmiyor
-                                </span>
-                              </IconButton>
-                            )}
-                          </>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={2} align="center">
-                      Sisteme ait IP bilgisi bulunmamaktadır.
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           </TableContainer>

@@ -207,6 +207,9 @@ class Malzeme(Base):
     photos = Column(ARRAY(String(255)))
     onarimlar = Column(ARRAY(Date))
     bakimlar = Column(ARRAY(Date))
+    ip = Column(Text)
+    state = Column(Integer, default=1)
+    frequency = Column(Float, default=5)
 
     type = relationship("Type")
     marka = relationship("Marka")
@@ -262,14 +265,3 @@ class Mevzi(Base):
     altt_y = relationship("AltY")
 
 
-class MalzMatch(Base):
-    __tablename__ = "malz_matches"
-
-    id = Column(Integer, primary_key=True)
-    malzeme_name = Column(Text, ForeignKey("malzeme.name"), nullable=True)
-    mevzi_id = Column(UUID(as_uuid=True), ForeignKey("mevzi.id"), nullable=True)
-    ip = Column(Text)
-    state = Column(Integer, default=1)
-
-    malzeme = relationship("Malzeme")
-    mevzi = relationship("Mevzi")

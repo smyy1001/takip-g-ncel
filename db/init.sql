@@ -456,7 +456,7 @@ BEGIN
         ) VALUES (
             'a16f634c-48ff-4f6b-90d4-7cbf8f9856e4', 'Mevzi-003', 'Üçüncü Mevzi', '2023-03-05', '40SMD5046', 500.0, TRUE, 
             'İZMİR', 'Destekli Ulaşım', 3, 1, '2023-06-15', 
-            ARRAY['Sistem Q'], ARRAY[3], 3, '139.179.207.145', 0, 1.0);
+            ARRAY['Sistem Q'], ARRAY[3], 3, '192.168.1.44', 0, 1.0);
 
         INSERT INTO mevzi (
            id, name, isim, kesif_tarihi, kordinat, rakim, yurt_i, lokasyon, ulasim, 
@@ -520,7 +520,7 @@ BEGIN
         ) VALUES (
             'f5d13e7d-8a8b-4f44-9cd9-1e134a1b5a50', 'System-005', 2, 1, 3, 'SN-005-E', 
             ARRAY[3, 2],
-            1, null, '2023-10-01', 'Beşinci sistem açıklaması', '139.179.207.145', 2, 1.0
+            1, null, '2023-10-01', 'Beşinci sistem açıklaması', '192.168.1.44', 2, 1.0
         );
 
         INSERT INTO system (
@@ -568,7 +568,10 @@ BEGIN
             arizalar DATE[],
             onarimlar DATE[],
             photos TEXT[],
-            bakimlar DATE[]
+            bakimlar DATE[],
+            ip TEXT,
+            state INTEGER DEFAULT 1,
+            frequency FLOAT DEFAULT 5      
         );
 
 

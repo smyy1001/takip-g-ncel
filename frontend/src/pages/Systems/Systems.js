@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Container from "@mui/material/Container";
-import Box from "@mui/material/Box";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
 import Table from "@mui/material/Table";
@@ -33,6 +32,156 @@ import InfoIcon from "@mui/icons-material/Info";
 import KeyboardDoubleArrowUpIcon from "@mui/icons-material/KeyboardDoubleArrowUp";
 import KeyboardDoubleArrowDownIcon from "@mui/icons-material/KeyboardDoubleArrowDown";
 import RemoveIcon from "@mui/icons-material/Remove";
+import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import { FormControlLabel, Checkbox, FormGroup } from '@mui/material';
+import Modal from "@mui/material/Modal";
+import Box from "@mui/material/Box";
+import Autocomplete from '@mui/material/Autocomplete';
+
+
+function highlightText(text, highlight) {
+  const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+  return <span> {
+    parts.map((part, i) =>
+      <span key={i} className={part.toLowerCase() === highlight.toLowerCase() ? 'highlight' : ''}>
+        {part}
+      </span>
+    )
+  } </span>;
+}
+
+
+const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
+const checkedIcon = <CheckBoxIcon fontSize="small" />;
+
+const CustomAutocompleteTextField = styled(Autocomplete)({
+  "& label.Mui-focused": {
+    color: "white",
+  },
+  "& .MuiInput-underline:after": {
+    borderBottomColor: "white !important",
+  },
+  "& .MuiOutlinedInput-root": {
+    "& fieldset": {
+      borderColor: "white",
+    },
+    "&:hover fieldset": {
+      borderColor: "white",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "white !important",
+    },
+    "& input:valid:focus + fieldset": {
+      borderColor: "white !important",
+    },
+  },
+  "& .MuiFilledInput-root": {
+    "&:before": {
+      borderBottomColor: "white",
+    },
+    "&:hover:before": {
+      borderBottomColor: "white",
+    },
+    "&:after": {
+      borderBottomColor: "white",
+    },
+    "&:hover fieldset": {
+      borderColor: "white",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "white",
+    },
+  },
+  "& label.Mui-focused": {
+    color: "white",
+  },
+  "& label": {
+    color: "white",
+    '&[aria-selected="true"]': {
+      backgroundColor: "#423532",
+    },
+    "&:hover": {
+      backgroundColor: "#332725",
+    },
+  },
+  "& .MuiInputBase-root": {
+    "&::selection": {
+      backgroundColor: "rgba(255, 255, 255, 0.99)",
+      color: "#241b19",
+    },
+    "& input": {
+      caretColor: "white",
+    },
+  },
+  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+    borderColor: "white !important",
+  },
+  "& .MuiInputBase-input::selection": {
+    backgroundColor: "rgba(255, 255, 255, 0.99)",
+    color: "#241b19",
+  },
+});
+
+const CustomTextField = styled(TextField)({
+  "& .MuiInput-underline:after": {
+    borderBottomColor: "white",
+  },
+  "& .MuiOutlinedInput-root": {
+    "& fieldset": {
+      borderColor: "white",
+    },
+    "&:hover fieldset": {
+      borderColor: "white",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "white !important",
+    },
+    "& input:valid:focus + fieldset": {
+      borderColor: "white !important",
+    },
+  },
+  "& .MuiFilledInput-root": {
+    "&:before": {
+      borderBottomColor: "white",
+    },
+    "&:hover:before": {
+      borderBottomColor: "white",
+    },
+    "&:after": {
+      borderBottomColor: "white",
+    },
+    "&:hover fieldset": {
+      borderColor: "white",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "white",
+    },
+  },
+  "& label.Mui-focused": {
+    color: "white",
+  },
+  "& label": {
+    color: "white",
+  },
+  "& .MuiInputBase-root": {
+    "&::selection": {
+      backgroundColor: "rgba(255, 255, 255, 0.99)",
+      color: "#241b19",
+    },
+    "& input": {
+      caretColor: "white",
+    },
+  },
+  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+    borderColor: "white !important",
+  },
+  "& .MuiInputBase-input::selection": {
+    backgroundColor: "rgba(255, 255, 255, 0.99)",
+    color: "#241b19",
+  },
+});
 
 function CollapsibleRow({
   system,
@@ -41,6 +190,7 @@ function CollapsibleRow({
   page,
   rowsPerPage,
   setSystems,
+  searchSistem
 }) {
   const [open, setOpen] = useState(false);
   const [malzemePage, setMalzemePage] = useState(0);
@@ -102,7 +252,7 @@ function CollapsibleRow({
 
   const handleChangeMalzemeRowsPerPage = (event) => {
     setMalzemeRowsPerPage(parseInt(event.target.value, 10));
-    setMalzemePage(0); // Reset page to 0 when changing rows per page
+    setMalzemePage(0);
   };
 
   const handleRequestSort2 = (property) => {
@@ -128,9 +278,12 @@ function CollapsibleRow({
   };
 
   const handleViewSystemClick = async (id) => {
-    navigate(`/system/${id}/bilgi`);
+    navigate(`/sistem/${id}/bilgi`);
   };
 
+  const handleViewMalzClick = async (id) => {
+    navigate(`/malzeme/${id}/bilgi`);
+  };
 
   return (
     <React.Fragment>
@@ -175,109 +328,126 @@ function CollapsibleRow({
             </IconButton>
           )}
         </TableCell>
-        <TableCell style={{ textAlign: "center" }}>{system.name}</TableCell>
+        <TableCell style={{ textAlign: "center" }}>{highlightText(system.name, searchSistem)}</TableCell>
         <TableCell style={{ textAlign: "center" }}>
-          {system.type_id ? system.type_id : "-"}
+          {system.type_id ? highlightText(system.type_id, searchSistem) : "-"}
         </TableCell>
         <TableCell style={{ textAlign: "center" }}>
-          {system.marka_id ? system.marka_id : "-"}
+          {system.marka_id ? highlightText(system.marka_id, searchSistem) : "-"}
         </TableCell>
         <TableCell style={{ textAlign: "center" }}>
-          {system.mmodel_id ? system.mmodel_id : "-"}
+          {system.mmodel_id ? highlightText(system.mmodel_id, searchSistem) : "-"}
         </TableCell>
         <TableCell style={{ textAlign: "center" }}>
-          {system.seri_num ? system.seri_num : "-"}
+          {system.seri_num ? highlightText(system.seri_num, searchSistem) : "-"}
         </TableCell>
         <TableCell style={{ textAlign: "center" }}>
-          {system.ilskili_unsur ? system.ilskili_unsur.join(", ") : "-"}
+          {system.ilskili_unsur ? highlightText(system.ilskili_unsur.join(", "), searchSistem) : "-"}
         </TableCell>
         <TableCell style={{ textAlign: "center" }}>
           {system.depo === 0
-            ? "Birim Depo"
+            ? highlightText("Birim Depo", searchSistem)
             : system.depo === 1
-            ? "Yedek Depo"
-            : system.depo === 2
-            ? system.mevzi_id
-            : "-"}
+              ? highlightText("Yedek Depo", searchSistem)
+              : system.depo === 2 && system.mevzi_name
+                ? highlightText(system.mevzi_name, searchSistem)
+                : "-"}
         </TableCell>
         <TableCell style={{ textAlign: "center" }}>
-          {system.giris_tarihi ? system.giris_tarihi : "-"}
+          {system.giris_tarihi ? highlightText(system.giris_tarihi, searchSistem) : "-"}
         </TableCell>
         <TableCell style={{ textAlign: "center" }}>
-          {system.state !== null && system.state !== undefined ? (
-            <>
-              {system.state < 1 && (
-                <>
-                  <IconButton className="noHighlight" disableRipple>
-                    <KeyboardDoubleArrowDownIcon
-                      style={{ color: "red" }}
-                    />
+          {system.ip ? (
+            system.state !== null && system.state !== undefined ? (
+              <>
+                {system.state < 1 && (
+                  <>
+                    <IconButton className="noHighlight" disableRipple>
+                      <KeyboardDoubleArrowDownIcon style={{ color: "red" }} />
+                      <span style={{ fontSize: "16px", color: "white" }}>
+                        {highlightText('Inaktif', searchSistem)}
+                      </span>
+                    </IconButton>
+                    <br />
                     <span
-                      style={{ fontSize: "16px", color: "white" }}
+                      style={{
+                        fontSize: "14px",
+                        color: "white",
+                        justifyContent: "center",
+                        display: "flex",
+                      }}
                     >
-                      Kapalı
+                      Ip: {highlightText(system.ip, searchSistem)}
                     </span>
-                  </IconButton>
-                  <br />
-                  <span
-                    style={{
-                      fontSize: "14px",
-                      color: "white",
-                      justifyContent: "center",
-                      display: "flex",
-                    }}
-                  >
-                    Ip: {system.ip}
-                  </span>
-                </>
-              )}
-              {system.state === 2 && (
-                <>
-                  <IconButton className="noHighlight" disableRipple>
-                    <KeyboardDoubleArrowUpIcon
-                      style={{ color: "green" }}
-                    />
+                  </>
+                )}
+                {system.state === 2 && (
+                  <>
+                    <IconButton className="noHighlight" disableRipple>
+                      <KeyboardDoubleArrowUpIcon style={{ color: "green" }} />
+                      <span style={{ fontSize: "16px", color: "white" }}>
+                        {highlightText('Aktif', searchSistem)}
+                      </span>
+                    </IconButton>
+                    <br />
                     <span
-                      style={{ fontSize: "16px", color: "white" }}
+                      style={{
+                        fontSize: "14px",
+                        color: "white",
+                        justifyContent: "center",
+                        display: "flex",
+                      }}
                     >
-                      Açık
+                      Ip: {highlightText(system.ip, searchSistem)}
                     </span>
-                  </IconButton>
-                  <br />
-                  <span
-                    style={{
-                      fontSize: "14px",
-                      color: "white",
-                      justifyContent: "center",
-                      display: "flex",
-                    }}
-                  >
-                    Ip: {system.ip}
-                  </span>
-                </>
-              )}
-            </>
+                  </>
+                )}
+                {system.state === 1 && (
+                  <>
+                    <IconButton className="noHighlight" disableRipple>
+                      <RemoveIcon style={{ color: "yellow" }} />
+                      <span style={{ fontSize: "16px", color: "white" }}>
+                        {highlightText('Bilinmiyor', searchSistem)}
+                      </span>
+                    </IconButton>
+                    <br />
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        color: "white",
+                        justifyContent: "center",
+                        display: "flex",
+                      }}
+                    >
+                      Ip: {highlightText(system.ip, searchSistem)}
+                    </span>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <IconButton className="noHighlight" disableRipple>
+                  <RemoveIcon style={{ color: "yellow" }} />
+                </IconButton>
+                <br />
+                <span
+                  style={{
+                    fontSize: "14px",
+                    color: "white",
+                    justifyContent: "center",
+                    display: "flex",
+                  }}
+                >
+                  {highlightText('Bilinmiyor', searchSistem)}
+                </span>
+              </>
+            )
           ) : (
-            <>
-              <IconButton className="noHighlight" disableRipple>
-                <RemoveIcon style={{ color: "yellow" }} />
-              </IconButton>
-              <br />
-              <span
-                style={{
-                  fontSize: "14px",
-                  color: "white",
-                  justifyContent: "center",
-                  display: "flex",
-                }}
-              >
-                Bilinmiyor
-              </span>
-            </>
+            "-"
           )}
         </TableCell>
         <TableCell style={{ textAlign: "center" }}>
-          {system.description ? system.description : "-"}
+          {system.description ? highlightText(system.description, searchSistem): "-"}
         </TableCell>
         <TableCell style={{ textAlign: "center" }}>
           <IconButton
@@ -339,7 +509,7 @@ function CollapsibleRow({
           backgroundColor: "transparent",
         }}
       >
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={14} >
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={14}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 1 }}>
               <Table size="small" aria-label="malzemeler">
@@ -586,6 +756,17 @@ function CollapsibleRow({
                     >
                       Fotoğraflar
                     </TableCell>
+                    <Tooltip title="Detaylı Bilgi">
+                      <TableCell
+                        style={{
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          fontSize: "medium",
+                        }}
+                      >
+                        Görüntüle
+                      </TableCell>
+                    </Tooltip>
                     {isRoleAdmin && (
                       <>
                         <TableCell
@@ -597,7 +778,6 @@ function CollapsibleRow({
                         >
                           Düzenle & Sil
                         </TableCell>
-                        {/* <TableCell style={{ textAlign: 'center', fontWeight: 'bold', fontSize: 'medium' }}>Sil</TableCell> */}
                       </>
                     )}
                   </TableRow>
@@ -612,34 +792,34 @@ function CollapsibleRow({
                   ).map((malzeme, index) => (
                     <TableRow key={index}>
                       <TableCell style={{ textAlign: "center" }}>
-                        {malzeme.name}
+                        {highlightText(malzeme.name, searchSistem)}
                       </TableCell>
                       <TableCell style={{ textAlign: "center" }}>
-                        {malzeme.type_id ? malzeme.type_id : "-"}
+                        {malzeme.type_id ? highlightText(malzeme.type_id, searchSistem) : "-"}
                       </TableCell>
                       <TableCell style={{ textAlign: "center" }}>
-                        {malzeme.marka_id ? malzeme.marka_id : "-"}
+                        {malzeme.marka_id ? highlightText(malzeme.marka_id, searchSistem) : "-"}
                       </TableCell>
                       <TableCell style={{ textAlign: "center" }}>
-                        {malzeme.mmodel_id ? malzeme.mmodel_id : "-"}
+                        {malzeme.mmodel_id ? highlightText(malzeme.mmodel_id, searchSistem) : "-"}
                       </TableCell>
                       <TableCell style={{ textAlign: "center" }}>
-                        {malzeme.seri_num ? malzeme.seri_num : "-"}
+                        {malzeme.seri_num ? highlightText(malzeme.seri_num, searchSistem) : "-"}
                       </TableCell>
                       <TableCell style={{ textAlign: "center" }}>
                         {malzeme.depo === 0
-                          ? "Birim Depo"
+                          ? highlightText("Birim Depo", searchSistem)
                           : malzeme.depo === 1
-                          ? "Yedek Depo"
-                          : malzeme.depo === 2
-                          ? malzeme.mevzi_id
-                          : "-"}
+                            ? highlightText("Yedek Depo", searchSistem)
+                            : malzeme.depo === 2 && malzeme.mevzi_name ?
+                              highlightText(malzeme.mevzi_name, searchSistem)
+                              : "-"}
                       </TableCell>
                       <TableCell style={{ textAlign: "center" }}>
-                        {malzeme.giris_tarihi ? malzeme.giris_tarihi : "-"}
+                        {malzeme.giris_tarihi ? highlightText(malzeme.giris_tarihi, searchSistem) : "-"}
                       </TableCell>
                       <TableCell style={{ textAlign: "center" }}>
-                        {malzeme.description ? malzeme.description : "-"}
+                        {malzeme.description ? highlightText(malzeme.description, searchSistem) : "-"}
                       </TableCell>
                       <TableCell style={{ textAlign: "center" }}>
                         {(malzeme.arizalar && malzeme.arizalar.length > 0) > 0
@@ -665,6 +845,18 @@ function CollapsibleRow({
                         >
                           <Tooltip title="Fotoğraflar">
                             <CollectionsIcon />
+                          </Tooltip>
+                        </IconButton>
+                      </TableCell>
+                      <TableCell style={{ textAlign: "center" }}>
+                        <IconButton
+                          aria-label="edit"
+                          size="small"
+                          className="system-edit-icon"
+                          onClick={() => handleViewMalzClick(malzeme.id)}
+                        >
+                          <Tooltip title="Detaylı Bilgi">
+                            <InfoIcon />
                           </Tooltip>
                         </IconButton>
                       </TableCell>
@@ -718,66 +910,14 @@ function CollapsibleRow({
   );
 }
 
-const CustomTextField = styled(TextField)({
-  "& .MuiInput-underline:after": {
-    borderBottomColor: "white",
-  },
-  "& .MuiOutlinedInput-root": {
-    "& fieldset": {
-      borderColor: "white",
-    },
-    "&:hover fieldset": {
-      borderColor: "white",
-    },
-    "&.Mui-focused fieldset": {
-      borderColor: "white !important",
-    },
-    "& input:valid:focus + fieldset": {
-      borderColor: "white !important",
-    },
-  },
-  "& .MuiFilledInput-root": {
-    "&:before": {
-      borderBottomColor: "white",
-    },
-    "&:hover:before": {
-      borderBottomColor: "white",
-    },
-    "&:after": {
-      borderBottomColor: "white",
-    },
-    "&:hover fieldset": {
-      borderColor: "white",
-    },
-    "&.Mui-focused fieldset": {
-      borderColor: "white",
-    },
-  },
-  "& label.Mui-focused": {
-    color: "white",
-  },
-  "& label": {
-    color: "white",
-  },
-  "& .MuiInputBase-root": {
-    "&::selection": {
-      backgroundColor: "rgba(255, 255, 255, 0.99)",
-      color: "#241b19",
-    },
-    "& input": {
-      caretColor: "white",
-    },
-  },
-  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
-    borderColor: "white !important",
-  },
-  "& .MuiInputBase-input::selection": {
-    backgroundColor: "rgba(255, 255, 255, 0.99)",
-    color: "#241b19",
-  },
-});
+
 
 function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
+  const [models, setModels] = useState([]);
+  const [markalar, setMarkalar] = useState([]);
+  const [types, setTypes] = useState([]);
+  const [unsurlar, setUnsurlar] = useState([]);
+  const [mevziler, setMevziler] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const navigate = useNavigate();
@@ -785,6 +925,25 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
   const [searchSistem, setSearchSistem] = useState("");
   const [order, setOrder] = useState("asc");
   const [orderBy, setOrderBy] = useState("name");
+  const stateIntervalIds = useRef([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedLocationIds, setSelectedLocationIds] = useState([]);
+  const [state, setState] = useState({
+    aktif: true,
+    inaktif: true,
+    bilinmeyen: true
+  });
+
+  const handleChange = (event) => {
+    setState({
+      ...state,
+      [event.target.name]: event.target.checked,
+    });
+  };
+
+  const handleLocationChange = (event, newValue) => {
+    setSelectedLocationIds(newValue.map((option) => option.id));
+  };
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -796,11 +955,10 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
 
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0); // Reset page to 0 when changing rows per page
+    setPage(0);
   };
 
   const updateSystemDetails = async (systems) => {
-    // Define your fetching functions here
     const fetchModels = async () => {
       const response = await axios.get("/api/sys_model/all/");
       return response.data;
@@ -826,7 +984,6 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
       return response.data;
     };
 
-    // Fetch additional models, markalar, and types for malzemeler
     const fetchMModels = async () => {
       const response = await axios.get("/api/model/all/");
       return response.data;
@@ -842,46 +999,60 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
       return response.data;
     };
 
-    // Execute all fetches concurrently
-    const [models, markalar, types, unsurlar, mevziler] = await Promise.all([
-      fetchModels(),
-      fetchMarkalar(),
-      fetchTypes(),
-      fetchUnsur(),
-      fetchMevzi(),
-    ]);
+    try {
+      const [fetchedModels, fetchedMarkalar, fetchedTypes, fetchedUnsurlar, fetchedMevziler] = await Promise.all([
+        fetchModels(),
+        fetchMarkalar(),
+        fetchTypes(),
+        fetchUnsur(),
+        fetchMevzi(),
+      ]);
 
-    const [models2, markalar2, types2] = await Promise.all([
-      fetchMModels(),
-      fetchMMarkalar(),
-      fetchMTypes(),
-    ]);
+      // Update state with the fetched data
+      setModels(fetchedModels);
+      setMarkalar(fetchedMarkalar);
+      setTypes(fetchedTypes);
+      setUnsurlar(fetchedUnsurlar);
+      setMevziler(fetchedMevziler);
 
-    // Update systems with mapped values
-    return systems.map((system) => ({
-      ...system,
-      mmodel_id: models.find((m) => m.id === system.mmodel_id)?.name || null,
-      marka_id: markalar.find((m) => m.id === system.marka_id)?.name || null,
-      type_id: types.find((t) => t.id === system.type_id)?.name || null,
-      mevzi_id: mevziler.find((m) => m.id === system.mevzi_id)?.name || null,
-      ilskili_unsur:
-        Array.isArray(system.ilskili_unsur) && system.ilskili_unsur.length > 0
-          ? system.ilskili_unsur.map(
-              (id) => unsurlar.find((u) => u.id === id)?.name || id
+      // Fetch additional details for `malzemeler`
+      const [models2, markalar2, types2] = await Promise.all([
+        fetchMModels(),
+        fetchMMarkalar(),
+        fetchMTypes(),
+      ]);
+
+      // Map through the systems and attach the fetched details
+      return systems.map((system) => ({
+        ...system,
+        // Map system level details
+        mmodel_id: fetchedModels.find((m) => m.id === system.mmodel_id)?.name || null,
+        marka_id: fetchedMarkalar.find((m) => m.id === system.marka_id)?.name || null,
+        type_id: fetchedTypes.find((t) => t.id === system.type_id)?.name || null,
+        mevzi_name: fetchedMevziler.find((m) => m.id === system.mevzi_id)?.name || null,
+        ilskili_unsur:
+          Array.isArray(system.ilskili_unsur) && system.ilskili_unsur.length > 0
+            ? system.ilskili_unsur.map(
+              (id) => fetchedUnsurlar.find((u) => u.id === id)?.name || id
             )
-          : null,
+            : null,
 
-      malzemeler: system.malzemeler.map((malzeme) => ({
-        ...malzeme,
-        mmodel_id:
-          models2.find((m) => m.id === malzeme.mmodel_id)?.name || null,
-        marka_id:
-          markalar2.find((m) => m.id === malzeme.marka_id)?.name || null,
-        type_id: types2.find((t) => t.id === malzeme.type_id)?.name || null,
-        mevzi_id: mevziler.find((m) => m.id === malzeme.mevzi_id)?.name || null,
-      })),
-    }));
+        // Map malzemeler details
+        malzemeler: system.malzemeler.map((malzeme) => ({
+          ...malzeme,
+          mmodel_id: models2.find((m) => m.id === malzeme.mmodel_id)?.name || null,
+          marka_id: markalar2.find((m) => m.id === malzeme.marka_id)?.name || null,
+          type_id: types2.find((t) => t.id === malzeme.type_id)?.name || null,
+          mevzi_name: fetchedMevziler.find((m) => m.id === malzeme.mevzi_id)?.name || null,
+        })),
+      }));
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      return []; // Return an empty array in case of error
+    }
   };
+
+
 
   useEffect(() => {
     const updateData = async () => {
@@ -892,8 +1063,6 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
     };
     updateData();
   }, [initialSystems]);
-
-
 
   const handleRequestSort = (property) => {
     const isAsc = orderBy === property && order === "asc";
@@ -916,57 +1085,278 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
       ? (a, b) => (b[orderBy] < a[orderBy] ? -1 : 1)
       : (a, b) => (a[orderBy] < b[orderBy] ? -1 : 1);
   };
+  const normalizeString = (str) => {
+    return str
+      .toLowerCase()
+      .replace(/ç/g, "c")
+      .replace(/ğ/g, "g")
+      .replace(/ı/g, "i")
+      .replace(/i̇/g, "i")
+      .replace(/ö/g, "o")
+      .replace(/ş/g, "s")
+      .replace(/ü/g, "u")
+      .replace(/Ç/g, "c")
+      .replace(/Ğ/g, "g")
+      .replace(/İ/g, "i")
+      .replace(/Ö/g, "o")
+      .replace(/Ş/g, "s")
+      .replace(/Ü/g, "u");
+  };
+  const getDepoName = (depo) => {
+    if (depo === 0) return "Birim Depo";
+    if (depo === 1) return "Yedek Depo";
+    return null;
+  };
 
-  // filter systems reagrding searchSistem keyword. if the keyword is empty, return all systems
-  const filteredSystems = systems.filter((sys) =>
-    sys.name.toLowerCase().includes(searchSistem.toLowerCase())
-  );
+  const getStateName = (state) => {
+    if (state < 1) return "İnaktif";
+    if (state === 2) return "Aktif";
+    return "Bilinmiyor";
+  };
+
+  const filteredSystems = useMemo(() => {
+    const searchTerm = normalizeString(searchSistem);
+
+    return systems
+      .map((sys) => {
+        const filteredMalzemeler = sys.malzemeler.filter((malz) => {
+          const depoName = getDepoName(malz.depo);
+          return (
+            (malz.name && normalizeString(malz.name).includes(searchTerm)) ||
+            (malz.marka_id &&
+              normalizeString(malz.marka_id).includes(searchTerm)) ||
+            (malz.mmodel_id &&
+              normalizeString(malz.mmodel_id).includes(searchTerm)) ||
+            (malz.seri_num &&
+              normalizeString(malz.seri_num.toString()).includes(searchTerm)) ||
+            (malz.type_id &&
+              normalizeString(malz.type_id).includes(searchTerm)) ||
+            (malz.description &&
+              normalizeString(malz.description).includes(searchTerm)) ||
+            (malz.giris_tarihi &&
+              normalizeString(malz.giris_tarihi).includes(searchTerm)) ||
+            (malz.arizalar &&
+              normalizeString(malz.arizalar.join(",")).includes(searchTerm)) ||
+            (malz.onarimlar &&
+              normalizeString(malz.onarimlar.join(",")).includes(searchTerm)) ||
+            (malz.bakimlar &&
+              normalizeString(malz.bakimlar.join(",")).includes(searchTerm)) ||
+            (malz.depo &&
+              normalizeString(malz.depo.toString()).includes(searchTerm)) ||
+            (depoName && normalizeString(depoName).includes(searchTerm)) ||
+            (malz.mevzi_name &&
+              normalizeString(malz.mevzi_name).includes(searchTerm))
+          );
+        });
+        const systemDepoName = getDepoName(sys.depo);
+        const systemStateName = getStateName(sys.state);
+        const systemMatches =
+          (sys.name && normalizeString(sys.name).includes(searchTerm)) ||
+          (sys.marka_id &&
+            normalizeString(sys.marka_id).includes(searchTerm)) ||
+          (sys.mmodel_id &&
+            normalizeString(sys.mmodel_id).includes(searchTerm)) ||
+          (sys.seri_num &&
+            normalizeString(sys.seri_num.toString()).includes(searchTerm)) ||
+          (sys.ilskili_unsur &&
+            normalizeString(sys.ilskili_unsur.join(",")).includes(searchTerm)) ||
+          (sys.type_id && normalizeString(sys.type_id).includes(searchTerm)) ||
+          (sys.description &&
+            normalizeString(sys.description).includes(searchTerm)) ||
+          (sys.giris_tarihi &&
+            normalizeString(sys.giris_tarihi).includes(searchTerm)) ||
+          (systemDepoName &&
+            normalizeString(systemDepoName).includes(searchTerm)) ||
+          (sys.mevzi_name &&
+            normalizeString(sys.mevzi_name).includes(searchTerm)) ||
+          (systemStateName &&
+            normalizeString(systemStateName).includes(searchTerm)) ||
+          (sys.ip && normalizeString(sys.ip).includes(searchTerm));
+
+        // Apply State Filtering
+        const stateFilterMatch =
+          (sys.state === 2 && state.aktif) ||
+          (sys.state === 0 && state.inaktif) ||
+          (sys.state === 1 && state.bilinmeyen);
+
+        // Apply Location Filtering
+        const locationMatch = selectedLocationIds.length === 0 || selectedLocationIds.some((selectedId) => {
+          if (selectedId === 0 || selectedId === 1) {
+            return sys.depo === selectedId;
+          }
+          return sys.mevzi_id === selectedId;
+        });
+
+        // If system matches the state and location filters, and search term, include it
+        if (systemMatches || filteredMalzemeler.length > 0) {
+          if (stateFilterMatch && locationMatch) {
+            return {
+              ...sys,
+              filteredMalzemeler,
+            };
+          }
+        }
+
+        return null;
+      })
+      .filter((sys) => sys !== null);
+  }, [systems, searchSistem, state, selectedLocationIds]);
+
+
+
+  // const filteredSystems = useMemo(() => {
+  //   const searchTerm = normalizeString(searchSistem);
+
+  //   return systems
+  //     .map((sys) => {
+  //       const filteredMalzemeler = sys.malzemeler.filter((malz) => {
+  //         const depoName = getDepoName(malz.depo);
+  //         return (
+  //           (malz.name && normalizeString(malz.name).includes(searchTerm)) ||
+  //           (malz.marka_id &&
+  //             normalizeString(malz.marka_id).includes(searchTerm)) ||
+  //           (malz.mmodel_id &&
+  //             normalizeString(malz.mmodel_id).includes(searchTerm)) ||
+  //           (malz.seri_num &&
+  //             normalizeString(malz.seri_num.toString()).includes(searchTerm)) ||
+  //           (malz.type_id &&
+  //             normalizeString(malz.type_id).includes(searchTerm)) ||
+  //           (malz.description &&
+  //             normalizeString(malz.description).includes(searchTerm)) ||
+  //           (malz.giris_tarihi &&
+  //             normalizeString(malz.giris_tarihi).includes(searchTerm)) ||
+  //           (malz.arizalar &&
+  //             normalizeString(malz.arizalar.join(",")).includes(searchTerm)) ||
+  //           (malz.onarimlar &&
+  //             normalizeString(malz.onarimlar.join(",")).includes(searchTerm)) ||
+  //           (malz.bakimlar &&
+  //             normalizeString(malz.bakimlar.join(",")).includes(searchTerm)) ||
+  //           (malz.depo &&
+  //             normalizeString(malz.depo.toString()).includes(searchTerm)) ||
+  //           (depoName && normalizeString(depoName).includes(searchTerm)) ||
+  //           (malz.mevzi_id &&
+  //             normalizeString(malz.mevzi_id).includes(searchTerm))
+  //         );
+  //       });
+  //       const systemDepoName = getDepoName(sys.depo);
+  //       const systemStateName = getStateName(sys.state);
+  //       const systemMatches =
+  //         (sys.name && normalizeString(sys.name).includes(searchTerm)) ||
+  //         (sys.marka_id &&
+  //           normalizeString(sys.marka_id).includes(searchTerm)) ||
+  //         (sys.mmodel_id &&
+  //           normalizeString(sys.mmodel_id).includes(searchTerm)) ||
+  //         (sys.seri_num &&
+  //           normalizeString(sys.seri_num.toString()).includes(searchTerm)) ||
+  //         (sys.ilskili_unsur &&
+  //           normalizeString(sys.ilskili_unsur.join(",")).includes(
+  //             searchTerm
+  //           )) ||
+  //         (sys.type_id && normalizeString(sys.type_id).includes(searchTerm)) ||
+  //         (sys.description &&
+  //           normalizeString(sys.description).includes(searchTerm)) ||
+  //         (sys.giris_tarihi &&
+  //           normalizeString(sys.giris_tarihi).includes(searchTerm)) ||
+  //         (systemDepoName &&
+  //           normalizeString(systemDepoName).includes(searchTerm)) ||
+  //         (sys.mevzi_id &&
+  //           normalizeString(sys.mevzi_id).includes(searchTerm)) ||
+  //         (systemStateName &&
+  //           normalizeString(systemStateName).includes(searchTerm)) ||
+  //         (sys.ip && normalizeString(sys.ip).includes(searchTerm));
+
+  //       if (systemMatches || filteredMalzemeler.length > 0) {
+  //         return {
+  //           ...sys,
+  //           filteredMalzemeler,
+  //         };
+  //       }
+
+  //       return null;
+  //     })
+  //     .filter((sys) => sys !== null);
+  // }, [systems, searchSistem]);
+
+  const updateState = async (systemId) => {
+    try {
+      const response = await axios.get(`/api/system/update-state/${systemId}`);
+      setSystems((prevSystems) =>
+        prevSystems.map((system) =>
+          system.id === systemId
+            ? { ...system, state: response.data.state }
+            : system
+        )
+      );
+    } catch (error) {
+      console.error(
+        `Durum güncellenirken hata alındı (System ID: ${systemId}):`,
+        error
+      );
+    }
+  };
+
+  const startOrUpdateInterval = (system) => {
+    const existingInterval = stateIntervalIds.current.find(
+      (item) => item.systemId === system.id
+    );
+
+    if (existingInterval) {
+      if (existingInterval.frequency !== system.frequency) {
+        clearInterval(existingInterval.intervalId);
+        stateIntervalIds.current = stateIntervalIds.current.filter(
+          (item) => item.systemId !== system.id
+        );
+      } else {
+        return;
+      }
+    }
+
+    const intervalTime = system.frequency * 60000;
+
+    const intervalId = setInterval(() => {
+      updateState(system.id);
+    }, intervalTime);
+
+    stateIntervalIds.current.push({
+      systemId: system.id,
+      intervalId: intervalId,
+      frequency: system.frequency,
+    });
+  };
 
   useEffect(() => {
-    // Store interval IDs for all systems
-    const stateIntervalIds = [];
-
-    const updateState = async (systemId) => {
-      try {
-        const response = await axios.get(`/api/system/update-state/${systemId}`);
-        setSystems((prevSystems) =>
-          prevSystems.map((system) =>
-            system.id === systemId
-              ? { ...system, state: response.data.state } // Update the state for the matched system
-              : system // Keep other systems unchanged
-          )
-        );
-      } catch (error) {
-        console.error(`Durum güncellenirken hata alındı (System ID: ${systemId}):`, error);
-      }
-    };
-
-    const startStateInterval = (system) => {
-      const intervalId = setInterval(() => {
-        updateState(system.id);
-      }, system.frequency * 60000);
-      return intervalId;
-    };
-
-    // Start intervals for all systems in the systems list
     if (systems && systems.length > 0) {
       systems.forEach((system) => {
         if (system && system.frequency) {
-          const intervalId = startStateInterval(system);
-          stateIntervalIds.push({ systemId: system.id, intervalId });
+          startOrUpdateInterval(system);
         }
       });
     }
-
-    return () => {
-      stateIntervalIds.forEach(({ intervalId }) => clearInterval(intervalId));
-    };
   }, [systems]);
 
   useEffect(() => {
     fetchSystems();
   }, []);
 
+  const handleOpenModal = () => setModalOpen(true);
+  const handleCloseModal = () => setModalOpen(false);
+
+  const [options, setOptions] = useState([]);
+
+  useEffect(() => {
+    if (mevziler && mevziler.length > 0) {
+      const newOptions = [
+        { id: 0, title: "Birim Depo" },
+        { id: 1, title: "Yedek Depo" },
+        ...mevziler.map((m) => ({ id: m.id, title: m.name }))
+      ];
+      setOptions(newOptions);
+    }
+  }, [mevziler]);
+
+  const selectedLocations = options.filter((option) =>
+    selectedLocationIds.includes(option.id)
+  );
 
   return (
     <Container className="system-main-container">
@@ -990,26 +1380,109 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                 </Tooltip>
               </IconButton>
             )}
+            <Tooltip title="Arama & Filtreleme">
+              <IconButton
+                size="large"
+                // style={{ margin: "0px", padding: "0px" }}
+                className="mevzi-add-button-in-header"
+                onClick={handleOpenModal}
+              >
+                <FilterAltIcon style={{ fontSize: '1.5rem' }} />
+              </IconButton>
+            </Tooltip>
           </Typography>
         </div>
         <div className="systems-page-search-bar">
-          <CustomTextField
-            autoComplete="off"
-            fullWidth
-            variant="outlined"
-            placeholder="Ara..."
-            value={searchSistem}
-            onChange={(e) => setSearchSistem(e.target.value)}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton disabled={!searchSistem}>
-                    <SearchIcon />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+          <Modal
+            open={modalOpen}
+            onClose={handleCloseModal}
+            aria-labelledby="Ara & Filtrele"
+            aria-describedby="Ara & Filtrele"
+          >
+            <Box
+              sx={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                bgcolor: "background.paper",
+                boxShadow: "0px 4px 15px rgba(0, 0, 0, 0.4)",
+                p: 4,
+                outline: "none",
+              }}
+            >
+              <Tooltip title="Tüm alanlarda arama yapılabilir (Sistemlerdeki Malzemeler Dahil)!">
+                <CustomTextField
+                  autoComplete="off"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Ara..."
+                  value={searchSistem}
+                  onChange={(e) => { if (modalOpen) setSearchSistem(e.target.value); }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton disabled={!searchSistem}>
+                          <SearchIcon />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Tooltip>
+
+              <div style={{ display: "flex", alignItems: "center", flexDirection: 'row', marginTop: '15px', gap: '5px' }}>
+                <div >Aktiflik Durumu:</div>
+                <FormGroup row>
+                  <FormControlLabel
+                    control={<Checkbox checked={state.aktif} onChange={handleChange} name="aktif" />}
+                    label="Aktif"
+                  />
+                  <FormControlLabel
+                    control={<Checkbox checked={state.inaktif} onChange={handleChange} name="inaktif" />}
+                    label="İnaktif"
+                  />
+                  <FormControlLabel
+                    control={<Checkbox checked={state.bilinmeyen} onChange={handleChange} name="bilinmeyen" />}
+                    label="Bilinmeyen"
+                  />
+                </FormGroup>
+              </div>
+
+
+              <div style={{ display: "flex", alignItems: "center", flexDirection: 'row', marginTop: '10px' }}>
+                <div>Lokasyon:</div>
+                <div style={{ marginLeft: "15px" }}>
+                  <CustomAutocompleteTextField
+                    multiple
+                    fullWidth
+                    id="checkboxes-tags"
+                    options={options}
+                    disableCloseOnSelect
+                    value={selectedLocations} 
+                    getOptionLabel={(option) => option.title}
+                    onChange={handleLocationChange}
+                    renderOption={(props, option, { selected }) => (
+                      <li {...props}>
+                        <Checkbox
+                          icon={icon}
+                          checkedIcon={checkedIcon}
+                          style={{ marginRight: 8 }}
+                          checked={selected}
+                        />
+                        {option.title}
+                      </li>
+                    )}
+                    style={{ width: 300 }}
+                    renderInput={(params) => (
+                      <CustomTextField {...params} label="Lokasyon" placeholder="Lokasyonlar Seçiniz" />
+                    )}
+                  />
+                </div>
+              </div>
+
+            </Box>
+          </Modal>
         </div>
       </div>
 
@@ -1295,6 +1768,7 @@ function Systems({ isRoleAdmin, initialSystems, fetchSystems }) {
                     fetchSystems={fetchSystems}
                     isRoleAdmin={isRoleAdmin}
                     setSystems={setSystems}
+                    searchSistem={searchSistem}
                   />
                 ))}
               </TableBody>

@@ -65,7 +65,12 @@ async def create_malzeme(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Bu malzeme zaten bu sistemde mevcut"
             )
+        if malzeme_create.frequency is None or malzeme_create.frequency == "":
+            malzeme_create.frequency = 5
 
+        if malzeme_create.ip in ["", "null", "None", None]:
+            malzeme_create.ip = None 
+            
         db_malzeme = models.Malzeme(
             name=malzeme_create.name,
             description=malzeme_create.description,
@@ -73,6 +78,8 @@ async def create_malzeme(
             marka_id=malzeme_create.marka_id,
             mmodel_id=malzeme_create.mmodel_id,
             seri_num=malzeme_create.seri_num,
+            ip=malzeme_create.ip,
+            frequency=malzeme_create.frequency,
             system_id=malzeme_create.system_id,
             depo=malzeme_create.depo,
             mevzi_id=malzeme_create.mevzi_id,
@@ -80,6 +87,7 @@ async def create_malzeme(
             bakimlar=malzeme_create.bakimlar,
             arizalar=malzeme_create.arizalar,
             onarimlar=malzeme_create.onarimlar,
+            state=2 if ping_ip(malzeme_create.ip) else 0
         )
         db.add(db_malzeme)
         db.commit()
@@ -127,7 +135,6 @@ def delete_malzeme(malzeme_id: UUID4, db: Session = Depends(get_db)):
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Resim silinirken hata oluştu: {str(e)}")
 
-    db.query(models.MalzMatch).filter(models.MalzMatch.malzeme_name == db_malzeme.name).update({models.MalzMatch.malzeme_name: None})
     
     db.delete(db_malzeme)
     db.commit()
@@ -320,12 +327,23 @@ async def update_malzeme(
             if not db_malzeme:
                 raise HTTPException(status_code=404, detail="Malzeme bulunamadı")
 
+
+            if malzeme_update.frequency is None or malzeme_update.frequency == "":
+                malzeme_update.frequency = 5
+            
+            if malzeme_update.ip in ["", "null", "None", None]:
+                malzeme_update.ip = None 
+
             for field, value in malzeme_update.dict().items():
                 if field == "photos" and value is None:
                     continue
-                if value is None:
-                    continue
+                
                 setattr(db_malzeme, field, value)
+
+            if malzeme_update.ip is None or malzeme_update.ip == "":
+                db_malzeme.state = 1
+            else:
+                db_malzeme.state = 2 if ping_ip(malzeme_update.ip) else 0
 
         image_urls = db_malzeme.photos if db_malzeme.photos is not None else []
 
@@ -397,140 +415,26 @@ async def update_malzeme(
         raise HTTPException(status_code=500, detail=f"Bir hata oluştu: {str(e)}")
 
 
-@router.put("/malzmatches/add/")
-def update_malz_matches(ips: List[schemas.MalzMatchCreate], db: Session = Depends(get_db)):
-
-    for item in ips:
-        malz_match = (
-        db.query(models.MalzMatch)
-        .filter(models.MalzMatch.malzeme_name == item.malzeme_name)
-        .first()
-        )
-
-        if malz_match:
-            malz_match.state = 2 if ping_ip(item.ip) else 0
-
-            malz_match.ip = item.ip
-            malz_match.mevzi_id = item.mevzi_id
-        else:
-            state = 2 if ping_ip(item.ip) else 0
-
-            new_malz_match = models.MalzMatch(
-                malzeme_name=item.malzeme_name,
-                mevzi_id=item.mevzi_id,
-                ip=item.ip,
-                state=state,
-            )
-            db.add(new_malz_match)
-
-        db.commit()
-    return {"status": "success", "message": "Malz matches updated successfully."}
-
-
-@router.post("/malzmatches/update-state/{malz_name}", response_model=schemas.MalzMatch)
-async def update_system_state(malz_name: str, db: Session = Depends(get_db)):
-    db_system = (
-        db.query(models.MalzMatch).filter(models.MalzMatch.malzeme_name == malz_name).first()
-    )
-    if not db_system:
-        raise HTTPException(status_code=404, detail="Bulunamadı")
-
-    state = 2 if ping_ip(db_system.ip) else 0
-    db_system.state = state
-    db.commit()
-    db.refresh(db_system)
-
-    return db_system
-
-
-@router.get("/malzmatches/state")
-def get_malz_matches(
-    mevzi_id: Optional[UUID4] = None,
-    s_id: Optional[UUID4] = None,
-    db: Session = Depends(get_db),
+@router.put("/update-ip-frequency/{malzeme_id}", response_model=schemas.Malzeme)
+async def update_malzeme_ip_and_frequency(
+    malzeme_id: UUID4,
+    ip: str = Form(...),  
+    frequency:  Optional[float] = Form(None), 
+    db: Session = Depends(get_db)
 ):
-    query = db.query(models.MalzMatch)
 
-    if mevzi_id:
-        query = query.filter(models.MalzMatch.mevzi_id == mevzi_id)
-
-    if s_id:
-        query = query.join(
-            models.Malzeme, models.MalzMatch.malzeme_name == models.Malzeme.name
-        ).filter(models.Malzeme.system_id == s_id)
-
-    malz_matches = query.all()
-
-    for m in malz_matches:
-        m.state = 2 if ping_ip(m.ip) else 0
-
-    # Formatting the results
-    formatted_matches = [
-        {
-            "malzeme_name": match.malzeme_name,
-            "mevzi_id": match.mevzi_id,
-            "ip": match.ip,
-            "state": match.state,
-        }
-        for match in malz_matches
-    ]
-
-    return formatted_matches
-
-
-@router.get("/malzmatches/get")
-def get_malz_matches(
-    mevzi_id: Optional[UUID4] = None,
-    s_id: Optional[UUID4] = None,
-    malzeme_name: Optional[str] = None,
-    db: Session = Depends(get_db),
-):
-    query = db.query(models.MalzMatch)
-
-    if mevzi_id:
-        query = query.filter(models.MalzMatch.mevzi_id == mevzi_id)
-
-    if s_id:
-        query = query.join(
-            models.Malzeme, models.MalzMatch.malzeme_name == models.Malzeme.name
-        ).filter(models.Malzeme.system_id == s_id)
-
-    if malzeme_name:
-        query = query.filter(models.MalzMatch.malzeme_name == malzeme_name)
-
-    malz_matches = query.all()
-
-    # Formatting the results
-    formatted_matches = [
-        {
-            "malzeme_name": match.malzeme_name,
-            "mevzi_id": match.mevzi_id,
-            "ip": match.ip,
-            "state": match.state,
-        }
-        for match in malz_matches
-    ]
-
-    return formatted_matches
-
-
-@router.delete("/malzmatches/delete/{malzeme_name}")
-def delete_malz_match(malzeme_name: str, db: Session = Depends(get_db)):
-    # İlk olarak silinmesi gereken kaydı bul
-    malz_match = (
-        db.query(models.MalzMatch)
-        .filter(models.MalzMatch.malzeme_name == malzeme_name)
-        .first()
-    )
+    db_malzeme = db.query(models.Malzeme).filter(models.Malzeme.id == malzeme_id).first()
     
-    if not malz_match:
-        raise HTTPException(status_code=404, detail="Malzeme not found")
+    if not db_malzeme:
+        raise HTTPException(status_code=404, detail="Malzeme bulunamadı")
+    
+    db_malzeme.ip = ip if ip not in ["", "null", "None", None] else None
+    db_malzeme.frequency = frequency if frequency is not None else 5
 
-    db.delete(malz_match)
     db.commit()
+    db.refresh(db_malzeme)
 
-    return {"status": "success", "message": f"Malzeme '{malzeme_name}' başarıyla silindi."}
-
+    return db_malzeme
 
 @router.get("/{malzeme_name}/photos", response_model=List[str])
 def get_malzeme_photos(malzeme_name: str, db: Session = Depends(get_db)):
@@ -553,6 +457,8 @@ async def unset_system_id_for_malzeme(malzeme_id: UUID4, db: Session = Depends(g
         raise HTTPException(status_code=404, detail="Malzeme bulunamadı")
 
     db_malzeme.system_id = None
+    db_malzeme.ip= None
+    db_malzeme.frequency= 5
 
     db.commit()
     db.refresh(db_malzeme)
@@ -574,3 +480,23 @@ def get_malzeme_by_id(id: UUID4, db: Session = Depends(get_db)):
     if not malzeme:
         raise HTTPException(status_code=404, detail="Malzeme bulunamadı")
     return malzeme
+
+
+@router.get("/update-state/{id}", response_model=schemas.Malzeme)
+async def update_malzeme_state(
+    id: UUID4,
+    db: Session = Depends(get_db)
+):
+    db_malzeme= db.query(models.Malzeme).filter(models.Malzeme.id == id).first()
+    if not db_malzeme:
+        raise HTTPException(status_code=404, detail="Malzeme bulunamadı")
+
+    if db_malzeme.ip == '':
+        db_malzeme.state = 0
+    else:
+        state = 2 if ping_ip(db_malzeme.ip) else 0
+    db_malzeme.state = state
+    db.commit()
+    db.refresh(db_malzeme)
+
+    return db_malzeme

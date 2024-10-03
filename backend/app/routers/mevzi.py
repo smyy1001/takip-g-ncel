@@ -61,6 +61,12 @@ async def create_mevzi(
         db_mevzi = db.query(models.Mevzi).filter(models.Mevzi.name == mevzi_create.name).first()
         if db_mevzi:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Bu isimde bir mevzi zaten var")
+        
+        if mevzi_create.frequency is None or mevzi_create.frequency == "":
+            mevzi_create.frequency = 5
+
+        if mevzi_create.ip in ["", "null", "None", None]:
+            mevzi_create.ip = None 
 
         db_mevzi = models.Mevzi(
             name=mevzi_create.name,
@@ -132,7 +138,7 @@ def delete_mevzi(mevzi_id: UUID4, db: Session = Depends(get_db)):
     db.query(models.System).filter(models.System.mevzi_id == mevzi_id).update({models.System.mevzi_id: None})
     db.query(models.Malzeme).filter(models.Malzeme.mevzi_id == mevzi_id).update({models.Malzeme.depo: 0})
     db.query(models.Malzeme).filter(models.Malzeme.mevzi_id == mevzi_id).update({models.Malzeme.mevzi_id: None})
-    db.query(models.MalzMatch).filter(models.MalzMatch.mevzi_id == mevzi_id).delete()
+  
 
     db.delete(db_mevzi)
     db.commit()
@@ -174,7 +180,7 @@ async def update_mevzi(
     try:
 
         db_mevzi = db.query(models.Mevzi).filter(models.Mevzi.id == mevzi_id).first()
-        
+
         if mevzi:
             updated_mevzi_data = json.loads(mevzi)
             mevzi_update = schemas.MevziCreate(**updated_mevzi_data)
@@ -182,37 +188,47 @@ async def update_mevzi(
             if not db_mevzi:
                 raise HTTPException(status_code=404, detail="Mevzi bulunamadı")
 
+
+            if mevzi_update.frequency is None or mevzi_update.frequency == "":
+                mevzi_update.frequency = 5
+
+
+            if mevzi_update.ip in ["", "null", "None", None]:
+                mevzi_update.ip = None 
+                
             for key, value in mevzi_update.dict().items():
                 if key == "photos" and value is None:
                     continue
-                if value is None:
-                    continue
+
                 setattr(db_mevzi, key, value)
+
+            if mevzi_update.ip is None or mevzi_update.ip == "":
+                db_mevzi.state = 1
+            else:
+                db_mevzi.state = 2 if ping_ip(mevzi_update.ip) else 0
+
 
         image_urls = db_mevzi.photos if db_mevzi.photos is not None else []
 
         folder_image_counts = json.loads(folderImageCounts) if folderImageCounts not in [None, "null", ""] else []
         image_index = 0
 
-
         if oldFolderNames and folderNames and len(oldFolderNames) == len(folderNames):
             for index, old_folder_name in enumerate(oldFolderNames):
-             
+
                 if old_folder_name != "null" and folderNames[index]:
                     new_folder_name = folderNames[index]
                     image_urls = [
                     photo.replace(f"/{old_folder_name}/", f"/{new_folder_name}/")
                     for photo in image_urls
                     ]
-                   
+
                     await move_files_in_minio(
                         format_bucket_name(db_mevzi.name),
                         old_folder_name,
                         new_folder_name
                     )
 
-
-            
         if folderNames and folder_image_counts:
             for folder_index, folder_name in enumerate(folderNames):
                 image_count = folder_image_counts[folder_index]
@@ -335,7 +351,10 @@ async def update_system_state(
     if not db_system:
         raise HTTPException(status_code=404, detail="Mevzi bulunamadı")
 
-    state = 2 if ping_ip(db_system.ip) else 0
+    if db_system.ip == '':
+        db_system.state = 0
+    else:
+        state = 2 if ping_ip(db_system.ip) else 0
     db_system.state = state
     db.commit()
     db.refresh(db_system)

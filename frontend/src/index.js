@@ -5,6 +5,7 @@ import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import { ThemeContextProvider } from "./ThemeContext";
 import axios from "axios";
+import { AuthProvider, getAuthContext } from "./AuthContext";
 
 axios.interceptors.request.use(
   function (config) {
@@ -19,11 +20,26 @@ axios.interceptors.request.use(
   }
 );
 
+axios.interceptors.response.use(
+  function (response) {
+    return response;
+  },
+  function (error) {
+    if (error.response && error.response.status === 401) {
+      const authContext = getAuthContext();
+      authContext.logout();
+    }
+    return Promise.reject(error);
+  }
+);
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <ThemeContextProvider>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </ThemeContextProvider>
   </React.StrictMode>
 );

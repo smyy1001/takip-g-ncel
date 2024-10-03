@@ -254,6 +254,8 @@ class MalzemeBase(BaseModel):
     onarimlar: Optional[List[date]] = None
     bakimlar: Optional[List[date]] = None
     photos: Optional[List[str]] = None
+    ip: Optional[str] = None
+    frequency: Optional[float] = None
 
 
 class MalzemeCreate(MalzemeBase):
@@ -262,6 +264,7 @@ class MalzemeCreate(MalzemeBase):
 
 class Malzeme(MalzemeBase):
     id: UUID4
+    state: int
 
     class Config:
         from_attributes = True
@@ -346,16 +349,3 @@ class Mevzi(MevziBase):
         from_attributes = True
 
 
-class MalzMathchBase(BaseModel):
-    malzeme_name: Optional[str] = None
-    mevzi_id: Optional[UUID4] = None
-    ip: Optional[str] = None
-
-
-class MalzMatchCreate(MalzMathchBase):
-    pass
-
-
-class MalzMatch(MalzMathchBase):
-    state: int
-    id: int

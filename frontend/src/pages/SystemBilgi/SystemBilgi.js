@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import {
   Container,
@@ -28,19 +28,38 @@ function SystemBilgi({ isRoleAdmin }) {
   const { id } = useParams();
   const [systemInfo, setSystemInfo] = useState(null);
   const [malzemeler, setMalzemeler] = useState([]);
-  const [ips, setIps] = useState([]);
   const [unsurlar, setUnsurlar] = useState([]);
-  const [markalar, setMarkalar] = useState([]);
-  const [modeller, setModeller] = useState([]);
-  const [turler, setTurler] = useState([]);
   const navigate = useNavigate();
+  const stateIntervalIds = useRef([]);
 
   useEffect(() => {
-    let ipsIntervalId; // Store interval ID for fetching IPs
     const fetchSystemInfo = async () => {
       try {
         const response = await axios.get(`/api/system/get/${id}`);
-        setSystemInfo(response.data);
+        const [mevziler, markalar, modeller, turler] = await Promise.all([
+          axios.get("/api/mevzi/all/"),
+          axios.get("/api/sys_marka/all/"),
+          axios.get("/api/sys_model/all/"),
+          axios.get("/api/systype/all/"),
+        ]);
+
+        const system = response.data;
+        const updatedSystem = {
+          ...system,
+          mevzi_name:
+            mevziler.data.find((mevzi) => mevzi.id === system.mevzi_id)?.name ||
+            null,
+          marka_name:
+            markalar.data.find((marka) => marka.id === system.marka_id)?.name ||
+            null,
+          model_name:
+            modeller.data.find((model) => model.id === system.mmodel_id)
+              ?.name || null,
+          type_name:
+            turler.data.find((tur) => tur.id === system.type_id)?.name || null,
+        };
+
+        setSystemInfo(updatedSystem);
 
         const malzemeResponse = await axios.get("/api/malzeme/all/");
         const filteredMalzemeler = malzemeResponse.data.filter(
@@ -48,32 +67,9 @@ function SystemBilgi({ isRoleAdmin }) {
         );
         setMalzemeler(filteredMalzemeler);
 
-        if (response.data.mevzi_id) {
-          await fetchIps(response.data.mevzi_id);
-          // Start the interval for fetching IPs every 30 seconds
-          ipsIntervalId = startIpsInterval(response.data.mevzi_id);
-        }
-
-        fetchMarkaModelAndTur();
         fetchUnsurlar(response.data.ilskili_unsur);
       } catch (error) {
         console.error("Sistem bilgisi alınırken hata oluştu: ", error);
-      }
-    };
-
-    const fetchMarkaModelAndTur = async () => {
-      try {
-        const markaResponse = await axios.get("/api/sys_marka/all/");
-        const modelResponse = await axios.get("/api/sys_model/all/");
-        const turResponse = await axios.get("/api/systype/all/");
-        setMarkalar(markaResponse.data);
-        setModeller(modelResponse.data);
-        setTurler(turResponse.data);
-      } catch (error) {
-        console.error(
-          "Marka, model ve tür bilgisi alınırken hata oluştu: ",
-          error
-        );
       }
     };
 
@@ -90,77 +86,59 @@ function SystemBilgi({ isRoleAdmin }) {
       }
     };
 
-    const fetchIps = async (mevziId) => {
-      try {
-        const response = await axios.get(
-          `/api/malzeme/malzmatches/state?mevzi_id=${mevziId}&s_id=${id}`
-        );
-        const fetchedIps = response.data.map(
-          ({ malzeme_name, mevzi_id, ip, state }) => ({
-            malzeme_name,
-            mevzi_id,
-            ip,
-            state,
-          })
-        );
-        setIps(fetchedIps);
-      } catch (error) {
-        console.error("IP'ler çekilirken hata oluştu:", error);
-      }
-    };
-
-    // Start an interval for fetching IPs
-    const startIpsInterval = (mevziId) => {
-      const intervalId = setInterval(() => {
-        fetchIps(mevziId);
-      }, 60000);
-      return intervalId;
-    };
-
     fetchSystemInfo();
-
-    // Cleanup function to clear the IP fetch interval
-    return () => {
-      if (ipsIntervalId) {
-        clearInterval(ipsIntervalId);
-      }
-    };
   }, [id]);
 
-  useEffect(() => {
-    let stateIntervalId; // Store interval ID for updating state
-
-    const updateState = async (id) => {
-      try {
-        const response = await axios.get(
-          `/api/system/update-state/${id}`
-        );
-        setSystemInfo({ ...systemInfo, state: response.data.state });
-      } catch (error) {
-        console.error("Durum güncellenirken hata alındı:", error);
+  const updateState = async (systemId) => {
+    try {
+      const response = await axios.get(`/api/system/update-state/${systemId}`);
+      if (systemInfo && systemInfo.id === systemId) {
+        setSystemInfo({
+          ...systemInfo,
+          state: response.data.state,
+        });
       }
-    };
+    } catch (error) {
+      console.error(
+        `Durum güncellenirken hata alındı (System ID: ${systemId}):`,
+        error
+      );
+    }
+  };
 
-    // Start an interval for updating the system state
-    const startStateInterval = (id) => {
-      const intervalId = setInterval(() => {
-        updateState(id);
-      }, systemInfo.frequency * 60000); // Convert minutes to milliseconds
-      return intervalId;
-    };
+  const startOrUpdateInterval = (system) => {
+    const existingInterval = stateIntervalIds.current.find(
+      (item) => item.systemId === system.id
+    );
 
-    if (systemInfo && systemInfo.frequency) {
-      stateIntervalId = startStateInterval(id); // Start the state update interval
+    if (existingInterval) {
+      if (existingInterval.frequency !== system.frequency) {
+        clearInterval(existingInterval.intervalId);
+        stateIntervalIds.current = stateIntervalIds.current.filter(
+          (item) => item.systemId !== system.id
+        );
+      } else {
+        return;
+      }
     }
 
-    // Cleanup function to clear the state update interval
-    return () => {
-      if (stateIntervalId) {
-        clearInterval(stateIntervalId);
-      }
-    };
-  }, [systemInfo, id]);
+    const intervalTime = system.frequency * 60000;
+    const intervalId = setInterval(() => {
+      updateState(system.id);
+    }, intervalTime);
 
+    stateIntervalIds.current.push({
+      systemId: system.id,
+      intervalId: intervalId,
+      frequency: system.frequency,
+    });
+  };
+
+  useEffect(() => {
+    if (systemInfo && systemInfo.frequency) {
+      startOrUpdateInterval(systemInfo);
+    }
+  }, [systemInfo, id]);
 
   const handleSystemPhotoClick = async (name) => {
     navigate(`/system/gallery/${name}`);
@@ -257,85 +235,94 @@ function SystemBilgi({ isRoleAdmin }) {
                 <TableRow>
                   <TableCell>IP Adresi</TableCell>
                   <TableCell>
-                    {systemInfo.state !== null && systemInfo.state !== undefined ? (
-                      <>
-                        {systemInfo.state < 1 && (
-                          <>
-                            <IconButton className="noHighlight" disableRipple>
-                              <KeyboardDoubleArrowDownIcon
-                                style={{ color: "red" }}
-                              />
-                              <span
-                                style={{ fontSize: '1rem'}}>
-                                Kapalı  /  Ip: {systemInfo.ip}
-                              </span>
-                            </IconButton>
-                          </>
-                        )}
-                        {systemInfo.state === 2 && (
-                          <>
-                            <IconButton className="noHighlight" disableRipple>
-                              <KeyboardDoubleArrowUpIcon
-                                style={{ color: "green" }}
-                              />
-                              <span
-                                style={{ fontSize: '1rem' }}>
-                                Açık  /  Ip: {systemInfo.ip}
-                              </span>
-                            </IconButton>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <IconButton className="noHighlight" disableRipple>
+                    {systemInfo.ip ? (
+                      systemInfo.state !== null &&
+                      systemInfo.state !== undefined ? (
+                        <>
+                          {systemInfo.state < 1 && (
+                            <>
+                              <IconButton className="noHighlight" disableRipple>
+                                <KeyboardDoubleArrowDownIcon
+                                  style={{ color: "red" }}
+                                />
+                                <span style={{ fontSize: "1rem" }}>
+                                  İnaktif / Ip: {systemInfo.ip}
+                                </span>
+                              </IconButton>
+                            </>
+                          )}
+                          {systemInfo.state === 2 && (
+                            <>
+                              <IconButton className="noHighlight" disableRipple>
+                                <KeyboardDoubleArrowUpIcon
+                                  style={{ color: "green" }}
+                                />
+                                <span style={{ fontSize: "1rem" }}>
+                                  Aktif / Ip: {systemInfo.ip}
+                                </span>
+                              </IconButton>
+                            </>
+                          )}
+                          {systemInfo.state === 1 && (
+                            <>
+                              <IconButton className="noHighlight" disableRipple>
+                                <RemoveIcon style={{ color: "yellow" }} />
+                                <span style={{ fontSize: "1rem" }}>
+                                  Bilinmiyor / Ip: {systemInfo.ip}
+                                </span>
+                              </IconButton>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <IconButton className="noHighlight" disableRipple>
                             <RemoveIcon style={{ color: "yellow" }} />
-                            <span
-                              style={{ fontSize: '0.875rem' }}>
+                            <span style={{ fontSize: "0.875rem" }}>
                               Bilinmiyor
                             </span>
-                        </IconButton>
-                      </>
+                          </IconButton>
+                        </>
+                      )
+                    ) : (
+                      "-"
                     )}
                   </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>Lokasyon</TableCell>
-                  <TableCell>{systemInfo.depo ? (systemInfo.depo === 0 && 'Birim Depo') :  '-'}</TableCell> 
+                  <TableCell>
+                    {systemInfo.depo === 0
+                      ? "Birim Depo"
+                      : systemInfo.depo === 1
+                      ? "Yedek Depo"
+                      : systemInfo.mevzi_name || "-"}
+                  </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>Tür</TableCell>
-                  <TableCell>
-                    {turler.find((tur) => tur.id === systemInfo.type_id)
-                      ?.name || "-"}
-                  </TableCell>
+                  <TableCell>{systemInfo.type_name || "-"}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>Marka</TableCell>
-                  <TableCell>
-                    {markalar.find((marka) => marka.id === systemInfo.marka_id)
-                      ?.name || "-"}
-                  </TableCell>
+                  <TableCell>{systemInfo.marka_name || "-"}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>Model</TableCell>
-                  <TableCell>
-                    {modeller.find((model) => model.id === systemInfo.mmodel_id)
-                      ?.name || "-"}
-                  </TableCell>
+                  <TableCell>{systemInfo.model_name || "-"}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>Giriş Tarihi</TableCell>
                   <TableCell>
                     {systemInfo.giris_tarihi
                       ? new Date(systemInfo.giris_tarihi).toLocaleDateString(
-                        "tr-TR",
-                        {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        }
-                      )
+                          "tr-TR",
+                          {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          }
+                        )
                       : "-"}
                   </TableCell>
                 </TableRow>
@@ -365,110 +352,105 @@ function SystemBilgi({ isRoleAdmin }) {
             className="system-bilgi-system-table-main-container"
           >
             <Table stickyHeader aria-label="malzeme table">
-              <TableHead>
-                <TableRow className="system-bilgi-system-sticky-header">
-                  <TableCell style={{ fontWeight: "bold" }}>
-                    Malzeme Adı
-                  </TableCell>
-                  <TableCell style={{ fontWeight: "bold" }}>
-                    Seri Numarası
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {malzemeler.length > 0 ? (
-                  malzemeler.map((malzeme) => (
-                    <TableRow key={malzeme.id}>
-                      <TableCell>{malzeme.name || "-"}</TableCell>
-                      <TableCell>{malzeme.seri_num || "-"}</TableCell>
+              {malzemeler.length > 0 ? (
+                <>
+                  <TableHead>
+                    <TableRow className="system-bilgi-system-sticky-header">
+                      <TableCell style={{ fontWeight: "bold" }}>
+                        Malzeme Adı
+                      </TableCell>
+                      <TableCell style={{ fontWeight: "bold" }}>
+                        Seri Numarası
+                      </TableCell>
+                      <TableCell style={{ fontWeight: "bold" }}>
+                        IP Adresi
+                      </TableCell>
                     </TableRow>
-                  ))
-                ) : (
+                  </TableHead>
+                  <TableBody>
+                    {malzemeler.map((malzeme) => (
+                      <TableRow key={malzeme.id}>
+                        <TableCell>{malzeme.name || "-"}</TableCell>
+                        <TableCell>{malzeme.seri_num || "-"}</TableCell>
+                        <TableCell>
+                          {malzeme.ip ? (
+                            malzeme.state !== null &&
+                            malzeme.state !== undefined ? (
+                              <>
+                                {malzeme.state < 1 && (
+                                  <>
+                                    <IconButton
+                                      className="noHighlight"
+                                      disableRipple
+                                    >
+                                      <KeyboardDoubleArrowDownIcon
+                                        style={{ color: "red" }}
+                                      />
+                                      <span style={{ fontSize: "1rem" }}>
+                                        İnaktif / IP: {malzeme.ip}
+                                      </span>
+                                    </IconButton>
+                                  </>
+                                )}
+                                {malzeme.state === 2 && (
+                                  <>
+                                    <IconButton
+                                      className="noHighlight"
+                                      disableRipple
+                                    >
+                                      <KeyboardDoubleArrowUpIcon
+                                        style={{ color: "green" }}
+                                      />
+                                      <span style={{ fontSize: "1rem" }}>
+                                        Aktif / IP: {malzeme.ip}
+                                      </span>
+                                    </IconButton>
+                                  </>
+                                )}
+                                {malzeme.state === 1 && (
+                                  <>
+                                    <IconButton
+                                      className="noHighlight"
+                                      disableRipple
+                                    >
+                                      <RemoveIcon style={{ color: "yellow" }} />
+                                      <span style={{ fontSize: "1rem" }}>
+                                        Bilinmiyor / IP: {malzeme.ip}
+                                      </span>
+                                    </IconButton>
+                                  </>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <IconButton
+                                  className="noHighlight"
+                                  disableRipple
+                                >
+                                  <RemoveIcon style={{ color: "yellow" }} />
+                                  <span style={{ fontSize: "0.875rem" }}>
+                                    Bilinmiyor
+                                  </span>
+                                </IconButton>
+                              </>
+                            )
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </>
+              ) : (
+                <TableBody>
                   <TableRow>
                     <TableCell colSpan={4} align="center">
                       Sisteme ait malzeme bulunmamaktadır.
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          <Typography
-            variant="h5"
-            gutterBottom
-            className="system-bilgi-system-section-title"
-          >
-            Sistem IP Listeleri
-          </Typography>
-          <TableContainer
-            component={Paper}
-            className="system-bilgi-system-table-main-container"
-          >
-            <Table stickyHeader aria-label="ip table">
-              <TableHead>
-                <TableRow className="system-bilgi-system-sticky-header">
-                  <TableCell style={{ fontWeight: "bold" }}>
-                    IP Adresi
-                  </TableCell>
-                  <TableCell style={{ fontWeight: "bold" }}>Durum</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {ips.length > 0 ? (
-                  ips.map((ip, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{ip.ip || "-"}</TableCell>
-                      <TableCell style={{ textAlign: "left" }}>
-                        {ip.state !== null && ip.state !== undefined && (
-                          <>
-                            {ip.state < 1 && (
-                              <IconButton className="noHighlight" disableRipple>
-                                <KeyboardDoubleArrowDownIcon
-                                  style={{ color: "red" }}
-                                />
-                                <span
-                                  style={{ fontSize: "16px", color: "white" }}
-                                >
-                                  Kapalı
-                                </span>
-                              </IconButton>
-                            )}
-                            {ip.state === 2 && (
-                              <IconButton className="noHighlight" disableRipple>
-                                <KeyboardDoubleArrowUpIcon
-                                  style={{ color: "green" }}
-                                />
-                                <span
-                                  style={{ fontSize: "16px", color: "white" }}
-                                >
-                                  Açık
-                                </span>
-                              </IconButton>
-                            )}
-                            {ip.state === 1 && (
-                              <IconButton className="noHighlight" disableRipple>
-                                <RemoveIcon style={{ color: "yellow" }} />
-                                <span
-                                  style={{ fontSize: "16px", color: "white" }}
-                                >
-                                  Bilinmiyor
-                                </span>
-                              </IconButton>
-                            )}
-                          </>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={3} align="center">
-                      Sisteme ait IP bilgisi bulunmamaktadır.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
+                </TableBody>
+              )}
             </Table>
           </TableContainer>
         </>

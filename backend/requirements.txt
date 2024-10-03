@@ -10,7 +10,7 @@ python-jose
 passlib[bcrypt]==1.7.4
 shapely
 bcrypt==3.2.0
-geopandas
+# geopandas
 shapely
 ping3==4.0.4
 PyYAML

@@ -15,4 +15,4 @@ COPY . .
 
 COPY wait.sh /wait.sh
 RUN chmod +x /wait.sh
-CMD ["/wait.sh", "db", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/wait.sh", "${POSTGRES_HOST}", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "${DOCKER_BACKEND_PORT}"]
