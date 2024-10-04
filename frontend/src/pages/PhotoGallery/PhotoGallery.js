@@ -96,24 +96,133 @@ function PhotoGallery({ isRoleAdmin }) {
     fetchPhotos();
   }, [sisMalzMev, name]);
 
-  const handleDeleteImage = (folderName, imageName) => {
-    setDeletedImagesData((prev) => [
-      ...prev,
-      { folderName, deletedImages: [imageName] },
-    ]);
+  const handleDeleteImage = async (folderName, imageName) => {
+    try {
+      const formData = new FormData();
+      for (const folder of folders) {
+        if (!folder.folderName || folder.folderName.trim() === "") {
+          message.warning("Klasör ismi boş olamaz");
+          return;
+        }
+        formData.append("folderNames", folder.folderName);
+        if (folder.oldFolderName) {
+          formData.append("oldFolderNames", folder.oldFolderName);
+        } else {
+          formData.append("oldFolderNames", null);
+        }
+      }
+      const updatedDeletedImagesData = [
+        ...deletedImagesData,
+        { folderName, deletedImages: [imageName] },
+      ];
+      formData.append(
+        "deletedImagesData",
+        JSON.stringify(updatedDeletedImagesData)
+      );
 
-    setFolders((prevFolders) =>
-      prevFolders.map((folder) =>
-        folder.folderName === folderName
-          ? {
-              ...folder,
-              photos: folder.photos.filter(
-                (photo) => !photo.includes(imageName)
-              ),
-            }
-          : folder
-      )
-    );
+      const response = await axios.put(
+        `/api/${sisMalzMev}/update/${systemId}`,
+        formData
+      );
+
+      if (response.status === 200) {
+        const groupedPhotos = groupPhotosByFolder(response.data.photos);
+        setFolders(
+          Object.keys(groupedPhotos).map((folderName) => ({
+            folderName,
+            oldFolderName: null,
+            photos: groupedPhotos[folderName],
+          }))
+        );
+
+        message.success("Fotoğraf başarıyla silindi");
+      } else {
+        throw new Error("Fotoğraf silinemedi.");
+      }
+    } catch (error) {
+      message.error("Fotoğraf silinirken hata oluştu");
+    }
+  };
+
+  const handleDeleteFolder = async (folderName) => {
+    try {
+      const folderToDelete = folders.find(
+        (folder) => folder.folderName === folderName
+      );
+
+      if (!folderToDelete) {
+        throw new Error("Silinecek klasör bulunamadı");
+      }
+      const formData = new FormData();
+      const deletedImages = folderToDelete.photos.map((photo) =>
+        photo.split("/").pop()
+      );
+      formData.append("folderNames", folderName);
+      formData.append(
+        "deletedImagesData",
+        JSON.stringify([{ folderName, deletedImages }])
+      );
+
+      const response = await axios.put(
+        `/api/${sisMalzMev}/update/${systemId}`,
+        formData
+      );
+
+      if (response.status === 200) {
+        const groupedPhotos = groupPhotosByFolder(response.data.photos);
+        setFolders(
+          Object.keys(groupedPhotos).map((folderName) => ({
+            folderName,
+            oldFolderName: null,
+            photos: groupedPhotos[folderName],
+          }))
+        );
+        message.success("Klasör başarıyla silindi");
+      } else {
+        throw new Error("Klasör silinemedi.");
+      }
+    } catch (error) {
+      message.error("Klasör silinirken hata oluştu: " + error.message);
+    }
+  };
+
+  const handleFolderNameSubmit = async (index) => {
+    try {
+      const folder = folders[index];
+
+      if (!folder.folderName || folder.folderName.trim() === "") {
+        message.warning("Klasör ismi boş olamaz");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("folderNames", folder.folderName);
+      if (folder.oldFolderName) {
+        formData.append("oldFolderNames", folder.oldFolderName);
+      } else {
+        formData.append("oldFolderNames", null);
+      }
+
+      const response = await axios.put(
+        `/api/${sisMalzMev}/update/${systemId}`,
+        formData
+      );
+
+      if (response.status === 200) {
+        const groupedPhotos = groupPhotosByFolder(response.data.photos);
+        setFolders(
+          Object.keys(groupedPhotos).map((folderName) => ({
+            folderName,
+            oldFolderName: null,
+            photos: groupedPhotos[folderName],
+          }))
+        );
+        message.success("Klasör ismi başarıyla güncellendi");
+      } else {
+        throw new Error("Klasör ismi güncellenemedi.");
+      }
+    } catch (error) {
+      message.error("Klasör ismi güncellenirken hata oluştu: " + error.message);
+    }
   };
 
   const handleFolderNameChange = (index, newFolderName) => {
@@ -131,76 +240,6 @@ function PhotoGallery({ isRoleAdmin }) {
       updatedFolders[index].folderName = newFolderName;
       return updatedFolders;
     });
-  };
-
-  const handleDeleteFolder = (folderName) => {
-    setDeletedImagesData((prev) => {
-      const updatedDeletedImagesData = [...prev];
-
-      const folderToDelete = folders.find(
-        (folder) => folder.folderName === folderName
-      );
-      if (folderToDelete) {
-        const deletedImages = folderToDelete.photos.map((photo) =>
-          photo.split("/").pop()
-        );
-
-        updatedDeletedImagesData.push({
-          folderName,
-          deletedImages,
-        });
-      }
-
-      return updatedDeletedImagesData;
-    });
-    setFolders((prevFolders) =>
-      prevFolders.map((folder) =>
-        folder.folderName === folderName ? { ...folder, photos: [] } : folder
-      )
-    );
-  };
-
-  const handleSubmitDeletions = async () => {
-    try {
-      const formData = new FormData();
-      for (const folder of folders) {
-        if (!folder.folderName || folder.folderName.trim() === "") {
-          message.warning("Klasör ismi boş olamaz");
-          return;
-        }
-        formData.append("folderNames", folder.folderName);
-        if (folder.oldFolderName) {
-          formData.append("oldFolderNames", folder.oldFolderName);
-        } else {
-          formData.append("oldFolderNames", null);
-        }
-      }
-
-      if (deletedImagesData.length > 0) {
-        formData.append("deletedImagesData", JSON.stringify(deletedImagesData));
-      }
-
-      const response = await axios.put(
-        `/api/${sisMalzMev}/update/${systemId}`,
-        formData
-      );
-
-      if (response.status === 200) {
-        message.success("Değişiklikler kaydedildi");
-        const groupedPhotos = groupPhotosByFolder(response.data.photos);
-
-        setFolders(
-          Object.keys(groupedPhotos).map((folderName) => ({
-            folderName,
-            oldFolderName: null,
-            photos: groupedPhotos[folderName],
-          }))
-        );
-        setDeletedImagesData([]);
-      }
-    } catch (error) {
-      message.error("işlem sırasında hata oluştu");
-    }
   };
 
   const handleAccordionChange = (folderName) => (event, isExpanded) => {
@@ -244,6 +283,11 @@ function PhotoGallery({ isRoleAdmin }) {
                         if (isRoleAdmin) {
                           e.stopPropagation();
                           handleFolderNameChange(index, e.target.value);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && isRoleAdmin) {
+                          handleFolderNameSubmit(index);
                         }
                       }}
                       onClick={(event) => event.stopPropagation()}
@@ -307,16 +351,6 @@ function PhotoGallery({ isRoleAdmin }) {
               </AccordionDetails>
             </Accordion>
           ))}
-          {((deletedImagesData && deletedImagesData.length > 0) ||
-            folders.some((folder) => folder.oldFolderName)) && (
-            <CustomOutlinedButton
-              variant="outlined"
-              style={{ marginTop: "10px" }}
-              onClick={handleSubmitDeletions}
-            >
-              Kaydet
-            </CustomOutlinedButton>
-          )}
         </div>
       ) : (
         <Typography
